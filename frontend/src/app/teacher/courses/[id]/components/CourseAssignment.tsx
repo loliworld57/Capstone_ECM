@@ -11,7 +11,9 @@ import {
     X,
     Clock,
     Eye,
-    Paperclip
+    Paperclip,
+    ArrowUpDown,
+    Users
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from '@/utils/axiosConfig';
@@ -37,19 +39,44 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [keyword, setKeyword] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); // Default newest first
+    const [submissionCounts, setSubmissionCounts] = useState<Record<number, number>>({});
 
     // Modal Management
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [viewSubmissionsId, setViewSubmissionsId] = useState<number | null>(null);
 
     // Fetch assignments list from Backend
     const fetchAssignments = async () => {
         setIsLoading(true);
         try {
             const response = await api.get(`/assignments/course/${courseId}`);
-            setAssignments(response.data);
+            let data = response.data;
+
+            // Sort by created date
+            data.sort((a: Assignment, b: Assignment) => {
+                const dateA = new Date(a.createdDate).getTime();
+                const dateB = new Date(b.createdDate).getTime();
+                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            });
+
+            setAssignments(data);
+
+            // Fetch submission counts for each assignment
+            const counts: Record<number, number> = {};
+            for (const assignment of data) {
+                try {
+                    const subResponse = await api.get(`/assignments/${assignment.id}/submissions`);
+                    counts[assignment.id] = subResponse.data.length;
+                } catch (error) {
+                    console.error(`Error fetching submissions for assignment ${assignment.id}:`, error);
+                    counts[assignment.id] = 0;
+                }
+            }
+            setSubmissionCounts(counts);
         } catch (error) {
             console.error("Error fetching assignments:", error);
             toast.error("Unable to load the assignments list.");
@@ -60,7 +87,11 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
 
     useEffect(() => {
         if (courseId) fetchAssignments();
-    }, [courseId]);
+    }, [courseId, sortOrder]);
+
+    const toggleSortOrder = () => {
+        setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    };
 
     const formatDateTime = (dateString: string) => {
         if (!dateString) return "N/A";
@@ -145,29 +176,14 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                 />
             )}
 
-            {/* --- 2. CREATE NEW ASSIGNMENT MODAL --- */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
-                            <h2 className="font-bold text-gray-800 text-lg">Create New Assignment</h2>
-                            <button
-                                onClick={() => setIsAddModalOpen(false)}
-                                className="text-gray-500 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <AssignmentForm
-                            courseId={courseId}
-                            onSuccess={() => {
-                                setIsAddModalOpen(false);
-                                fetchAssignments();
-                            }}
-                            onCancel={() => setIsAddModalOpen(false)}
-                        />
-                    </div>
-                </div>
+            {/* --- 3. VIEW SUBMISSIONS MODAL --- */}
+            {viewSubmissionsId !== null && (
+                <SubmissionsModal
+                    assignmentId={viewSubmissionsId}
+                    courseId={courseId}
+                    onClose={() => setViewSubmissionsId(null)}
+                    onRefresh={() => fetchAssignments()}
+                />
             )}
 
             {/* HEADER */}
@@ -177,14 +193,24 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                     Assignments & Quizzes ({assignments.length})
                 </div>
 
-                {!readOnly && (
+                <div className="flex items-center gap-3">
                     <button
-                        onClick={() => setIsAddModalOpen(true)}
+                        onClick={toggleSortOrder}
                         className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition text-sm font-bold"
+                        title={`Sort by created date (${sortOrder === 'asc' ? 'Oldest first' : 'Newest first'})`}
                     >
-                        <Plus size={16} /> Create Assignment
+                        <ArrowUpDown size={16} /> Sort
                     </button>
-                )}
+
+                    {!readOnly && (
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition text-sm font-bold"
+                        >
+                            <Plus size={16} /> Create Assignment
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="p-6">
@@ -208,6 +234,7 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                         <thead>
                             <tr className="bg-[var(--color-secondary)]/10 text-[var(--color-text)] border-b border-[var(--color-main)]">
                                 <th className="p-4 font-semibold">Assignment Title</th>
+                                <th className="p-4 font-semibold w-32 text-center">Submissions</th>
                                 <th className="p-4 font-semibold w-56">Due Date</th>
                                 <th className="p-4 font-semibold w-32 text-center">Actions</th>
                             </tr>
@@ -215,20 +242,21 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                         <tbody>
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={3} className="text-center py-10">
+                                    <td colSpan={4} className="text-center py-10">
                                         <Loader2 size={24} className="animate-spin text-[var(--color-main)] mx-auto mb-2" />
                                         <p className="text-gray-500">Loading assignments...</p>
                                     </td>
                                 </tr>
                             ) : filteredAssignments.length === 0 ? (
                                 <tr>
-                                    <td colSpan={3} className="text-center text-gray-500 py-10 border-dashed">
+                                    <td colSpan={4} className="text-center text-gray-500 py-10 border-dashed">
                                         {keyword ? "No assignments match your search." : "No assignments have been created yet."}
                                     </td>
                                 </tr>
                             ) : (
                                 filteredAssignments.map((assignment) => {
                                     const overdue = isOverdue(assignment.dueDate);
+                                    const submittedCount = submissionCounts[assignment.id] || 0;
                                     return (
                                         <tr
                                             key={assignment.id}
@@ -251,6 +279,12 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                                                     )}
                                                 </div>
                                             </td>
+                                            <td className="p-4 text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className="font-semibold text-[var(--color-text)]">{submittedCount}</span>
+                                                    <span className="text-xs text-gray-500">submitted</span>
+                                                </div>
+                                            </td>
                                             <td className="p-4">
                                                 <div className={`flex items-center gap-1.5 font-medium ${overdue ? 'text-red-600' : 'text-gray-600'}`}>
                                                     <Clock size={16} className={overdue ? 'text-red-500' : 'text-[var(--color-main)]'} />
@@ -260,6 +294,15 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center justify-center gap-2">
+                                                    {/* VIEW SUBMISSIONS BUTTON */}
+                                                    <button
+                                                        onClick={() => setViewSubmissionsId(assignment.id)}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                                        title="View Submissions"
+                                                    >
+                                                        <Users size={18} />
+                                                    </button>
+
                                                     {/* VIEW DETAILS BUTTON (Opens Modal) */}
                                                     <button
                                                         onClick={() => setSelectedAssignment(assignment)}
@@ -290,6 +333,216 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                     </table>
                 </div>
             </div>
+        </div>
+    );
+}
+
+// Submissions Modal Component
+function SubmissionsModal({ assignmentId, courseId, onClose, onRefresh }: { assignmentId: number; courseId: number; onClose: () => void; onRefresh: () => void }) {
+    const [students, setStudents] = useState<any[]>([]);
+    const [submissions, setSubmissions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [grading, setGrading] = useState<Record<number, boolean>>({});
+
+    useEffect(() => {
+        fetchData();
+    }, [assignmentId, courseId]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            // Fetch all enrolled students
+            const studentsResponse = await api.get(`/courses/${courseId}/students`);
+            const enrolledStudents = Array.from(studentsResponse.data);
+
+            // Fetch all submissions
+            const submissionsResponse = await api.get(`/assignments/${assignmentId}/submissions`);
+            const assignmentSubmissions = submissionsResponse.data;
+
+            setStudents(enrolledStudents);
+            setSubmissions(assignmentSubmissions);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast.error("Unable to load students and submissions.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGrade = async (submissionId: number, score: number, feedback: string) => {
+        setGrading(prev => ({ ...prev, [submissionId]: true }));
+        try {
+            await api.put(`/assignments/submissions/${submissionId}/grade`, { score, feedback });
+            toast.success("Submission graded successfully!");
+            fetchData();
+            onRefresh();
+        } catch (error) {
+            console.error("Error grading submission:", error);
+            toast.error("Error grading submission.");
+        } finally {
+            setGrading(prev => ({ ...prev, [submissionId]: false }));
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center p-6 border-b bg-gray-50">
+                    <h2 className="font-bold text-gray-800 text-xl">Student Submissions</h2>
+                    <button onClick={onClose} title="Close" className="text-gray-500 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                <div className="p-6 max-h-96 overflow-y-auto">
+                    {loading ? (
+                        <div className="text-center py-10">
+                            <Loader2 size={32} className="animate-spin text-[var(--color-main)] mx-auto mb-2" />
+                            <p className="text-gray-500">Loading students and submissions...</p>
+                        </div>
+                    ) : students.length === 0 ? (
+                        <div className="text-center py-10 text-gray-500">
+                            No students enrolled in this course.
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {students.map((student) => {
+                                const studentSubmission = submissions.find(sub => sub.student?.id === student.id);
+                                return (
+                                    <StudentSubmissionItem
+                                        key={student.id}
+                                        student={student}
+                                        submission={studentSubmission}
+                                        onGrade={handleGrade}
+                                        grading={grading[studentSubmission?.id] || false}
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Student Submission Item Component
+function StudentSubmissionItem({ student, submission, onGrade, grading }: { student: any; submission?: any; onGrade: (id: number, score: number, feedback: string) => void; grading: boolean }) {
+    const [score, setScore] = useState(submission?.score || '');
+    const [feedback, setFeedback] = useState(submission?.feedback || '');
+    const [showGradeForm, setShowGradeForm] = useState(false);
+
+    const formatDateTime = (dateStr: string) => {
+        if (!dateStr) return "";
+        return new Date(dateStr).toLocaleString('en-US', {
+            year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'
+        });
+    };
+
+    const isLate = submission?.status === 'LATE';
+    const hasSubmitted = !!submission;
+
+    return (
+        <div className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <h3 className="font-bold text-gray-800">{student.firstName} {student.lastName}</h3>
+                    <p className="text-sm text-gray-600">{student.email}</p>
+                </div>
+                <div className="text-right">
+                    {hasSubmitted ? (
+                        <>
+                            <p className="text-sm text-gray-600">Submitted: {formatDateTime(submission.submittedAt)}</p>
+                            {isLate && <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">LATE</span>}
+                        </>
+                    ) : (
+                        <span className="text-sm font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded">Not Submitted</span>
+                    )}
+                </div>
+            </div>
+
+            {hasSubmitted && submission.fileUrl && (
+                <div className="mb-3">
+                    <a
+                        href={submission.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-blue-600 hover:underline"
+                    >
+                        <Download size={16} /> {submission.fileName}
+                    </a>
+                </div>
+            )}
+
+            {hasSubmitted && submission.status === 'GRADED' ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="font-bold text-green-800">Score: {submission.score}</span>
+                        <button
+                            onClick={() => setShowGradeForm(true)}
+                            className="text-sm text-blue-600 hover:underline"
+                        >
+                            Edit Grade
+                        </button>
+                    </div>
+                    {submission.feedback && (
+                        <p className="text-sm text-gray-700">Feedback: {submission.feedback}</p>
+                    )}
+                </div>
+            ) : hasSubmitted ? (
+                <button
+                    onClick={() => setShowGradeForm(true)}
+                    className="bg-[var(--color-main)] text-white px-4 py-2 rounded-lg hover:bg-[var(--color-main)]/90 transition"
+                >
+                    Grade Submission
+                </button>
+            ) : (
+                <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 text-center">
+                    <span className="text-sm text-gray-500">No submission yet</span>
+                </div>
+            )}
+
+            {showGradeForm && hasSubmitted && (
+                <div className="mt-3 border-t pt-3">
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Score</label>
+                            <input
+                                type="number"
+                                value={score}
+                                onChange={(e) => setScore(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-main)] outline-none"
+                                placeholder="Enter score"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
+                            <textarea
+                                value={feedback}
+                                onChange={(e) => setFeedback(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-main)] outline-none"
+                                rows={3}
+                                placeholder="Enter feedback"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => onGrade(submission.id, parseFloat(score), feedback)}
+                                disabled={grading}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                            >
+                                {grading ? <Loader2 size={16} className="animate-spin" /> : 'Save Grade'}
+                            </button>
+                            <button
+                                onClick={() => setShowGradeForm(false)}
+                                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

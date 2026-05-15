@@ -1,13 +1,47 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 import { clearStoredAuth } from "@/utils/auth";
 
 const api = axios.create({
     baseURL: "https://capstone-ecm-1.onrender.com/api",
+    timeout: 10000, // 10 seconds timeout for backend availability
     headers: {
         "Content-Type": "application/json",
     },
 });
+
+export const getApiErrorMessage = (error: unknown) => {
+    if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED" || error.message?.toLowerCase().includes("timeout")) {
+            return "The server is taking too long to respond. Please try again later.";
+        }
+
+        if (!error.response) {
+            return "Unable to reach the server. Check your network or try again later.";
+        }
+
+        const responseData = error.response.data;
+        if (typeof responseData === "string") {
+            return responseData;
+        }
+
+        if (responseData?.message) {
+            return responseData.message;
+        }
+
+        if (error.response.status >= 500) {
+            return "Server error. Please try again later.";
+        }
+
+        return `Request failed with status ${error.response.status}.`;
+    }
+
+    if (error instanceof Error) {
+        return error.message || "An unexpected error occurred. Please try again.";
+    }
+
+    return "An unexpected error occurred. Please try again.";
+};
 
 const AUTH_FLOW_PATHS = [
     "/users/login",
@@ -51,6 +85,11 @@ api.interceptors.response.use(
     (error) => {
         const status = error.response?.status;
         const requestUrl = error.config?.url;
+        const normalizedMessage = getApiErrorMessage(error);
+
+        if (error && typeof error === "object") {
+            (error as any).message = normalizedMessage;
+        }
 
         if (isAuthFlowRequest(requestUrl)) {
             return Promise.reject(error);

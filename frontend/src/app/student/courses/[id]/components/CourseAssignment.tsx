@@ -10,7 +10,8 @@ import {
     Eye,
     Paperclip,
     CheckCircle2,
-    XCircle
+    XCircle,
+    Filter
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from '@/utils/axiosConfig';
@@ -29,6 +30,7 @@ interface Assignment {
     createdDate: string;
     // Tạm thời giả lập dữ liệu trả về từ API có thêm thông tin submission
     submissionStatus?: "SUBMITTED" | "NOT_SUBMITTED" | "LATE";
+    submittedAt?: string | null;
 }
 
 export default function StudentCourseAssignments({ courseId }: Props) {
@@ -36,6 +38,7 @@ export default function StudentCourseAssignments({ courseId }: Props) {
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [keyword, setKeyword] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [showOverdueOnly, setShowOverdueOnly] = useState(false);
 
     // Fetch assignments
     const fetchAssignments = async () => {
@@ -47,7 +50,8 @@ export default function StudentCourseAssignments({ courseId }: Props) {
             // Tạm thời giả lập trạng thái cho UI (Bạn có thể xóa phần giả lập này sau khi Backend update)
             const dataWithMockStatus = response.data.map((a: any, index: number) => ({
                 ...a,
-                submissionStatus: index % 2 === 0 ? "SUBMITTED" : "NOT_SUBMITTED"
+                submissionStatus: index % 2 === 0 ? "SUBMITTED" : "NOT_SUBMITTED",
+                submittedAt: index % 2 === 0 ? new Date(Date.now() - Math.random() * 86400000).toISOString() : null // Mock submit time
             }));
 
             setAssignments(dataWithMockStatus);
@@ -75,7 +79,8 @@ export default function StudentCourseAssignments({ courseId }: Props) {
     };
 
     const filteredAssignments = assignments.filter((a) =>
-        a.title.toLowerCase().includes(keyword.toLowerCase())
+        a.title.toLowerCase().includes(keyword.toLowerCase()) &&
+        (!showOverdueOnly || isOverdue(a.dueDate))
     );
 
     return (
@@ -87,6 +92,16 @@ export default function StudentCourseAssignments({ courseId }: Props) {
                     <ClipboardList size={18} />
                     Assignments ({assignments.length})
                 </div>
+
+                <button
+                    onClick={() => setShowOverdueOnly(!showOverdueOnly)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition text-sm font-bold ${
+                        showOverdueOnly ? 'bg-red-600 hover:bg-red-700' : 'bg-white/20 hover:bg-white/30'
+                    }`}
+                    title={showOverdueOnly ? 'Show all assignments' : 'Show overdue only'}
+                >
+                    <Filter size={16} /> {showOverdueOnly ? 'Overdue Only' : 'All Assignments'}
+                </button>
             </div>
 
             <div className="p-6">
@@ -150,9 +165,14 @@ export default function StudentCourseAssignments({ courseId }: Props) {
                                             {/* STATUS COLUMN */}
                                             <td className="p-4 text-center">
                                                 {submitted ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                                                        <CheckCircle2 size={14} /> Submitted
-                                                    </span>
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                                            <CheckCircle2 size={14} /> Submitted
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">
+                                                            {assignment.submittedAt ? formatDateTime(assignment.submittedAt) : ''}
+                                                        </span>
+                                                    </div>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
                                                         <XCircle size={14} /> Not Submitted

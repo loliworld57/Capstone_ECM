@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser, type User as AuthUser } from "@/services/authService";
+import { getApiErrorMessage } from "@/utils/axiosConfig";
 import toast from "react-hot-toast";
 import { Lock, Mail } from "lucide-react";
 import LockedAccountModal from '@/components/LockedAccountModal';
@@ -91,10 +92,7 @@ export default function LoginPage() {
 
         } catch (error: unknown) {
             console.error("Login Error:", error);
-            const responseData = (error as ApiError).response?.data;
-            const msg = typeof responseData === "string"
-                ? responseData
-                : responseData?.message || "Login Failed! Please check again.";
+            const msg = getApiErrorMessage(error);
 
             if (typeof msg === 'string' && msg.includes("ACCOUNT_DEACTIVATED")) {
                 toast(() => (
