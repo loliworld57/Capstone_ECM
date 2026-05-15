@@ -3,7 +3,7 @@ import axios from "axios";
 import { clearStoredAuth } from "@/utils/auth";
 
 const api = axios.create({
-    baseURL: "https://capstone-ecm.onrender.com/api",
+    baseURL: "https://capstone-ecm-1.onrender.com/api",
     headers: {
         "Content-Type": "application/json",
     },
