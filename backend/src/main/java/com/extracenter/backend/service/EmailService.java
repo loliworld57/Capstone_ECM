@@ -24,6 +24,8 @@ public class EmailService {
     // doesn't have to wait 3-5 seconds on the loading screen for the SMTP server.
     @Async
     public void sendVerificationEmail(String toEmail, String otp) {
+        logger.info("Email Request Received -> sendVerificationEmail to={}", toEmail);
+        logger.info("OTP Code Generated -> {}", otp);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(senderEmail); // Always set 'From' to prevent spam folder issues
@@ -40,20 +42,20 @@ public class EmailService {
                     "The ECM Team";
 
             message.setText(content);
+            logger.info("Sending to user email -> {}", toEmail);
             mailSender.send(message);
 
-            logger.info("Verification email successfully sent to: {}", toEmail);
+            logger.info("Verification email SUCCESS -> sent to={}", toEmail);
 
         } catch (Exception e) {
-            logger.error("Failed to send verification email to {}: {}", toEmail, e.getMessage());
-            // We log the error but do not throw an exception, so the background thread
-            // handles it gracefully.
+            logger.error("Verification email FAILED -> to={}", toEmail, e);
         }
     }
 
     // Send email with credentials (Step 2)
     @Async
     public void sendCredentialEmail(String toEmail, String newAccountEmail, String password) {
+        logger.info("Email Request Received -> sendCredentialEmail to={}", toEmail);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(senderEmail);
@@ -71,17 +73,20 @@ public class EmailService {
                     "The ECM Team";
 
             message.setText(content);
+            logger.info("Sending credential email -> to={}", toEmail);
             mailSender.send(message);
 
-            logger.info("Credential email successfully sent to: {}", toEmail);
+            logger.info("Credential email SUCCESS -> sent to={}", toEmail);
 
         } catch (Exception e) {
-            logger.error("Failed to send credential email to {}: {}", toEmail, e.getMessage());
+            logger.error("Credential email FAILED -> to={}", toEmail, e);
         }
     }
 
     @Async
     public void sendCourseDeleteOtpEmail(String toEmail, String courseName, String otp) {
+        logger.info("Email Request Received -> sendCourseDeleteOtpEmail to={}", toEmail);
+        logger.info("OTP Code Generated -> {} for course={}", otp, courseName);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(senderEmail);
@@ -98,11 +103,12 @@ public class EmailService {
                     "The ECM Team";
 
             message.setText(content);
+            logger.info("Sending course deletion OTP email -> to={}", toEmail);
             mailSender.send(message);
 
-            logger.info("Course deletion OTP email successfully sent to: {}", toEmail);
+            logger.info("Course deletion OTP email SUCCESS -> sent to={}", toEmail);
         } catch (Exception e) {
-            logger.error("Failed to send course deletion OTP email to {}: {}", toEmail, e.getMessage());
+            logger.error("Course deletion OTP email FAILED -> to={}", toEmail, e);
         }
     }
 }

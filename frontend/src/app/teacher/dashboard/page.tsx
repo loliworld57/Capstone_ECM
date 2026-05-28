@@ -109,24 +109,66 @@ export default function TeacherDashboard() {
             <h1 className="text-2xl font-bold text-[var(--color-text)] mb-6">Overview</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {stats.map((stat, index) => (
-                    <div key={index} className="bg-white p-6 rounded-xl shadow-sm flex items-center gap-4">
-                        <div className={`${stat.color} p-4 rounded-lg text-white`}>
-                            <stat.icon size={24} />
+                {loading
+                    ? Array.from({ length: 3 }).map((_, index) => (
+                        <div
+                            key={index}
+                            className="bg-white p-6 rounded-xl shadow-sm flex items-center gap-4 animate-pulse"
+                        >
+                            {/* Icon skeleton */}
+                            <div className="w-14 h-14 rounded-lg bg-gray-300"></div>
+
+                            {/* Text skeleton */}
+                            <div className="flex-1">
+                                <div className="h-4 w-32 rounded bg-gray-300 mb-3"></div>
+                                <div className="h-7 w-16 rounded bg-gray-200"></div>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[var(--color-text)] font-semibold">{stat.label}</p>
-                            <p className="text-2xl font-bold text-[var(--color-alert)]">{stat.value}</p>
+                    ))
+                    : stats.map((stat, index) => (
+                        <div
+                            key={index}
+                            className="bg-white p-6 rounded-xl shadow-sm flex items-center gap-4"
+                        >
+                            <div className={`${stat.color} p-4 rounded-lg text-white`}>
+                                <stat.icon size={24} />
+                            </div>
+
+                            <div>
+                                <p className="text-[var(--color-text)] font-semibold">
+                                    {stat.label}
+                                </p>
+
+                                <p className="text-2xl font-bold text-[var(--color-alert)]">
+                                    {stat.value}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-sm border border-[var(--color-main)]/30">
                 <h2 className="text-lg font-bold text-[var(--color-text)] mb-4">Upcoming Classes</h2>
 
                 {loading ? (
-                    <p className="text-sm text-gray-500">Loading upcoming classes...</p>
+                    <div className="space-y-3">
+                        {Array.from({ length: 4 }).map((_, index) => (
+                            <div
+                                key={index}
+                                className="rounded-lg border border-[var(--color-main)]/20 bg-[var(--color-soft-white)] p-3 animate-pulse"
+                            >
+                                {/* Course title */}
+                                <div className="h-4 w-40 rounded bg-gray-300 mb-3"></div>
+
+                                {/* Info row */}
+                                <div className="flex flex-wrap gap-3">
+                                    <div className="h-3 w-24 rounded bg-gray-200"></div>
+                                    <div className="h-3 w-28 rounded bg-gray-200"></div>
+                                    <div className="h-3 w-20 rounded bg-gray-200"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : upcomingClasses.length === 0 ? (
                     <p className="text-sm text-gray-500">No upcoming classes in the next 14 days.</p>
                 ) : (

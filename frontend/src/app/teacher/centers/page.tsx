@@ -196,11 +196,10 @@ export default function CenterManagementPage() {
     const tabButtonClass = (tab: "managed" | "teaching" | "archived") => {
         const isActive = activeTab === tab;
 
-        return `flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
-            isActive
+        return `flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${isActive
                 ? "border-[var(--color-main)] bg-[var(--color-main)] text-white shadow-sm"
                 : "border-[var(--color-main)]/20 bg-white text-[var(--color-text)] hover:border-[var(--color-main)] hover:text-[var(--color-main)]"
-        }`;
+            }`;
     };
 
     return (
@@ -415,9 +414,52 @@ export default function CenterManagementPage() {
             {/* Content Grid */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">
                 {loading ? (
-                    <div className="rounded-2xl border border-[var(--color-main)]/15 bg-white p-10 text-center text-[var(--color-text)] shadow-sm lg:col-span-2 2xl:col-span-3">
-                        Loading centers...
-                    </div>
+                    Array.from({ length: 2 }).map((_, index) => (
+                        <div
+                            key={index}
+                            className="group overflow-hidden rounded-2xl border border-[var(--color-main)]/15 bg-white shadow-sm animate-pulse"
+                        >
+                            {/* Top gradient area */}
+                            <div className="bg-gray-300 px-5 py-4 h-32 relative overflow-hidden">
+                                <div className="absolute inset-0 shimmer"></div>
+
+                                <div className="relative z-10">
+                                    <div className="h-6 w-24 rounded bg-white/40 mb-4"></div>
+
+                                    <div className="h-8 w-2/3 rounded bg-white/50"></div>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-5 space-y-4">
+                                {/* Info cards */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="rounded-xl bg-gray-100 p-4">
+                                        <div className="h-3 w-16 rounded bg-gray-300 mb-2"></div>
+                                        <div className="h-4 w-24 rounded bg-gray-200"></div>
+                                    </div>
+
+                                    <div className="rounded-xl bg-gray-100 p-4">
+                                        <div className="h-3 w-14 rounded bg-gray-300 mb-2"></div>
+                                        <div className="h-4 w-20 rounded bg-gray-200"></div>
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                <div className="rounded-xl bg-gray-100 p-4 space-y-2">
+                                    <div className="h-3 w-full rounded bg-gray-300"></div>
+                                    <div className="h-3 w-5/6 rounded bg-gray-300"></div>
+                                    <div className="h-3 w-2/3 rounded bg-gray-300"></div>
+                                </div>
+
+                                {/* Buttons */}
+                                <div className="flex gap-2 pt-2">
+                                    <div className="h-10 w-24 rounded-lg bg-gray-300"></div>
+                                    <div className="h-10 w-28 rounded-lg bg-gray-200"></div>
+                                </div>
+                            </div>
+                        </div>
+                    ))
                 ) : paginatedCenters.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-[var(--color-main)]/30 bg-white p-12 text-center text-[var(--color-text)] shadow-sm lg:col-span-2 2xl:col-span-3">
                         {activeTab === "managed"

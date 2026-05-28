@@ -378,3 +378,23 @@ html {
 .rct-dateHeader-primary {
     color: var(--color-text) !important;
 }
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.shimmer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.35),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
