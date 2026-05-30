@@ -105,9 +105,9 @@ public class EmailService {
         }
 
         String payload = "{"
-                + "\"from\":\"" + escapeJson(senderEmail) + "\"," 
+                + "\"from\":\"" + escapeJson(senderEmail) + "\","
                 + "\"to\":[\"" + escapeJson(toEmail) + "\"],"
-                + "\"subject\":\"" + escapeJson(subject) + "\"," 
+                + "\"subject\":\"" + escapeJson(subject) + "\","
                 + "\"text\":\"" + escapeJson(body) + "\""
                 + "}";
 
@@ -119,7 +119,8 @@ public class EmailService {
                 .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                 .build();
 
-        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> response = HTTP_CLIENT.send(request,
+                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
 
         if (response.statusCode() >= 300) {
             throw new IOException("Resend API returned status " + response.statusCode() + ": " + response.body());
