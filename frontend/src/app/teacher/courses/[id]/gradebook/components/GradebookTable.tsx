@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     createColumnHelper,
     flexRender,
@@ -11,8 +11,6 @@ import {
 
 import {
     GradebookResponse,
-    ScoreCategory,
-    ScoreItem,
     StudentGradebookRow,
 } from "@/services/gradebookService";
 
@@ -42,16 +40,9 @@ export default function GradebookTable({
     scoreItemEdits,
 }: Props) {
 
-    // =========================
-    // helpers
-    // =========================
-    const getScore = (student: StudentGradebookRow, itemId: number) => {
-        const key = `${student.studentId}-${itemId}`;
-        return pendingChanges[key] ?? student.scores[itemId];
-    };
-    // =========================
-    // COLUMNS (FULL DYNAMIC)
-    // =========================
+    // ==========================================
+    // COLUMNS (STABLE REFERENCE BY USEMAP/META)
+    // ==========================================
     const columns = useMemo<ColumnDef<StudentGradebookRow, any>[]>(() => {
         const dynamicCategories: ColumnDef<StudentGradebookRow>[] =
             gradebook.categories.map((cat) => {
@@ -64,84 +55,103 @@ export default function GradebookTable({
                     id: `cat-${cat.id}`,
 
                     // ===== CATEGORY HEADER =====
-                    header: () => (
-                        <div className="flex flex-col items-center text-center">
-                            {editMode ? (
-                                <>
-                                    <input
-                                        className="text-xs border rounded px-1 py-0.5 w-24"
-                                        value={categoryEdits[cat.id]?.name || ""}
-                                        onChange={(e) =>
-                                            onCategoryHeaderChange(cat.id, "name", e.target.value)
-                                        }
-                                    />
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        max={100}
-                                        step={5}
-                                        className="text-xs border rounded px-1 py-0.5 w-16 mt-1"
-                                        value={categoryEdits[cat.id]?.weight ?? cat.weight}
-                                        onChange={(e) => {
-                                            const nextWeight = e.target.value === "" ? 0 : Number(e.target.value);
-                                            onCategoryHeaderChange(cat.id, "weight", nextWeight);
-                                        }}
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    <div className="font-semibold text-xs uppercase">
-                                        {cat.name}
-                                    </div>
-                                    <div className="text-[10px] text-gray-500">
-                                        {cat.weight}%
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    ),
+                    header: (info) => {
+                        // Extract dynamic values safely from the table instance meta
+                        const tableMeta = info.table.options.meta as any;
+                        const currentCategoryEdits = tableMeta?.categoryEdits || {};
+                        const currentOnCategoryHeaderChange = tableMeta?.onCategoryHeaderChange;
+
+                        return (
+                            <div className="flex flex-col items-center text-center">
+                                {editMode ? (
+                                    <>
+                                        <input
+                                            className="text-xs border rounded px-1 py-0.5 w-24"
+                                            value={currentCategoryEdits[cat.id]?.name || ""}
+                                            onChange={(e) =>
+                                                currentOnCategoryHeaderChange?.(cat.id, "name", e.target.value)
+                                            }
+                                        />
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            step={5}
+                                            className="text-xs border rounded px-1 py-0.5 w-16 mt-1"
+                                            value={currentCategoryEdits[cat.id]?.weight ?? cat.weight}
+                                            onChange={(e) => {
+                                                const nextWeight = e.target.value === "" ? 0 : Number(e.target.value);
+                                                currentOnCategoryHeaderChange?.(cat.id, "weight", nextWeight);
+                                            }}
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="font-semibold text-xs uppercase">
+                                            {cat.name}
+                                        </div>
+                                        <div className="text-[10px] text-gray-500">
+                                            {cat.weight}%
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    },
 
                     // ===== CHILD COLUMNS =====
                     columns:
                         items.length > 0
                             ? items.map((item) =>
                                 columnHelper.accessor(
-                                    (row) => getScore(row, item.id),
+                                    (row) => row.scores[item.id],
                                     {
                                         id: `item-${item.id}`,
 
-                                        header: () => (
-                                            <div className="text-xs text-center">
-                                                {editMode ? (
-                                                    <input
-                                                        className="border rounded px-1 py-0.5 w-20 text-center"
-                                                        value={
-                                                            scoreItemEdits[item.id] ?? item.name
-                                                        }
-                                                        onChange={(e) =>
-                                                            onScoreItemHeaderChange(
-                                                                item.id,
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                    />
-                                                ) : (
-                                                    item.name
-                                                )}
-                                            </div>
-                                        ),
+                                        header: (info) => {
+                                            const tableMeta = info.table.options.meta as any;
+                                            const currentScoreItemEdits = tableMeta?.scoreItemEdits || {};
+                                            const currentOnScoreItemHeaderChange = tableMeta?.onScoreItemHeaderChange;
+
+                                            return (
+                                                <div className="text-xs text-center">
+                                                    {editMode ? (
+                                                        <input
+                                                            className="border rounded px-1 py-0.5 w-20 text-center"
+                                                            value={
+                                                                currentScoreItemEdits[item.id] ?? item.name
+                                                            }
+                                                            onChange={(e) =>
+                                                                currentOnScoreItemHeaderChange?.(
+                                                                    item.id,
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        item.name
+                                                    )}
+                                                </div>
+                                            );
+                                        },
 
                                         cell: (info) => {
                                             const student = info.row.original;
+                                            const tableMeta = info.table.options.meta as any;
+                                            const currentPendingChanges = tableMeta?.pendingChanges || {};
+                                            const currentOnScoreChange = tableMeta?.onScoreChange;
+
+                                            const key = `${student.studentId}-${item.id}`;
+                                            const liveScore = currentPendingChanges[key] ?? student.scores[item.id];
 
                                             return (
                                                 <div className="flex justify-center">
                                                     <GradebookScoreCell
                                                         studentId={student.studentId}
                                                         scoreItemId={item.id}
-                                                        score={info.getValue()}
+                                                        score={liveScore}
                                                         editable={editMode}
-                                                        onChange={onScoreChange}
+                                                        onChange={currentOnScoreChange}
                                                     />
                                                 </div>
                                             );
@@ -185,7 +195,7 @@ export default function GradebookTable({
             }),
 
             // =========================
-            // DYNAMIC
+            // DYNAMIC CATEGORIES
             // =========================
             ...dynamicCategories,
 
@@ -205,18 +215,26 @@ export default function GradebookTable({
                 meta: { sticky: "right" },
             }),
         ];
-    }, [gradebook, editMode, categoryEdits, scoreItemEdits, pendingChanges]);
+    }, [gradebook.categories, gradebook.scoreItems, editMode]); // Dynamic value objects omitted here to keep references static!
 
-    // =========================
-    // TABLE INSTANCE
-    // =========================
+    // ==========================================
+    // TABLE INSTANCE WITH DYNAMIC PASS-THROUGH
+    // ==========================================
     const table = useReactTable({
         data: gradebook.students,
         columns,
         getCoreRowModel: getCoreRowModel(),
+        // Pass dynamic configurations here so they never become stale
+        meta: {
+            categoryEdits,
+            scoreItemEdits,
+            pendingChanges,
+            onCategoryHeaderChange,
+            onScoreItemHeaderChange,
+            onScoreChange,
+        },
     });
 
-    
     // =========================
     // RENDER
     // =========================
