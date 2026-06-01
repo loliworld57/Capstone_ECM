@@ -14,11 +14,13 @@ import com.extracenter.backend.entity.Assignment;
 import com.extracenter.backend.entity.AssignmentSubmission;
 import com.extracenter.backend.entity.ClassSession;
 import com.extracenter.backend.entity.Course;
+import com.extracenter.backend.entity.ScoreCategory;
 import com.extracenter.backend.entity.User;
 import com.extracenter.backend.repository.AssignmentRepository;
 import com.extracenter.backend.repository.AssignmentSubmissionRepository;
 import com.extracenter.backend.repository.ClassSessionRepository;
 import com.extracenter.backend.repository.CourseRepository;
+import com.extracenter.backend.repository.ScoreCategoryRepository;
 import com.extracenter.backend.repository.UserRepository;
 
 @Service
@@ -36,6 +38,10 @@ public class AssignmentService {
     private UserRepository userRepository;
     @Autowired
     private CloudinaryService cloudinaryService;
+    @Autowired
+    private ScoreCategoryRepository scoreCategoryRepository;
+    @Autowired
+    private ScoreItemService scoreItemService;
 
     // 1. TẠO BÀI TẬP (GIÁO VIÊN)
     @Transactional
@@ -65,7 +71,25 @@ public class AssignmentService {
             assignment.setFileName(file.getOriginalFilename());
         }
 
-        return assignmentRepository.save(assignment);
+        Assignment savedAssignment = assignmentRepository.save(assignment);
+
+        // Automatically create a ScoreItem for this assignment in the "Assignment" category
+        try {
+            List<ScoreCategory> categories = scoreCategoryRepository.findByCourseId(courseId);
+            ScoreCategory assignmentCategory = categories.stream()
+                    .filter(cat -> "Assignment".equalsIgnoreCase(cat.getName()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (assignmentCategory != null) {
+                scoreItemService.createScoreItemForAssignment(savedAssignment, assignmentCategory);
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the assignment creation
+            e.printStackTrace();
+        }
+
+        return savedAssignment;
     }
 
     public List<Assignment> getAssignmentsForCourse(Long courseId) {
