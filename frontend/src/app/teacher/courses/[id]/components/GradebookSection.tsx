@@ -32,6 +32,7 @@ export default function GradebookSection({ courseId }: Props) {
     const [categoryEdits, setCategoryEdits] = useState<CategoryEditState>({});
     const [scoreItemEdits, setScoreItemEdits] = useState<ScoreItemEditState>({});
 
+
     useEffect(() => {
         let mounted = true;
         const fetchGradebook = async () => {
@@ -95,15 +96,45 @@ export default function GradebookSection({ courseId }: Props) {
         setScoreItemEdits((prev) => ({ ...prev, [scoreItemId]: name }));
     };
 
+    const hasChanges =
+        Object.keys(pendingChanges).length > 0 ||
+        (() => {
+            if (!gradebook) return false;
+
+            for (const c of gradebook.categories) {
+                const ed = categoryEdits[c.id];
+                if (ed && (ed.name !== c.name || ed.weight !== c.weight))
+                    return true;
+            }
+
+            for (const s of gradebook.scoreItems) {
+                const name = scoreItemEdits[s.id];
+                if (name !== undefined && name !== s.name)
+                    return true;
+            }
+
+            return false;
+        })();
+        
     const resetEdits = () => {
         if (!gradebook) return;
+
         const cEdits: CategoryEditState = {};
-        gradebook.categories.forEach((c) => (cEdits[c.id] = { name: c.name, weight: c.weight }));
-        setCategoryEdits(cEdits);
+        gradebook.categories.forEach((c) => {
+            cEdits[c.id] = {
+                name: c.name,
+                weight: c.weight,
+            };
+        });
 
         const sEdits: ScoreItemEditState = {};
-        gradebook.scoreItems.forEach((s) => (sEdits[s.id] = s.name));
+        gradebook.scoreItems.forEach((s) => {
+            sEdits[s.id] = s.name;
+        });
+
+        setCategoryEdits(cEdits);
         setScoreItemEdits(sEdits);
+        setPendingChanges({});
     };
 
     const handleSaveChanges = async () => {
@@ -148,10 +179,23 @@ export default function GradebookSection({ courseId }: Props) {
             setLoading(false);
         }
     };
+    
+    const handleEditModeToggle = async () => {
+        if (!editMode) {
+            setEditMode(true);
+            return;
+        }
+
+        if (!hasChanges) {
+            setEditMode(false);
+            return;
+        }
+
+        await handleSaveChanges();
+    };
 
     const handleDiscardChanges = () => {
         resetEdits();
-        setPendingChanges({});
         setEditMode(false);
     };
 
@@ -204,25 +248,30 @@ export default function GradebookSection({ courseId }: Props) {
     if (!gradebook) return <div className="p-8 text-center">No gradebook data available</div>;
 
     return (
-        <div className="bg-[var(--color-soft-white)] rounded-xl border border-[var(--color-main)] shadow-sm mt-6 overflow-hidden">
-            <div className="bg-[var(--color-main)] text-white px-6 py-4 flex items-center justify-between font-semibold">
+        <div className="h-[calc(100vh-120px)] flex flex-col bg-[var(--color-soft-white)] rounded-xl border border-[var(--color-main)] shadow-sm mt-6 overflow-hidden">
+            <div className="shrink-0 bg-[var(--color-main)] text-white px-6 py-4 flex items-center justify-between font-semibold">
                 <div className="flex items-center gap-2">
                     <span className="text-lg font-semibold">Gradebook</span>
                 </div>
                 <div className="text-sm text-white/90">{gradebook.courseName}</div>
             </div>
-            <div className="p-6">
-                {!gradebook.weightComplete && <WeightWarningBanner totalWeight={gradebook.totalWeight} />}
+            
+            <div className="p-6 flex flex-col flex-1 min-h-0">
+                {!gradebook.weightComplete && (
+                    <div className="shrink-0 mb-4">
+                        <WeightWarningBanner totalWeight={gradebook.totalWeight} />
+                    </div>
+                )}
 
-                <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white px-4 py-2 shadow-sm rounded-t-lg">
+                <div className="shrink-0 mb-4 flex flex-wrap items-center gap-2 border-b border-gray-200 bg-white px-4 py-2 shadow-sm rounded-t-lg">
                     {(["Score Sheet", "Categories", "Score Items"] as GradebookView[]).map((tab) => (
                         <button
                             key={tab}
                             type="button"
                             onClick={() => setActiveView(tab)}
                             className={`px-4 py-2 text-sm font-medium transition ${activeView === tab
-                                    ? "border-b-4 border-[var(--color-main)] text-[var(--color-main)]"
-                                    : "border-b-4 border-transparent text-[var(--color-text)] hover:text-[var(--color-secondary)]"
+                                ? "border-b-4 border-[var(--color-main)] text-[var(--color-main)]"
+                                : "border-b-4 border-transparent text-[var(--color-text)] hover:text-[var(--color-secondary)]"
                                 }`}
                         >
                             {tab}
@@ -230,46 +279,38 @@ export default function GradebookSection({ courseId }: Props) {
                     ))}
                 </div>
 
-                <GradebookToolbar
-                    editMode={editMode}
-                    hasChanges={Object.keys(pendingChanges).length > 0 || (() => {
-                        if (!gradebook) return false;
-                        for (const c of gradebook.categories) {
-                            const ed = categoryEdits[c.id];
-                            if (ed && (ed.name !== c.name || ed.weight !== c.weight)) return true;
-                        }
-                        for (const s of gradebook.scoreItems) {
-                            const name = scoreItemEdits[s.id];
-                            if (name !== undefined && name !== s.name) return true;
-                        }
-                        return false;
-                    })()}
-                    onEditModeToggle={() => setEditMode((v) => !v)}
-                    onSave={handleSaveChanges}
-                    onDiscard={handleDiscardChanges}
-                    onAddCategory={() => setShowCategoryModal(true)}
-                    onAddScoreItem={() => setShowScoreItemModal(true)}
-                    onExport={() => console.log("Export gradebook to Excel")}
-                />
+                <div className="shrink-0">
+                    <GradebookToolbar
+                        editMode={editMode}
+                        hasChanges={hasChanges}
+                        onEditModeToggle={handleEditModeToggle}
+                        onDiscard={handleDiscardChanges}
+                        onAddCategory={() => setShowCategoryModal(true)}
+                        onAddScoreItem={() => setShowScoreItemModal(true)}
+                        onExport={() => console.log("Export gradebook to Excel")}
+                    />
+                </div>
 
-                <div className="space-y-6">
+                <div className="mt-6 flex-1 min-h-0 flex flex-col">
                     {activeView === "Score Sheet" && (
-                        <GradebookTable
-                            gradebook={gradebook}
-                            editMode={editMode}
-                            pendingChanges={pendingChanges}
-                            onScoreChange={handleScoreChange}
-                            categoryEdits={categoryEdits}
-                            scoreItemEdits={scoreItemEdits}
-                            onCategoryHeaderChange={handleCategoryHeaderChange}
-                            onScoreItemHeaderChange={handleScoreItemHeaderChange}
-                        />
+                        <div className="flex-1 min-h-0">
+                            <GradebookTable
+                                gradebook={gradebook}
+                                editMode={editMode}
+                                pendingChanges={pendingChanges}
+                                onScoreChange={handleScoreChange}
+                                categoryEdits={categoryEdits}
+                                scoreItemEdits={scoreItemEdits}
+                                onCategoryHeaderChange={handleCategoryHeaderChange}
+                                onScoreItemHeaderChange={handleScoreItemHeaderChange}
+                            />
+                        </div>
                     )}
 
                     {activeView === "Categories" && (
-                        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                        <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
                             <table className="min-w-[640px] w-full border-collapse">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-gray-50 sticky top-0 z-10">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Category</th>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Weight</th>
@@ -308,13 +349,13 @@ export default function GradebookSection({ courseId }: Props) {
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-700">{category.items.length}</td>
                                             <td className="px-4 py-3 text-sm text-gray-700">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteCategory(category.id)}
-                                                    className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 transition hover:bg-red-50"
-                                                >
-                                                    Delete
-                                                </button>
+                                                {editMode && (
+                                                    <button
+                                                        onClick={() => handleDeleteCategory(category.id)}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -324,9 +365,9 @@ export default function GradebookSection({ courseId }: Props) {
                     )}
 
                     {activeView === "Score Items" && (
-                        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                        <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
                             <table className="min-w-[760px] w-full border-collapse">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-gray-50 sticky top-0 z-10">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Category</th>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Score Item</th>

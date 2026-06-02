@@ -3,6 +3,7 @@ package com.extracenter.backend.entity;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -16,10 +17,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.Data;
 
 @Entity
 @Table(name = "ScoreItem")
@@ -40,6 +41,8 @@ public class ScoreItem {
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "score_category_id", nullable = false)
+    // FIX: Prevents Jackson from choking on the ByteBuddy proxy when serializing this relationship
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ScoreCategory scoreCategory;
 
     // RELATIONSHIP: Optional link to an Assignment
@@ -47,6 +50,8 @@ public class ScoreItem {
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id")
+    // FIX: Prevents Jackson from choking on the ByteBuddy proxy when serializing this relationship
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Assignment assignment;
 
     // RELATIONSHIP: Student scores for this item

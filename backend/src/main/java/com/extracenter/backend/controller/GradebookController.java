@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.extracenter.backend.dto.GradebookResponse;
 import com.extracenter.backend.dto.ScoreCategoryRequest;
 import com.extracenter.backend.dto.ScoreItemRequest;
+import com.extracenter.backend.dto.ScoreItemResponse;
 import com.extracenter.backend.dto.StudentScoreRequest;
 import com.extracenter.backend.dto.StudentScoreResponse;
 import com.extracenter.backend.entity.ScoreCategory;
@@ -144,7 +145,7 @@ public class GradebookController {
             @PathVariable Long scoreCategoryId,
             @Valid @RequestBody ScoreItemRequest request) {
         try {
-            ScoreItem item = scoreItemService.createScoreItem(scoreCategoryId, request);
+            ScoreItemResponse item = scoreItemService.createScoreItem(scoreCategoryId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(item);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -165,7 +166,7 @@ public class GradebookController {
             @PathVariable Long id,
             @Valid @RequestBody ScoreItemRequest request) {
         try {
-            ScoreItem item = scoreItemService.updateScoreItem(id, request);
+            ScoreItemResponse item = scoreItemService.updateScoreItem(id, request);
             return ResponseEntity.ok(item);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
