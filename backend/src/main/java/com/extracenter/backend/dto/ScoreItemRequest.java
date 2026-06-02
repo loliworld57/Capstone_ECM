@@ -15,4 +15,7 @@ public class ScoreItemRequest {
 
     // Optional: link to an Assignment
     private Long assignmentId;
+
+    // Optional: move this score item to a different category
+    private Long scoreCategoryId;
 }

@@ -37,9 +37,18 @@ export default function GradebookScoreCell({
   };
 
   if (!editable) {
+    const scoreClass =
+      score == null
+        ? "text-gray-400"
+        : score < 50
+          ? "text-red-600 bg-red-50"
+          : "text-emerald-600 bg-emerald-50";
+
     return (
-      <div className="p-2 text-center text-gray-700 min-w-20">
-        {score !== null && score !== undefined ? score : "-"}
+      <div
+        className={`p-2 text-center min-w-20 rounded font-semibold ${scoreClass}`}
+      >
+        {score ?? "-"}
       </div>
     );
   }

@@ -7,6 +7,8 @@ import GradebookToolbar from "../gradebook/components/GradebookToolbar";
 import WeightWarningBanner from "../gradebook/components/WeightWarningBanner";
 import CategoryModal from "../gradebook/components/CategoryModal";
 import ScoreItemModal from "../gradebook/components/ScoreItemModal";
+import { Trash2 } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
 
 interface Props {
     courseId: number;
@@ -15,7 +17,7 @@ interface Props {
 type GradebookView = "Score Sheet" | "Categories" | "Score Items";
 
 type CategoryEditState = Record<number, { name: string; weight: number }>;
-type ScoreItemEditState = Record<number, string>;
+type ScoreItemEditState = Record<number, { name: string; categoryId: number }>;
 
 export default function GradebookSection({ courseId }: Props) {
     const [gradebook, setGradebook] = useState<GradebookResponse | null>(null);
@@ -31,6 +33,16 @@ export default function GradebookSection({ courseId }: Props) {
 
     const [categoryEdits, setCategoryEdits] = useState<CategoryEditState>({});
     const [scoreItemEdits, setScoreItemEdits] = useState<ScoreItemEditState>({});
+
+    const [deletingCategory, setDeletingCategory] = useState<{
+        id: number;
+        name: string;
+    } | null>(null);
+
+    const [deletingScoreItem, setDeletingScoreItem] = useState<{
+        id: number;
+        name: string;
+    } | null>(null);
 
 
     useEffect(() => {
@@ -67,7 +79,10 @@ export default function GradebookSection({ courseId }: Props) {
 
         const sEdits: ScoreItemEditState = {};
         gradebook.scoreItems.forEach(s => {
-            sEdits[s.id] = s.name;
+            sEdits[s.id] = {
+                name: s.name,
+                categoryId: s.scoreCategoryId,
+            };
         });
 
         setScoreItemEdits(sEdits);
@@ -92,8 +107,18 @@ export default function GradebookSection({ courseId }: Props) {
         setCategoryEdits((prev) => ({ ...prev, [categoryId]: { ...prev[categoryId], [field]: value } }));
     };
 
-    const handleScoreItemHeaderChange = (scoreItemId: number, name: string) => {
-        setScoreItemEdits((prev) => ({ ...prev, [scoreItemId]: name }));
+    const handleScoreItemHeaderChange = (
+        scoreItemId: number,
+        field: "name" | "categoryId",
+        value: string | number
+    ) => {
+        setScoreItemEdits((prev) => ({
+            ...prev,
+            [scoreItemId]: {
+                ...prev[scoreItemId],
+                [field]: value,
+            },
+        }));
     };
 
     const hasChanges =
@@ -103,19 +128,25 @@ export default function GradebookSection({ courseId }: Props) {
 
             for (const c of gradebook.categories) {
                 const ed = categoryEdits[c.id];
-                if (ed && (ed.name !== c.name || ed.weight !== c.weight))
+                if (ed && (ed.name !== c.name || ed.weight !== c.weight)) {
                     return true;
+                }
             }
 
             for (const s of gradebook.scoreItems) {
-                const name = scoreItemEdits[s.id];
-                if (name !== undefined && name !== s.name)
+                const ed = scoreItemEdits[s.id];
+
+                if (
+                    ed &&
+                    (ed.name !== s.name || ed.categoryId !== s.scoreCategoryId)
+                ) {
                     return true;
+                }
             }
 
             return false;
         })();
-        
+
     const resetEdits = () => {
         if (!gradebook) return;
 
@@ -129,7 +160,10 @@ export default function GradebookSection({ courseId }: Props) {
 
         const sEdits: ScoreItemEditState = {};
         gradebook.scoreItems.forEach((s) => {
-            sEdits[s.id] = s.name;
+            sEdits[s.id] = {
+                name: s.name,
+                categoryId: s.scoreCategoryId,
+            };
         });
 
         setCategoryEdits(cEdits);
@@ -153,9 +187,14 @@ export default function GradebookSection({ courseId }: Props) {
 
             // score items
             gradebook.scoreItems.forEach((s) => {
-                const name = scoreItemEdits[s.id];
-                if (name !== undefined && name !== s.name) {
-                    ops.push(gradebookService.updateScoreItem(courseId, s.id, { name }));
+                const ed = scoreItemEdits[s.id];
+                if (ed && (ed.name !== s.name || ed.categoryId !== s.scoreCategoryId)) {
+                    ops.push(
+                        gradebookService.updateScoreItem(courseId, s.id, {
+                            name: ed.name,
+                            scoreCategoryId: ed.categoryId
+                        })
+                    );
                 }
             });
 
@@ -179,7 +218,7 @@ export default function GradebookSection({ courseId }: Props) {
             setLoading(false);
         }
     };
-    
+
     const handleEditModeToggle = async () => {
         if (!editMode) {
             setEditMode(true);
@@ -211,11 +250,11 @@ export default function GradebookSection({ courseId }: Props) {
     };
 
     const handleDeleteCategory = async (categoryId: number) => {
-        if (!confirm("Are you sure you want to delete this category?")) return;
         try {
             await gradebookService.deleteCategory(courseId, categoryId);
             const updated = await gradebookService.getGradebook(courseId);
             setGradebook(updated);
+            setDeletingCategory(null);
         } catch (err: any) {
             setError(err.message || "Failed to delete category");
         }
@@ -233,11 +272,11 @@ export default function GradebookSection({ courseId }: Props) {
     };
 
     const handleDeleteScoreItem = async (scoreItemId: number) => {
-        if (!confirm("Are you sure you want to delete this score item?")) return;
         try {
             await gradebookService.deleteScoreItem(courseId, scoreItemId);
             const updated = await gradebookService.getGradebook(courseId);
             setGradebook(updated);
+            setDeletingScoreItem(null);
         } catch (err: any) {
             setError(err.message || "Failed to delete score item");
         }
@@ -255,7 +294,7 @@ export default function GradebookSection({ courseId }: Props) {
                 </div>
                 <div className="text-sm text-white/90">{gradebook.courseName}</div>
             </div>
-            
+
             <div className="p-6 flex flex-col flex-1 min-h-0">
                 {!gradebook.weightComplete && (
                     <div className="shrink-0 mb-4">
@@ -293,7 +332,7 @@ export default function GradebookSection({ courseId }: Props) {
 
                 <div className="mt-6 flex-1 min-h-0 flex flex-col">
                     {activeView === "Score Sheet" && (
-                        <div className="flex-1 min-h-0">
+                                <div className="flex-1 min-h-0">
                             <GradebookTable
                                 gradebook={gradebook}
                                 editMode={editMode}
@@ -315,19 +354,23 @@ export default function GradebookSection({ courseId }: Props) {
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Category</th>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Weight</th>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Score Items</th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Actions</th>
+                                        {editMode && (
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">
+                                                Actions
+                                            </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {categoriesWithItems.map((category) => (
                                         <tr key={category.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 text-sm text-gray-700">
                                                 {editMode ? (
                                                     <input
                                                         type="text"
                                                         value={categoryEdits[category.id]?.name ?? category.name}
                                                         onChange={(e) => handleCategoryHeaderChange(category.id, "name", e.target.value)}
-                                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+                                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[var(--color-main)] focus:outline-none"
                                                     />
                                                 ) : (
                                                     category.name
@@ -348,15 +391,22 @@ export default function GradebookSection({ courseId }: Props) {
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-700">{category.items.length}</td>
-                                            <td className="px-4 py-3 text-sm text-gray-700">
-                                                {editMode && (
+                                            {editMode && (
+                                                <td className="px-4 py-3 text-sm text-gray-700">
                                                     <button
-                                                        onClick={() => handleDeleteCategory(category.id)}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setDeletingCategory({
+                                                                id: category.id,
+                                                                name: category.name,
+                                                            })
+                                                        }
+                                                        className="rounded-lg border-2 border-[var(--color-alert)] bg-[var(--color-alert)] p-2 text-white transition hover:bg-white hover:text-[var(--color-alert)]"
                                                     >
-                                                        Delete
+                                                        <Trash2 size={18} />
                                                     </button>
-                                                )}
-                                            </td>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>
@@ -371,35 +421,67 @@ export default function GradebookSection({ courseId }: Props) {
                                     <tr>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Category</th>
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Score Item</th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Actions</th>
+                                        {editMode && (
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">
+                                                Actions
+                                            </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {categoriesWithItems.flatMap((category) =>
                                         category.items.map((scoreItem) => (
                                             <tr key={scoreItem.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm text-gray-700">{category.name}</td>
+                                                {/* CATEGORY COLUMN */}
+                                                <td className="px-4 py-3">
+                                                    {editMode ? (
+                                                        <select
+                                                            value={scoreItemEdits[scoreItem.id]?.categoryId ?? scoreItem.scoreCategoryId}
+                                                            onChange={(e) => handleScoreItemHeaderChange(scoreItem.id, "categoryId", Number(e.target.value))}
+                                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[var(--color-main)] focus:outline-none"
+                                                        >
+                                                            {gradebook.categories.map((cat) => (
+                                                                <option key={cat.id} value={cat.id}>
+                                                                    {cat.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    ) : (
+                                                        category.name
+                                                    )}
+                                                </td>
+
+                                                {/* SCORE ITEM NAME COLUMN */}
                                                 <td className="px-4 py-3">
                                                     {editMode ? (
                                                         <input
                                                             type="text"
-                                                            value={scoreItemEdits[scoreItem.id] ?? scoreItem.name}
-                                                            onChange={(e) => handleScoreItemHeaderChange(scoreItem.id, e.target.value)}
-                                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+                                                            value={scoreItemEdits[scoreItem.id]?.name ?? scoreItem.name}
+                                                            onChange={(e) => handleScoreItemHeaderChange(scoreItem.id, "name", e.target.value)}
+                                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[var(--color-main)] focus:outline-none"
                                                         />
                                                     ) : (
                                                         scoreItem.name
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteScoreItem(scoreItem.id)}
-                                                        className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 transition hover:bg-red-50"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
+
+                                                {/* ACTIONS COLUMN */}
+                                                {editMode && (
+                                                    <td className="px-4 py-3 text-sm text-gray-700">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setDeletingScoreItem({
+                                                                    id: scoreItem.id,
+                                                                    name: scoreItem.name,
+                                                                })
+                                                            }
+                                                            className="rounded-lg border-2 border-[var(--color-alert)] bg-[var(--color-alert)] p-2 text-white transition hover:bg-white hover:text-[var(--color-alert)]"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))
                                     )}
@@ -417,6 +499,32 @@ export default function GradebookSection({ courseId }: Props) {
                     <ScoreItemModal categories={gradebook.categories} onClose={() => setShowScoreItemModal(false)} onCreate={handleCreateScoreItem} mode="create" />
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={!!deletingCategory}
+                title="Delete Category"
+                message={`Delete category "${deletingCategory?.name || ""}"?`}
+                confirmText="Delete"
+                onClose={() => setDeletingCategory(null)}
+                onConfirm={() =>
+                    deletingCategory
+                        ? handleDeleteCategory(deletingCategory.id)
+                        : undefined
+                }
+            />
+
+            <ConfirmModal
+                isOpen={!!deletingScoreItem}
+                title="Delete Score Item"
+                message={`Delete score item "${deletingScoreItem?.name || ""}"?`}
+                confirmText="Delete"
+                onClose={() => setDeletingScoreItem(null)}
+                onConfirm={() =>
+                    deletingScoreItem
+                        ? handleDeleteScoreItem(deletingScoreItem.id)
+                        : undefined
+                }
+            />
         </div>
     );
 }

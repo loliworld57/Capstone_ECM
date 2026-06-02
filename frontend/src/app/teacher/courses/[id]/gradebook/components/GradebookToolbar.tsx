@@ -23,21 +23,19 @@ export default function GradebookToolbar({
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">Gradebook</h2>
-
         <div className="flex items-center gap-2">
           {!editMode ? (
             <>
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={onAddCategory}
                 className="gap-2"
               >
                 <Plus size={16} />
-                Add Category
+                Add Score Category
               </Button>
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={onAddScoreItem}
                 className="gap-2"
               >
@@ -45,7 +43,7 @@ export default function GradebookToolbar({
                 Add Score Item
               </Button>
               <Button
-                variant="outline"
+                variant="excel"
                 onClick={onExport}
                 className="gap-2"
               >

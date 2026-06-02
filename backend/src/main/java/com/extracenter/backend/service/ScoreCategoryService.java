@@ -1,17 +1,17 @@
 package com.extracenter.backend.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.extracenter.backend.dto.ScoreCategoryRequest;
-import com.extracenter.backend.entity.ScoreCategory;
 import com.extracenter.backend.entity.Course;
-import com.extracenter.backend.repository.ScoreCategoryRepository;
+import com.extracenter.backend.entity.ScoreCategory;
 import com.extracenter.backend.repository.CourseRepository;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import com.extracenter.backend.repository.ScoreCategoryRepository;
 
 @Service
 public class ScoreCategoryService {

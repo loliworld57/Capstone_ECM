@@ -1,5 +1,8 @@
-import { useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import toast from "react-hot-toast";
 import { ScoreCategory } from "@/services/gradebookService";
 
 interface ScoreItemModalProps {
@@ -19,64 +22,94 @@ export default function ScoreItemModal({
   onCreate,
   onUpdate,
 }: ScoreItemModalProps) {
-  const [name, setName] = useState(initialData?.name || "");
-  const [categoryId, setCategoryId] = useState(initialData?.categoryId || (categories[0]?.id || 0));
-  const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [categoryId, setCategoryId] = useState<number>(
+    initialData?.categoryId || categories[0]?.id || 0
+  );
+
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name);
+      setCategoryId(initialData.categoryId);
+    } else {
+      setName("");
+      setCategoryId(categories[0]?.id || 0);
+    }
+  }, [initialData, categories]);
 
   const handleSubmit = () => {
     if (!name.trim()) {
-      setError("Score item name is required");
+      toast.error("Score item name is required");
       return;
     }
 
     if (!categoryId) {
-      setError("Please select a category");
+      toast.error("Please select a category");
       return;
     }
 
-    if (mode === "create" && onCreate) {
-      onCreate(categoryId, { name: name.trim() });
-    } else if (mode === "edit" && onUpdate) {
-      onUpdate({ name: name.trim(), categoryId });
+    try {
+      if (mode === "create" && onCreate) {
+        onCreate(categoryId, { name: name.trim() });
+        toast.success("Score item created successfully");
+      }
+
+      if (mode === "edit" && onUpdate) {
+        onUpdate({ name: name.trim(), categoryId });
+        toast.success("Score item updated successfully");
+      }
+
+      onClose();
+    } catch {
+      toast.error("Operation failed");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-96 max-w-full">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
-            {mode === "create" ? "Add Score Item" : "Edit Score Item"}
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-6 animate-in fade-in zoom-in">
+
+        {/* Header */}
+        <div className="flex justify-between items-center border-b pb-3">
+          <h2 className="text-lg font-bold text-[var(--color-text)]">
+            {mode === "create" ? "Create Score Item" : "Edit Score Item"}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={24} />
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-100 transition"
+          >
+            <X size={20} />
           </button>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-4">
-            {error}
-          </div>
-        )}
-
+        {/* Form */}
         <div className="space-y-4">
+
+          {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Score Item Name</label>
+            <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              Score Item Name <span className="text-[var(--color-negative)]">*</span>
+            </label>
+
             <input
-              type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Quiz 1, Homework 2"
+              placeholder="Example: Quiz 1"
+              className="w-full p-3 border-2 border-[var(--color-main)] rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] outline-none bg-white"
             />
           </div>
 
+          {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              Category
+            </label>
+
             <select
               value={categoryId}
-              onChange={(e) => setCategoryId(parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setCategoryId(Number(e.target.value))}
+              className="w-full p-3 border-2 border-[var(--color-main)] rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] outline-none bg-white"
             >
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -87,20 +120,25 @@ export default function ScoreItemModal({
           </div>
         </div>
 
-        <div className="flex gap-3 mt-6">
+        {/* Footer */}
+        <div className="flex justify-end gap-3 pt-2 border-t">
+
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition"
           >
             Cancel
           </button>
+
           <button
             onClick={handleSubmit}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="bg-[var(--color-main)] border-2 border-[var(--color-main)] text-white px-4 py-2 rounded-lg font-bold hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition"
           >
-            {mode === "create" ? "Add" : "Update"}
+            {mode === "create" ? "Create" : "Save"}
           </button>
+
         </div>
+
       </div>
     </div>
   );

@@ -84,6 +84,12 @@ public class ScoreItemService {
 
         item.setName(request.getName());
 
+        if (request.getScoreCategoryId() != null) {
+            ScoreCategory category = scoreCategoryRepository.findById(request.getScoreCategoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("Score category not found"));
+            item.setScoreCategory(category);
+        }
+
         if (request.getAssignmentId() != null) {
             Assignment assignment = assignmentRepository.findById(request.getAssignmentId())
                     .orElseThrow(() -> new IllegalArgumentException("Assignment not found"));

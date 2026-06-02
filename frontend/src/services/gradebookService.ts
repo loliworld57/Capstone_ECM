@@ -74,7 +74,11 @@ export const gradebookService = {
     return response.data;
   },
 
-  async updateScoreItem(courseId: number, scoreItemId: number, data: { name: string; assignmentId?: number }): Promise<ScoreItem> {
+  async updateScoreItem(
+    courseId: number,
+    scoreItemId: number,
+    data: { name: string; scoreCategoryId?: number; assignmentId?: number } // Added scoreCategoryId here
+  ): Promise<ScoreItem> {
     const response = await api.put(`/courses/${courseId}/score-items/${scoreItemId}`, data);
     return response.data;
   },

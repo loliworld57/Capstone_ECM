@@ -1,5 +1,5 @@
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "outline" | "success";
+  variant?: "primary" | "outline" | "success" | "excel";
 }
 
 export default function Button({
@@ -9,11 +9,13 @@ export default function Button({
 }: ButtonProps) {
   const styles = {
     primary:
-      "bg-blue-600 text-white hover:bg-blue-700",
+      "flex items-center gap-2 bg-[var(--color-main)] border-2 border-[var(--color-main)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition",
     outline:
       "border border-gray-300 bg-white hover:bg-gray-50",
     success:
       "bg-green-600 text-white hover:bg-green-700",
+    excel:
+      "flex items-center gap-2 bg-[var(--color-positive)] border-2 border-[var(--color-positive)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--color-soft-white)] hover:text-[var(--color-positive)] transition",
   };
 
   return (

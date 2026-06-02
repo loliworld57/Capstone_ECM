@@ -26,10 +26,14 @@ interface Props {
     editMode: boolean;
     pendingChanges: Record<string, number>;
     onScoreChange: (studentId: number, scoreItemId: number, score: number) => void;
-    onCategoryHeaderChange: (id: number, field: "name" | "weight", value: any) => void;
-    onScoreItemHeaderChange: (id: number, name: string) => void;
+    onCategoryHeaderChange: (id: number, field: "name" | "weight", value: string | number) => void;
+    onScoreItemHeaderChange: (
+        id: number,
+        field: "name" | "categoryId",
+        value: string | number
+    ) => void;
     categoryEdits: Record<number, { name: string; weight: number }>;
-    scoreItemEdits: Record<number, string>;
+    scoreItemEdits: Record<number, { name: string; categoryId: number }>;
 }
 
 const columnHelper = createColumnHelper<StudentGradebookRow>();
