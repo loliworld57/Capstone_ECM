@@ -434,7 +434,11 @@ function SubmissionsModal({ assignmentId, courseId, onClose, onRefresh }: { assi
                     ) : (
                         <div className="space-y-4">
                             {students.map((student) => {
-                                const studentSubmission = submissions.find(sub => sub.student?.id === student.id);
+                                // Important: match by studentId strictly, otherwise students can be shown as submitted incorrectly.
+                                const studentSubmission = submissions.find(
+                                    sub => sub?.student?.id === student.id
+                                );
+
                                 return (
                                     <StudentSubmissionItem
                                         key={student.id}

@@ -1,20 +1,30 @@
 package com.extracenter.backend.controller;
 
-import com.extracenter.backend.dto.ScoreRequest;
-import com.extracenter.backend.entity.Assignment;
-import com.extracenter.backend.entity.AssignmentSubmission;
-import com.extracenter.backend.service.AssignmentService;
-import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import com.extracenter.backend.dto.ScoreRequest;
+import com.extracenter.backend.entity.Assignment;
+import com.extracenter.backend.entity.AssignmentSubmission;
+import com.extracenter.backend.service.AssignmentService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/assignments")
@@ -41,11 +51,18 @@ public class AssignmentController {
         }
     }
 
-    // --- 2. LẤY DANH SÁCH BÀI TẬP CỦA KHÓA HỌC ---
+    // --- 2. LẤY CHI TIẾT 1 BÀI TẬP ---
+    @GetMapping("/{assignmentId}")
+    public ResponseEntity<Assignment> getAssignmentDetail(@PathVariable Long assignmentId) {
+        return ResponseEntity.ok(assignmentService.getAssignmentById(assignmentId));
+    }
+
+    // --- 3. LẤY DANH SÁCH BÀI TẬP CỦA KHÓA HỌC ---
     @GetMapping("/course/{courseId}")
     public ResponseEntity<List<Assignment>> getAssignmentsByCourse(@PathVariable Long courseId) {
         return ResponseEntity.ok(assignmentService.getAssignmentsForCourse(courseId));
     }
+
 
     // --- 3. API CHO HỌC SINH NỘP BÀI LÀM ---
     @PostMapping(value = "/{assignmentId}/submit", consumes = { "multipart/form-data" })
@@ -100,12 +117,15 @@ public class AssignmentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAssignment(@PathVariable Long id) {
         try {
-            assignmentService.deleteAssignment(id); // Cần tự thêm hàm này vào Service
+            assignmentService.deleteAssignment(id);
             return ResponseEntity.ok("Deleted successfully");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // Surface the real error message in a consistent way
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage(), "type", e.getClass().getSimpleName()));
         }
     }
+
 
     @GetMapping("/student/{studentId}/pending")
     public ResponseEntity<List<Assignment>> getPendingAssignments(@PathVariable Long studentId) {
