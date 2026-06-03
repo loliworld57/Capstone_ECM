@@ -101,47 +101,56 @@ public class GradebookService {
                 .collect(Collectors.toList()));
 
         // Convert all score items to DTOs
-        List<ScoreItemDTO> allItems = new java.util.ArrayList<>();
-        for (List<ScoreItem> items : itemsByCategory.values()) {
-            allItems.addAll(items.stream()
-                    .map(item -> new ScoreItemDTO(item.getId(), item.getName(),
-                            item.getScoreCategory().getId(),
-                            item.getAssignment() != null ? item.getAssignment().getId() : null))
-                    .collect(Collectors.toList()));
-        }
+        List<ScoreItemDTO> allItems = scoreItems.stream()
+                .map(item -> new ScoreItemDTO(
+                        item.getId(),
+                        item.getName(),
+                        item.getScoreCategory().getId(),
+                        item.getAssignment() != null ? item.getAssignment().getId() : null))
+                .collect(Collectors.toList());
         response.setScoreItems(allItems);
+
+        // Precompute: map scoreItemId -> ScoreItem for quick lookups
+        Map<Long, ScoreItem> scoreItemById = scoreItems.stream()
+                .collect(Collectors.toMap(ScoreItem::getId, si -> si));
+
+        // Precompute student scores in one go
+        Map<Long, Map<Long, StudentScore>> studentScoreByStudentIdThenItemId = new HashMap<>();
+        if (!allScoreItemIds.isEmpty() && !enrollments.isEmpty()) {
+            List<StudentScore> allScores = studentScoreRepository.findByScoreItemIdIn(allScoreItemIds);
+            for (StudentScore s : allScores) {
+                Long sid = s.getStudent().getId();
+                Long itemId = s.getScoreItem().getId();
+                studentScoreByStudentIdThenItemId
+                        .computeIfAbsent(sid, k -> new HashMap<>())
+                        .put(itemId, s);
+            }
+        }
 
         // Build student rows
         List<StudentGradebookRowDTO> studentRows = new java.util.ArrayList<>();
         for (Enrollment enrollment : enrollments) {
             StudentGradebookRowDTO row = new StudentGradebookRowDTO();
-            row.setStudentId(enrollment.getStudent().getId());
+            Long studentId = enrollment.getStudent().getId();
+            row.setStudentId(studentId);
             row.setFirstName(enrollment.getStudent().getFirstName());
             row.setLastName(enrollment.getStudent().getLastName());
 
-            // Get scores for this student
+            // Scores (include null for missing items)
             Map<Long, Integer> scores = new HashMap<>();
-            for (ScoreItem item : allItems.stream()
-                    .map(dto -> scoreItems.stream()
-                            .filter(si -> si.getId().equals(dto.getId()))
-                            .findFirst()
-                            .orElse(null))
-                    .filter(item -> item != null)
-                    .collect(Collectors.toList())) {
-                StudentScore score = studentScoreRepository
-                        .findByStudentIdAndScoreItemId(enrollment.getStudent().getId(), item.getId())
-                        .orElse(null);
+            Map<Long, StudentScore> perStudent = studentScoreByStudentIdThenItemId.getOrDefault(studentId, Map.of());
+            for (ScoreItem item : scoreItems) {
+                StudentScore score = perStudent.get(item.getId());
                 scores.put(item.getId(), score != null ? score.getScore() : null);
             }
             row.setScores(scores);
 
-            // Calculate category averages
-            Map<Long, Double> categoryAverages = calculateCategoryAverages(enrollment.getStudent().getId(),
-                    categoryIds, scoreItems);
+            // Calculate category averages using precomputed scores
+            Map<Long, Double> categoryAverages = calculateCategoryAveragesFast(studentId, categoryIds, scoreItems, perStudent);
             row.setCategoryAverages(categoryAverages);
 
-            // Calculate final score
-            Double finalScore = calculateFinalScore(enrollment.getStudent().getId(), categories, categoryAverages);
+            // Calculate final score (use categoryAverages only)
+            Double finalScore = calculateFinalScore(categories, categoryAverages);
             row.setFinalScore(finalScore);
 
             studentRows.add(row);
@@ -157,25 +166,21 @@ public class GradebookService {
     /**
      * Calculate category averages for a student
      */
-    private Map<Long, Double> calculateCategoryAverages(Long studentId, List<Long> categoryIds,
-            List<ScoreItem> allScoreItems) {
+    private Map<Long, Double> calculateCategoryAveragesFast(Long studentId, List<Long> categoryIds,
+            List<ScoreItem> allScoreItems,
+            Map<Long, StudentScore> perStudentScoresByItemId) {
+        // Average over present scores in each category (same behavior as before, but no per-cell DB calls)
         Map<Long, Double> averages = new HashMap<>();
 
         for (Long categoryId : categoryIds) {
-            List<ScoreItem> categoryItems = allScoreItems.stream()
-                    .filter(item -> item.getScoreCategory().getId().equals(categoryId))
-                    .collect(Collectors.toList());
-
-            if (categoryItems.isEmpty()) {
-                averages.put(categoryId, null);
-                continue;
-            }
-
             List<Integer> scores = new java.util.ArrayList<>();
-            for (ScoreItem item : categoryItems) {
-                StudentScore score = studentScoreRepository
-                        .findByStudentIdAndScoreItemId(studentId, item.getId())
-                        .orElse(null);
+
+            for (ScoreItem item : allScoreItems) {
+                if (!item.getScoreCategory().getId().equals(categoryId)) {
+                    continue;
+                }
+
+                StudentScore score = perStudentScoresByItemId.get(item.getId());
                 if (score != null && score.getScore() != null) {
                     scores.add(score.getScore());
                 }
@@ -196,9 +201,9 @@ public class GradebookService {
     }
 
     /**
-     * Calculate final score for a student
+     * Calculate final score for a student (using precomputed category averages)
      */
-    private Double calculateFinalScore(Long studentId, List<ScoreCategory> categories,
+    private Double calculateFinalScore(List<ScoreCategory> categories,
             Map<Long, Double> categoryAverages) {
         int totalWeight = 0;
         double weightedSum = 0;

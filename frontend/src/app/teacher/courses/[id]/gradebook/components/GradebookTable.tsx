@@ -20,6 +20,7 @@ import {
 } from "@/services/gradebookService";
 
 import GradebookScoreCell from "./GradebookScoreCell";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 interface Props {
     gradebook: GradebookResponse;
@@ -39,9 +40,11 @@ interface Props {
 const columnHelper = createColumnHelper<StudentGradebookRow>();
 
 const CLS_INPUT = "text-xs border border-zinc-200 rounded px-2 py-1 w-full font-normal text-zinc-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all";
-const CLS_STICKY_LEFT = "sticky left-0 bg-white z-20 min-w-[240px] max-w-[240px] w-[240px] after:absolute after:right-0 after:top-0 after:bottom-0 after:w-2 after:translate-x-full after:bg-gradient-to-r after:from-black/[0.05] after:to-transparent after:pointer-events-none";
-const CLS_STICKY_RIGHT = "sticky right-0 bg-white z-20 min-w-[110px] max-w-[110px] w-[110px] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-2 before:-translate-x-full before:bg-gradient-to-l before:from-black/[0.05] before:to-transparent before:pointer-events-none";
-const CLS_SCORE_COL = "min-w-[85px] max-w-[85px] w-[85px]";
+// Keep widths consistent and allow horizontal scroll.
+// Student and Final Grade columns should NOT be separate fixed-position regions.
+const CLS_STICKY_LEFT = "";
+const CLS_STICKY_RIGHT = "";
+const CLS_SCORE_COL = "min-w-[85px] w-[85px]";
 
 export default function GradebookTable({
     gradebook,
@@ -113,10 +116,10 @@ export default function GradebookTable({
                                     </div>
                                 ) : (
                                     <>
-                                        <span className="font-bold text-slate-800 tracking-wider text-[13px] uppercase block truncate max-w-[150px]">
+                                        <span className="font-bold text-[var(--color-white)] text-s tracking-wider uppercase block truncate max-w-[150px]">
                                             {cat.name}
                                         </span>
-                                        <span className="inline-flex items-center px-2 py-0.5 mt-1.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-sm">
+                                        <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-md bg-[var(--color-white)] text-[var(--color-positive)] border border-indigo-200 shadow-sm">
                                             {cat.weight}%
                                         </span>
                                     </>
@@ -152,7 +155,7 @@ export default function GradebookTable({
                                                             />
                                                         </>
                                                     ) : (
-                                                        <span className="text-teal-700 font-semibold text-[11px] uppercase tracking-wide block truncate max-w-[85px]" title={item.name}>
+                                                        <span className="text-[var(--color-text)] font-semibold text-[11px] uppercase tracking-wide block truncate max-w-[85px]" title={item.name}>
                                                             {item.name}
                                                         </span>
                                                     )}
@@ -337,12 +340,12 @@ export default function GradebookTable({
                                             colSpan={header.colSpan > 1 ? header.colSpan : undefined}
                                             rowSpan={header.rowSpan > 1 ? header.rowSpan : undefined}
                                             className={`
-                                                px-3 py-2.5 font-semibold text-xs border-b border-r transition-colors
+                                                px-2 py-1
                                                 ${structuralWidthClass}
-                                                ${isStudent ? "!bg-slate-100 text-slate-800 border-slate-300" : ""}
-                                                ${isFinal ? "!bg-indigo-50 text-indigo-900 border-indigo-200" : ""}
-                                                ${isCategory && !isStudent && !isFinal ? "bg-slate-100 border-slate-300 shadow-sm" : ""}
-                                                ${isItem && !isStudent && !isFinal ? "bg-white border-slate-200 text-slate-600" : ""}
+                                                ${isStudent ? "!bg-[var(--color-main)] !text-[var(--color-white)] border-r-2 border-l-2 border-white" : ""}
+                                                ${isFinal ? "!bg-[var(--color-main)] !text-[var(--color-white)] border-r-2 border-l-2 border-white"  : ""}
+                                                ${isCategory && !isStudent && !isFinal ? "bg-[var(--color-main)] border-slate-300 shadow-sm border-r-2 border-l-2 border-white": ""}
+                                                ${isItem && !isStudent && !isFinal ? "bg-[var(--color-secondary)]/10 border-slate-200 text-[var(--color-text)]" : ""}
                                                 ${!isStudent && !isFinal && !isCategory && !isItem ? "border-zinc-200/80 bg-zinc-50/90" : ""}
                                             `}
                                         >
@@ -351,15 +354,21 @@ export default function GradebookTable({
                                                     className={`flex items-center gap-1.5 w-full h-full ${canSort ? "cursor-pointer select-none hover:text-indigo-600" : ""} ${isStudent ? "justify-start" : "justify-center"}`}
                                                     onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                                                 >
-                                                    <div className="truncate">
+                                                    <div className="whitespace-normal break-words">
                                                         {flexRender(
                                                             header.column.columnDef.header,
                                                             header.getContext()
                                                         )}
                                                     </div>
                                                     {canSort && (
-                                                        <span className="text-zinc-400 shrink-0 font-normal transition-transform duration-150">
-                                                            {sortStatus === "asc" ? "▲" : sortStatus === "desc" ? "▼" : "⇅"}
+                                                        <span className="text-[var(--color-white)] shrink-0 font-normal transition-transform duration-150">
+                                                            {sortStatus === "asc" ? (
+                                                                <ArrowUp size={14} />
+                                                            ) : sortStatus === "desc" ? (
+                                                                <ArrowDown size={14} />
+                                                            ) : (
+                                                                <ArrowUpDown size={14} />
+                                                            )}
                                                         </span>
                                                     )}
                                                 </div>
@@ -389,7 +398,7 @@ export default function GradebookTable({
                                         <td
                                             key={cell.id}
                                             className={`
-                                                px-3 py-1.5 text-sm border-r border-zinc-100 whitespace-nowrap align-middle
+                                                px-3 py-1.5 text-sm border-r border-zinc-100 whitespace-nowrap align-middle border-b-1
                                                 ${cellWidthClass}
                                                 ${isStudent ? "font-medium group-hover:bg-indigo-50/10" : ""}
                                                 ${isFinal ? "bg-inherit" : ""}

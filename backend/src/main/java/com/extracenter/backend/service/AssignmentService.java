@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.extracenter.backend.dto.ScoreCategoryRequest;
 import com.extracenter.backend.dto.ScoreRequest;
 import com.extracenter.backend.entity.Assignment;
 import com.extracenter.backend.entity.AssignmentSubmission;
@@ -22,6 +23,7 @@ import com.extracenter.backend.repository.ClassSessionRepository;
 import com.extracenter.backend.repository.CourseRepository;
 import com.extracenter.backend.repository.ScoreCategoryRepository;
 import com.extracenter.backend.repository.UserRepository;
+
 
 @Service
 public class AssignmentService {
@@ -41,7 +43,10 @@ public class AssignmentService {
     @Autowired
     private ScoreCategoryRepository scoreCategoryRepository;
     @Autowired
+    private ScoreCategoryService scoreCategoryService;
+    @Autowired
     private ScoreItemService scoreItemService;
+
 
     // 1. TẠO BÀI TẬP (GIÁO VIÊN)
     @Transactional
@@ -73,7 +78,9 @@ public class AssignmentService {
 
         Assignment savedAssignment = assignmentRepository.save(assignment);
 
-        // Automatically create a ScoreItem for this assignment in the "Assignment" category
+        // Automatically create a ScoreItem for this assignment in the "Assignment" category.
+        // If the "Assignment" category doesn't exist yet, create it with weight=0.
+        // Weight=0 means assignment scores won't contribute to final score until weights are configured.
         try {
             List<ScoreCategory> categories = scoreCategoryRepository.findByCourseId(courseId);
             ScoreCategory assignmentCategory = categories.stream()
@@ -81,13 +88,22 @@ public class AssignmentService {
                     .findFirst()
                     .orElse(null);
 
-            if (assignmentCategory != null) {
-                scoreItemService.createScoreItemForAssignment(savedAssignment, assignmentCategory);
+            if (assignmentCategory == null) {
+                // Create missing category with default weight=0
+                ScoreCategoryRequest categoryRequest = new ScoreCategoryRequest();
+                categoryRequest.setName("Assignment");
+                categoryRequest.setWeight(0);
+
+                assignmentCategory = scoreCategoryService.createCategory(courseId, categoryRequest);
             }
+
+            // Always create the score item for this assignment
+            scoreItemService.createScoreItemForAssignment(savedAssignment, assignmentCategory);
         } catch (Exception e) {
             // Log error but don't fail the assignment creation
             e.printStackTrace();
         }
+
 
         return savedAssignment;
     }
