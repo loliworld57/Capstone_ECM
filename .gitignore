@@ -2,3 +2,6 @@ backend/src/main/resources/application.properties
 backend/src/main/resources/application.properties
 /backend/src/main/resources
 .vscode/launch.json
+.env
+frontend/src/utils/axiosConfig.ts
+backend/src/main/java/com/extracenter/backend/CorsConfig.java

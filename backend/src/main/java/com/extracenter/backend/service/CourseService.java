@@ -28,6 +28,7 @@ import com.extracenter.backend.entity.Course;
 import com.extracenter.backend.entity.CourseStatus;
 import com.extracenter.backend.entity.Enrollment;
 import com.extracenter.backend.entity.Grade;
+import com.extracenter.backend.entity.ScoreCategory;
 import com.extracenter.backend.entity.Subject;
 import com.extracenter.backend.entity.User;
 import com.extracenter.backend.entity.VerificationToken;
@@ -41,6 +42,7 @@ import com.extracenter.backend.repository.CourseRepository;
 import com.extracenter.backend.repository.EnrollmentRepository;
 import com.extracenter.backend.repository.GradeRepository;
 import com.extracenter.backend.repository.MaterialRepository;
+import com.extracenter.backend.repository.ScoreCategoryRepository;
 import com.extracenter.backend.repository.SubjectRepository;
 import com.extracenter.backend.repository.UserRepository;
 import com.extracenter.backend.repository.VerificationTokenRepository;
@@ -70,6 +72,12 @@ public class CourseService {
     private GradeRepository gradeRepository;
     @Autowired
     private MaterialRepository materialRepository;
+
+    @Autowired
+    private ScoreCategoryRepository scoreCategoryRepository;
+
+    @Autowired
+    private ScoreCategoryService scoreCategoryService;
 
     // THÊM REPOSITORY NÀY ĐỂ QUẢN LÝ VIỆC ĐĂNG KÝ HỌC
     @Autowired
@@ -136,6 +144,9 @@ public class CourseService {
             generateClassSessions(savedCourse, savedSlots);
         }
 
+        // 5. Create default score categories for the course
+        createDefaultScoreCategories(savedCourse);
+
         return savedCourse;
     }
 
@@ -166,6 +177,24 @@ public class CourseService {
         // Batch save for high performance
         classSessionRepository.saveAll(sessionsToSave);
     }
+
+    // Helper method to create default score categories for a course
+    private void createDefaultScoreCategories(Course course) {
+        // Create "Assignment" category with 20% weight
+        ScoreCategory assignmentCategory = new ScoreCategory();
+        assignmentCategory.setName("Assignment");
+        assignmentCategory.setWeight(20);
+        assignmentCategory.setCourse(course);
+        scoreCategoryRepository.save(assignmentCategory);
+
+        // Create "Final Exam" category with 80% weight
+        ScoreCategory finalExamCategory = new ScoreCategory();
+        finalExamCategory.setName("Final Exam");
+        finalExamCategory.setWeight(80);
+        finalExamCategory.setCourse(course);
+        scoreCategoryRepository.save(finalExamCategory);
+    }
+
 
     public List<Course> getAllCourses() {
         return courseRepository.findAll().stream()
