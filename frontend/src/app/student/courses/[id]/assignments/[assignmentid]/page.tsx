@@ -35,8 +35,23 @@ export default function StudentAssignmentDetailPage() {
                 // const subRes = await api.get(`/assignments/${assignmentId}/submissions/student/${user.id}`);
                 // setSubmission(subRes.data);
 
-                // TẠM THỜI GIẢ LẬP DỮ LIỆU ĐỂ HIỂN THỊ UI (Giống trong ảnh Moodle)
-                setSubmission(null); // Đổi thành null để thấy form nộp bài
+                // Lấy submission của student hiện tại
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (!user?.id) {
+                    throw new Error('Missing logged-in user id');
+                }
+
+                const subRes = await api.get(
+                    `/assignments/${assignmentId}/submissions/student/${user.id}`
+                );
+
+                setSubmission(subRes.data);
+
+                // Nếu backend trả marker NOT_SUBMITTED thì coi như chưa nộp
+                if (subRes.data?.status === 'NOT_SUBMITTED') {
+                    setSubmission(null);
+                }
+
 
             } catch (error) {
                 console.error(error);

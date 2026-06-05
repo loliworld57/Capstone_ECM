@@ -16,13 +16,24 @@ import jakarta.transaction.Transactional;
 @Repository
 public interface AssignmentSubmissionRepository extends JpaRepository<AssignmentSubmission, Long> {
 
-    // Lấy danh sách học sinh đã nộp bài cho 1 Assignment cụ thể (Dành cho giáo
-    // viên)
-    List<AssignmentSubmission> findByAssignmentId(Long assignmentId);
+    // Lấy danh sách học sinh đã nộp bài cho 1 Assignment cụ thể (Dành cho giáo viên)
+    // JOIN FETCH giúp lấy đủ student/assignment fields để mapping DTO không bị NULL do LAZY.
+    @Query("SELECT sub FROM AssignmentSubmission sub JOIN FETCH sub.student WHERE sub.assignment.id = :assignmentId")
+    List<AssignmentSubmission> findByAssignmentIdWithStudent(@Param("assignmentId") Long assignmentId);
 
-    // Tìm bài nộp của 1 học sinh cụ thể trong 1 Assignment (Dùng để kiểm tra xem đã
-    // nộp chưa)
-    Optional<AssignmentSubmission> findByAssignmentIdAndStudentId(Long assignmentId, Long studentId);
+    // Tìm bài nộp của 1 học sinh cụ thể trong 1 Assignment
+    // JOIN FETCH để bảo đảm studentId được map đầy đủ cho DTO.
+    @Query("SELECT sub FROM AssignmentSubmission sub JOIN FETCH sub.student WHERE sub.assignment.id = :assignmentId AND sub.student.id = :studentId")
+    Optional<AssignmentSubmission> findByAssignmentIdAndStudentIdWithStudent(@Param("assignmentId") Long assignmentId, @Param("studentId") Long studentId);
+
+    // GIỮ TÊN METHOD TRUYỀN THỐNG để AssignmentService/submit vẫn compile.
+    @Query("SELECT sub FROM AssignmentSubmission sub JOIN FETCH sub.student WHERE sub.assignment.id = :assignmentId AND sub.student.id = :studentId")
+    Optional<AssignmentSubmission> findByAssignmentIdAndStudentId(@Param("assignmentId") Long assignmentId, @Param("studentId") Long studentId);
+
+    List<AssignmentSubmission> findByStudentId(Long studentId);
+
+    
+
 
     @Modifying
     @Transactional

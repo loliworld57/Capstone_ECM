@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.extracenter.backend.dto.AssignmentSubmissionResponse;
 import com.extracenter.backend.dto.ScoreRequest;
+import com.extracenter.backend.dto.StudentAssignmentResponse;
 import com.extracenter.backend.entity.Assignment;
 import com.extracenter.backend.entity.AssignmentSubmission;
 import com.extracenter.backend.service.AssignmentService;
@@ -53,8 +55,20 @@ public class AssignmentController {
 
     // --- 2. LẤY CHI TIẾT 1 BÀI TẬP ---
     @GetMapping("/{assignmentId}")
-    public ResponseEntity<Assignment> getAssignmentDetail(@PathVariable Long assignmentId) {
-        return ResponseEntity.ok(assignmentService.getAssignmentById(assignmentId));
+    public ResponseEntity<com.extracenter.backend.dto.AssignmentDetailResponse> getAssignmentDetail(
+            @PathVariable Long assignmentId) {
+        Assignment assignment = assignmentService.getAssignmentById(assignmentId);
+
+        // Return DTO to avoid Jackson serializing Hibernate lazy proxies
+        return ResponseEntity.ok(com.extracenter.backend.dto.AssignmentDetailResponse.builder()
+                .id(assignment.getId())
+                .title(assignment.getTitle())
+                .description(assignment.getDescription())
+                .dueDate(assignment.getDueDate())
+                .fileUrl(assignment.getFileUrl())
+                .fileName(assignment.getFileName())
+                .createdDate(assignment.getCreatedDate())
+                .build());
     }
 
     // --- 3. LẤY DANH SÁCH BÀI TẬP CỦA KHÓA HỌC ---
@@ -62,7 +76,6 @@ public class AssignmentController {
     public ResponseEntity<List<Assignment>> getAssignmentsByCourse(@PathVariable Long courseId) {
         return ResponseEntity.ok(assignmentService.getAssignmentsForCourse(courseId));
     }
-
 
     // --- 3. API CHO HỌC SINH NỘP BÀI LÀM ---
     @PostMapping(value = "/{assignmentId}/submit", consumes = { "multipart/form-data" })
@@ -80,8 +93,8 @@ public class AssignmentController {
 
     // --- 4. API LẤY DANH SÁCH BÀI NỘP CHO GIÁO VIÊN ---
     @GetMapping("/{assignmentId}/submissions")
-    public ResponseEntity<List<AssignmentSubmission>> getSubmissions(@PathVariable Long assignmentId) {
-        return ResponseEntity.ok(assignmentService.getSubmissionsByAssignment(assignmentId));
+    public ResponseEntity<List<AssignmentSubmissionResponse>> getSubmissions(@PathVariable Long assignmentId) {
+        return ResponseEntity.ok(assignmentService.getSubmissionsByAssignmentDto(assignmentId));
     }
 
     // --- 5. API CHẤM ĐIỂM BÀI NỘP ---
@@ -105,7 +118,6 @@ public class AssignmentController {
             @RequestParam("dueDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDate,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
-            // Logic Update (Cần tự thêm hàm này vào AssignmentService nhé)
             Assignment updated = assignmentService.updateAssignment(id, title, description, dueDate, file);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
@@ -120,15 +132,24 @@ public class AssignmentController {
             assignmentService.deleteAssignment(id);
             return ResponseEntity.ok("Deleted successfully");
         } catch (Exception e) {
-            // Surface the real error message in a consistent way
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage(), "type", e.getClass().getSimpleName()));
         }
     }
 
-
     @GetMapping("/student/{studentId}/pending")
     public ResponseEntity<List<Assignment>> getPendingAssignments(@PathVariable Long studentId) {
         return ResponseEntity.ok(assignmentService.getPendingAssignments(studentId));
+    }
+
+    @GetMapping("/course/{courseId}/student/{studentId}")
+    public ResponseEntity<List<StudentAssignmentResponse>> getAssignmentsForStudent(
+            @PathVariable Long courseId,
+            @PathVariable Long studentId) {
+
+        return ResponseEntity.ok(
+                assignmentService.getAssignmentsForStudent(
+                        courseId,
+                        studentId));
     }
 }

@@ -436,7 +436,7 @@ function SubmissionsModal({ assignmentId, courseId, onClose, onRefresh }: { assi
                             {students.map((student) => {
                                 // Important: match by studentId strictly, otherwise students can be shown as submitted incorrectly.
                                 const studentSubmission = submissions.find(
-                                    sub => sub?.student?.id === student.id
+                                    sub => sub?.studentId === student.id
                                 );
 
                                 return (
