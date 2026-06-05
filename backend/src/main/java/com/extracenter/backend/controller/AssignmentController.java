@@ -102,11 +102,19 @@ public class AssignmentController {
     public ResponseEntity<?> gradeSubmission(
             @PathVariable Long submissionId,
             @Valid @RequestBody ScoreRequest request) {
+
         try {
-            AssignmentSubmission graded = assignmentService.gradeSubmission(submissionId, request);
-            return ResponseEntity.ok(graded);
+
+            assignmentService.gradeSubmission(submissionId, request);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "message", "Grade saved successfully"));
+
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 

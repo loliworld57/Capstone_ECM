@@ -12,18 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignmentSubmissionResponse {
-
     private Long id;
     private Long assignmentId;
     private Long studentId;
-
     private String fileUrl;
     private String fileName;
-
     private LocalDateTime submittedAt;
     private String status;
-
     private Float score;
     private String feedback;
 }
-

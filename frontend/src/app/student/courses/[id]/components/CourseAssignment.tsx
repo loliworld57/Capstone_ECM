@@ -29,7 +29,7 @@ interface Assignment {
     fileName: string | null;
     createdDate: string;
     // Tạm thời giả lập dữ liệu trả về từ API có thêm thông tin submission
-    submissionStatus?: "SUBMITTED" | "NOT_SUBMITTED" | "LATE";
+    submissionStatus?: "SUBMITTED" | "NOT_SUBMITTED" | "LATE" | "SCORED";
     submittedAt?: string | null;
 }
 
@@ -149,7 +149,8 @@ export default function StudentCourseAssignments({ courseId }: Props) {
                                 filteredAssignments.map((assignment) => {
                                     const overdue = isOverdue(assignment.dueDate);
                                     const submitted =
-                                        assignment.submissionStatus === "SUBMITTED";
+                                        assignment.submissionStatus === "SUBMITTED" ||
+                                        assignment.submissionStatus === "SCORED";
                                     return (
                                         <tr key={assignment.id} className="border-b last:border-0 border-gray-200 hover:bg-[var(--color-secondary)]/5 transition group">
                                             <td className="p-4">

@@ -10,7 +10,7 @@ public class ScoreRequest {
 
     @NotNull(message = "Score is required")
     @Min(value = 0, message = "Score cannot be less than 0")
-    @Max(value = 10, message = "Score cannot be greater than 10")
+    @Max(value = 100, message = "Score cannot be greater than 100")
     private Float score;
 
     private String feedback;

@@ -403,9 +403,10 @@ function SubmissionsModal({ assignmentId, courseId, onClose, onRefresh }: { assi
             toast.success("Submission graded successfully!");
             fetchData();
             onRefresh();
-        } catch (error) {
+        } catch (error: any) {
+            const backendMsg = error?.response?.data?.error;
             console.error("Error grading submission:", error);
-            toast.error("Error grading submission.");
+            toast.error(backendMsg ? `Error: ${backendMsg}` : "Error grading submission.");
         } finally {
             setGrading(prev => ({ ...prev, [submissionId]: false }));
         }
@@ -558,7 +559,7 @@ function StudentSubmissionItem({ student, submission, onGrade, grading }: { stud
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => onGrade(submission.id, parseFloat(score), feedback)}
+                                onClick={() => onGrade(submission.id, Number.isFinite(Number(score)) ? Math.min(100, Math.max(0, Number(score))) : 0, feedback)}
                                 disabled={grading}
                                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
                             >

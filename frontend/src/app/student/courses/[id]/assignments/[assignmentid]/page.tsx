@@ -194,8 +194,8 @@ export default function StudentAssignmentDetailPage() {
                     <div className="flex flex-col md:flex-row">
                         <div className="p-4 font-bold text-gray-700 bg-gray-50/50 w-full md:w-1/3">Grading status</div>
                         <div className="p-4 w-full md:w-2/3 text-gray-700">
-                            {submission?.status === "GRADED" ? (
-                                <span className="font-bold text-green-600">Graded (Score: {submission.score}/10)</span>
+                            {submission?.status === "SCORED" ? (
+                                <span className="font-bold text-green-600">Graded (Score: {submission.score})</span>
                             ) : "Not graded"}
                         </div>
                     </div>
@@ -226,7 +226,7 @@ export default function StudentAssignmentDetailPage() {
                     )}
 
                     {/* Hàng 5: Feedback của giáo viên */}
-                    {(submission?.status === "GRADED" && submission?.feedback) && (
+                    {(submission?.status === "SCORED" && submission?.feedback) && (
                         <div className="flex flex-col md:flex-row">
                             <div className="p-4 font-bold text-gray-700 bg-gray-50/50 w-full md:w-1/3">Teacher Comments</div>
                             <div className="p-4 w-full md:w-2/3 text-gray-800 italic bg-yellow-50/30">
