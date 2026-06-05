@@ -9,16 +9,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.extracenter.backend.dto.AssignmentSubmissionResponse;
+import com.extracenter.backend.dto.ScoreCategoryRequest;
 import com.extracenter.backend.dto.ScoreRequest;
+import com.extracenter.backend.dto.StudentAssignmentResponse;
+import com.extracenter.backend.dto.StudentScoreRequest;
 import com.extracenter.backend.entity.Assignment;
 import com.extracenter.backend.entity.AssignmentSubmission;
 import com.extracenter.backend.entity.ClassSession;
 import com.extracenter.backend.entity.Course;
+import com.extracenter.backend.entity.ScoreCategory;
+import com.extracenter.backend.entity.ScoreItem;
 import com.extracenter.backend.entity.User;
 import com.extracenter.backend.repository.AssignmentRepository;
 import com.extracenter.backend.repository.AssignmentSubmissionRepository;
 import com.extracenter.backend.repository.ClassSessionRepository;
 import com.extracenter.backend.repository.CourseRepository;
+import com.extracenter.backend.repository.ScoreCategoryRepository;
+import com.extracenter.backend.repository.ScoreItemRepository;
 import com.extracenter.backend.repository.UserRepository;
 
 @Service
@@ -36,6 +44,18 @@ public class AssignmentService {
     private UserRepository userRepository;
     @Autowired
     private CloudinaryService cloudinaryService;
+    @Autowired
+    private ScoreCategoryRepository scoreCategoryRepository;
+    @Autowired
+    private ScoreCategoryService scoreCategoryService;
+    @Autowired
+    private ScoreItemService scoreItemService;
+
+    @Autowired
+    private StudentScoreService studentScoreService;
+
+    @Autowired
+    private ScoreItemRepository scoreItemRepository;
 
     // 1. TẠO BÀI TẬP (GIÁO VIÊN)
     @Transactional
@@ -65,11 +85,78 @@ public class AssignmentService {
             assignment.setFileName(file.getOriginalFilename());
         }
 
-        return assignmentRepository.save(assignment);
+        Assignment savedAssignment = assignmentRepository.save(assignment);
+
+        // Automatically create a ScoreItem for this assignment in the "Assignment"
+        // category.
+        // If the "Assignment" category doesn't exist yet, create it with weight=0.
+        // Weight=0 means assignment scores won't contribute to final score until
+        // weights are configured.
+        try {
+            List<ScoreCategory> categories = scoreCategoryRepository.findByCourseId(courseId);
+            ScoreCategory assignmentCategory = categories.stream()
+                    .filter(cat -> "Assignment".equalsIgnoreCase(cat.getName()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (assignmentCategory == null) {
+                // Create missing category with default weight=0
+                ScoreCategoryRequest categoryRequest = new ScoreCategoryRequest();
+                categoryRequest.setName("Assignment");
+                categoryRequest.setWeight(0);
+
+                assignmentCategory = scoreCategoryService.createCategory(courseId, categoryRequest);
+            }
+
+            // Always create the score item for this assignment
+            scoreItemService.createScoreItemForAssignment(savedAssignment, assignmentCategory);
+        } catch (Exception e) {
+            // Log error but don't fail the assignment creation
+            e.printStackTrace();
+        }
+
+        return savedAssignment;
     }
 
     public List<Assignment> getAssignmentsForCourse(Long courseId) {
         return assignmentRepository.findByCourseIdOrderByDueDateAsc(courseId);
+    }
+
+    public Assignment getAssignmentById(Long assignmentId) {
+        return assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found!"));
+    }
+
+    public List<StudentAssignmentResponse> getAssignmentsForStudent(Long courseId, Long studentId) {
+        List<Assignment> assignments = assignmentRepository.findByCourseId(courseId);
+        return assignments.stream()
+                .map(assignment -> {
+                    AssignmentSubmission submission = submissionRepository
+                            .findByAssignmentIdAndStudentId(
+                                    assignment.getId(),
+                                    studentId)
+                            .orElse(null);
+                    return StudentAssignmentResponse.builder()
+                            .id(assignment.getId())
+                            .title(assignment.getTitle())
+                            .description(assignment.getDescription())
+                            .dueDate(assignment.getDueDate())
+                            .fileUrl(assignment.getFileUrl())
+                            .fileName(assignment.getFileName())
+                            .createdDate(assignment.getCreatedDate())
+
+                            .submissionStatus(
+                                    submission != null
+                                            ? submission.getStatus()
+                                            : "NOT_SUBMITTED")
+
+                            .submittedAt(
+                                    submission != null
+                                            ? submission.getSubmittedAt()
+                                            : null)
+                            .build();
+                })
+                .toList();
     }
 
     // --- HÀM MỚI: CẬP NHẬT BÀI TẬP ---
@@ -99,10 +186,23 @@ public class AssignmentService {
         Assignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Assignment not found!"));
 
-        // Nhờ thiết lập CascadeType.ALL ở Entity Assignment,
-        // toàn bộ AssignmentSubmissions (Bài nộp của học sinh) cũng sẽ tự động bị xóa
-        // theo an toàn!
+        // Ensure related score items + student scores are deleted too.
+        // Otherwise FK constraints may prevent deletion when an assignment has a
+        // ScoreItem.
+        List<com.extracenter.backend.entity.ScoreItem> scoreItems = scoreItemRepository.findByAssignmentId(id);
+        for (com.extracenter.backend.entity.ScoreItem si : scoreItems) {
+            // ScoreItem has CascadeType.ALL to StudentScore (orphanRemoval=true)
+            // so deleting the ScoreItem should delete its studentScores.
+            scoreItemRepository.delete(si);
+        }
+
+        // Delete assignment submissions
+        if (assignment.getSubmissions() != null) {
+            assignment.getSubmissions().clear();
+        }
+
         assignmentRepository.delete(assignment);
+
     }
 
     // 2. NỘP BÀI (HỌC SINH)
@@ -144,18 +244,91 @@ public class AssignmentService {
         AssignmentSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new RuntimeException("Submission not found!"));
 
+        // 1) Store teacher grade on the submission record
         submission.setScore(request.getScore());
         submission.setFeedback(request.getFeedback());
         submission.setStatus("SCORED");
 
+        Assignment assignment = submission.getAssignment();
+        User student = submission.getStudent();
+
+        // 2) Also write the same grade into the gradebook (StudentScore)
+        // so the teacher/student can see it immediately.
+        // The ScoreItem for this assignment is stored in the "Assignment" score
+        // category.
+        try {
+            // Find the "Assignment" category for the assignment's course
+            ScoreCategory assignmentCategory = scoreCategoryRepository.findByIdAndCourseId(
+                    // categoryId is unknown here; so we locate via service by course
+                    null, assignment.getCourse().getId());
+        } catch (Exception ignored) {
+            // We'll resolve via the safer path below.
+        }
+
+        // Resolve the score item(s) for this assignment
+        // getItemsByAssignment returns ScoreItemResponse DTOs.
+        // Re-fetch ScoreItem entities (or update scores) using the returned ids.
+        var scoreItemResponses = scoreItemService.getItemsByAssignment(assignment.getId());
+        List<ScoreItem> itemsForAssignment = scoreItemResponses.stream()
+                .map(scoreItemDto -> scoreItemRepository.findById(scoreItemDto.getId()).orElse(null))
+                .filter(scoreItemEntity -> scoreItemEntity != null)
+                .toList();
+
+        if (!itemsForAssignment.isEmpty()) {
+            // There should normally be exactly one score item for an assignment.
+            // If multiple exist, update them all.
+            for (ScoreItem scoreItem : itemsForAssignment) {
+                StudentScoreRequest scoreReq = new StudentScoreRequest(
+                        student.getId(),
+                        scoreItem.getId(),
+                        Math.round(request.getScore()));
+                studentScoreService.updateScore(scoreReq);
+            }
+        }
+
         return submissionRepository.save(submission);
     }
 
-    public List<AssignmentSubmission> getSubmissionsByAssignment(Long assignmentId) {
-        return submissionRepository.findByAssignmentId(assignmentId);
+    private AssignmentSubmissionResponse toSubmissionDto(AssignmentSubmission sub) {
+        return AssignmentSubmissionResponse.builder()
+                .id(sub.getId())
+                .assignmentId(sub.getAssignment() != null ? sub.getAssignment().getId() : null)
+                .studentId(sub.getStudent() != null ? sub.getStudent().getId() : null)
+                .fileUrl(sub.getFileUrl())
+                .fileName(sub.getFileName())
+                .submittedAt(sub.getSubmittedAt())
+                .status(sub.getStatus())
+                .score(sub.getScore())
+                .feedback(sub.getFeedback())
+                .build();
+    }
+
+    public List<AssignmentSubmissionResponse> getSubmissionsByAssignmentDto(Long assignmentId) {
+        return submissionRepository.findByAssignmentIdWithStudent(assignmentId).stream()
+                .map(this::toSubmissionDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public AssignmentSubmissionResponse getStudentSubmissionDto(Long assignmentId, Long studentId) {
+        AssignmentSubmission sub = submissionRepository
+                .findByAssignmentIdAndStudentIdWithStudent(assignmentId, studentId)
+                .orElse(null);
+
+        if (sub == null) {
+            // Return an empty/marker response so frontend can handle "not submitted".
+            return AssignmentSubmissionResponse.builder()
+                    .assignmentId(assignmentId)
+                    .studentId(studentId)
+                    .status("NOT_SUBMITTED")
+                    .build();
+        }
+
+        return toSubmissionDto(sub);
     }
 
     public List<Assignment> getPendingAssignments(Long studentId) {
         return assignmentRepository.findPendingAssignmentsByStudentId(studentId);
     }
+
 }

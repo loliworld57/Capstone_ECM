@@ -176,6 +176,33 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                 />
             )}
 
+            {/* --- 2. CREATE ASSIGNMENT MODAL --- */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-3xl overflow-hidden rounded-[32px] border border-gray-200 bg-white shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-gray-50">
+                            <h2 className="text-lg font-semibold text-gray-900">Create Assignment</h2>
+                            <button
+                                type="button"
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition"
+                                aria-label="Close create assignment modal"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <AssignmentForm
+                            courseId={courseId}
+                            onSuccess={() => {
+                                setIsAddModalOpen(false);
+                                fetchAssignments();
+                            }}
+                            onCancel={() => setIsAddModalOpen(false)}
+                        />
+                    </div>
+                </div>
+            )}
+
             {/* --- 3. VIEW SUBMISSIONS MODAL --- */}
             {viewSubmissionsId !== null && (
                 <SubmissionsModal
@@ -376,9 +403,10 @@ function SubmissionsModal({ assignmentId, courseId, onClose, onRefresh }: { assi
             toast.success("Submission graded successfully!");
             fetchData();
             onRefresh();
-        } catch (error) {
+        } catch (error: any) {
+            const backendMsg = error?.response?.data?.error;
             console.error("Error grading submission:", error);
-            toast.error("Error grading submission.");
+            toast.error(backendMsg ? `Error: ${backendMsg}` : "Error grading submission.");
         } finally {
             setGrading(prev => ({ ...prev, [submissionId]: false }));
         }
@@ -407,7 +435,11 @@ function SubmissionsModal({ assignmentId, courseId, onClose, onRefresh }: { assi
                     ) : (
                         <div className="space-y-4">
                             {students.map((student) => {
-                                const studentSubmission = submissions.find(sub => sub.student?.id === student.id);
+                                // Important: match by studentId strictly, otherwise students can be shown as submitted incorrectly.
+                                const studentSubmission = submissions.find(
+                                    sub => sub?.studentId === student.id
+                                );
+
                                 return (
                                     <StudentSubmissionItem
                                         key={student.id}
@@ -527,7 +559,7 @@ function StudentSubmissionItem({ student, submission, onGrade, grading }: { stud
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => onGrade(submission.id, parseFloat(score), feedback)}
+                                onClick={() => onGrade(submission.id, Number.isFinite(Number(score)) ? Math.min(100, Math.max(0, Number(score))) : 0, feedback)}
                                 disabled={grading}
                                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
                             >

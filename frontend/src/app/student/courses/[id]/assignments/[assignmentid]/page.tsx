@@ -9,8 +9,9 @@ import api from '@/utils/axiosConfig';
 export default function StudentAssignmentDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const courseId = params.courseId;
-    const assignmentId = params.assignmentId;
+    const courseId = params.id as string;
+    const assignmentId = params.assignmentid as string;
+
 
     const [assignment, setAssignment] = useState<any>(null);
     const [submission, setSubmission] = useState<any>(null);
@@ -34,8 +35,23 @@ export default function StudentAssignmentDetailPage() {
                 // const subRes = await api.get(`/assignments/${assignmentId}/submissions/student/${user.id}`);
                 // setSubmission(subRes.data);
 
-                // TẠM THỜI GIẢ LẬP DỮ LIỆU ĐỂ HIỂN THỊ UI (Giống trong ảnh Moodle)
-                setSubmission(null); // Đổi thành null để thấy form nộp bài
+                // Lấy submission của student hiện tại
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (!user?.id) {
+                    throw new Error('Missing logged-in user id');
+                }
+
+                const subRes = await api.get(
+                    `/assignments/${assignmentId}/submissions/student/${user.id}`
+                );
+
+                setSubmission(subRes.data);
+
+                // Nếu backend trả marker NOT_SUBMITTED thì coi như chưa nộp
+                if (subRes.data?.status === 'NOT_SUBMITTED') {
+                    setSubmission(null);
+                }
+
 
             } catch (error) {
                 console.error(error);
@@ -178,8 +194,8 @@ export default function StudentAssignmentDetailPage() {
                     <div className="flex flex-col md:flex-row">
                         <div className="p-4 font-bold text-gray-700 bg-gray-50/50 w-full md:w-1/3">Grading status</div>
                         <div className="p-4 w-full md:w-2/3 text-gray-700">
-                            {submission?.status === "GRADED" ? (
-                                <span className="font-bold text-green-600">Graded (Score: {submission.score}/10)</span>
+                            {submission?.status === "SCORED" ? (
+                                <span className="font-bold text-green-600">Graded (Score: {submission.score})</span>
                             ) : "Not graded"}
                         </div>
                     </div>
@@ -210,7 +226,7 @@ export default function StudentAssignmentDetailPage() {
                     )}
 
                     {/* Hàng 5: Feedback của giáo viên */}
-                    {(submission?.status === "GRADED" && submission?.feedback) && (
+                    {(submission?.status === "SCORED" && submission?.feedback) && (
                         <div className="flex flex-col md:flex-row">
                             <div className="p-4 font-bold text-gray-700 bg-gray-50/50 w-full md:w-1/3">Teacher Comments</div>
                             <div className="p-4 w-full md:w-2/3 text-gray-800 italic bg-yellow-50/30">
