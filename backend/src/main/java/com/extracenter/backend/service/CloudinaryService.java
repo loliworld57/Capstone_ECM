@@ -17,9 +17,10 @@ public class CloudinaryService {
 
     public String uploadFile(MultipartFile file) throws IOException {
         try {
-            // 1. Phân loại file thông minh
             String contentType = file.getContentType();
             String resourceType = "auto"; // Mặc định cho Ảnh và Video
+            String originalFilename = file.getOriginalFilename();
+            String publicId = originalFilename;
 
             // Nếu là tệp tài liệu (PDF, Word, Excel, PowerPoint, ZIP...) -> Ép kiểu thành
             // "raw"
@@ -38,9 +39,9 @@ public class CloudinaryService {
                     ObjectUtils.asMap(
                             "resource_type", resourceType,
                             "folder", "extracenter_materials",
-                            "use_filename", true, // GIỮ LẠI TÊN GỐC CỦA FILE (vd: Unit_1_Grammar.pdf)
-                            "unique_filename", true // Thêm một đoạn mã ngẫu nhiên nhỏ xíu ở đuôi để tránh trùng lặp
-                    ));
+                            // BẮT BUỘC: Ép Cloudinary lấy tên này làm tên file thay vì chuỗi ngẫu nhiên
+                            "public_id", publicId,
+                            "overwrite", false));
 
             // 3. Lấy URL trả về
             return uploadResult.get("secure_url").toString();

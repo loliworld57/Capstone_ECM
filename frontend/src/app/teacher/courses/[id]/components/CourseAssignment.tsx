@@ -186,6 +186,31 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                 />
             )}
 
+            {/* --- 2. CREATE NEW ASSIGNMENT MODAL --- */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                            <h2 className="font-bold text-gray-800 text-lg">Create New Assignment</h2>
+                            <button
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="text-gray-500 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <AssignmentForm
+                            courseId={courseId}
+                            onSuccess={() => {
+                                setIsAddModalOpen(false);
+                                fetchAssignments();
+                            }}
+                            onCancel={() => setIsAddModalOpen(false)}
+                        />
+                    </div>
+                </div>
+            )}
+
             {/* HEADER */}
             <div className="bg-[var(--color-main)] text-white px-6 py-4 flex items-center justify-between font-semibold">
                 <div className="flex items-center gap-2">
