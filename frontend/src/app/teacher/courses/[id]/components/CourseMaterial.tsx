@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import api from '@/utils/axiosConfig';
 import MaterialAddForm from "./MaterialAddForm";
 import ConfirmModal from "@/components/ConfirmModal";
+import AiSummaryModal from "./AiSummaryModal";
 
 
 interface Props {
@@ -30,6 +31,7 @@ interface Material {
     fileName: string;
     fileUrl: string;
     fileType: string;
+    summary?: string; // Optional field for AI-generated summary
     uploadedDate: string;
 }
 
@@ -40,6 +42,16 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+
+    const [isAiSummaryModalOpen, setIsAiSummaryModalOpen] = useState(false);
+    const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+    const [initialModalState, setInitialModalState] = useState<"INPUT" | "REVIEW">("INPUT");
+
+    const openSummaryModal = (material: Material, startingState: "INPUT" | "REVIEW") => {
+        setSelectedMaterial(material);
+        setInitialModalState(startingState);
+        setIsAiSummaryModalOpen(true);
+    }
 
     // Fetch materials from the backend
     const fetchMaterials = async () => {
@@ -141,6 +153,38 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                 </div>
             )}
 
+            {isAiSummaryModalOpen && selectedMaterial && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-xl rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                            <h2 className="font-bold text-gray-800 text-lg">
+                                ✨ AI Summary: {selectedMaterial.fileName}
+                            </h2>
+                            <button
+                                onClick={() => setIsAiSummaryModalOpen(false)}
+                                className="text-gray-500 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-4">
+                            <AiSummaryModal
+                                materialId={selectedMaterial.id}
+                                existingSummary={selectedMaterial.summary}
+                                initialState={initialModalState}
+                                onSaveSuccess={() => {
+                                    setIsAiSummaryModalOpen(false);
+                                    fetchMaterials();
+                                }}
+                                onCancel={() => setIsAiSummaryModalOpen(false)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             {/* HEADER */}
             <div className="bg-[var(--color-main)] text-white px-6 py-4 flex items-center justify-between font-semibold">
                 <div className="flex items-center gap-2">
@@ -234,6 +278,32 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                                                 >
                                                     <Download size={18} />
                                                 </a>
+                                                {material.summary ? (
+                                                    <>
+                                                        {/* Button 1: Just view the existing summary */}
+                                                        <button
+                                                            onClick={() => openSummaryModal(material, "REVIEW")}
+                                                            className="text-green-600 hover:text-green-800 bg-green-50 px-2 py-1 rounded"
+                                                        >
+                                                            👁️ View
+                                                        </button>
+
+                                                        {/* Button 2: Force a new generation */}
+                                                        <button
+                                                            onClick={() => openSummaryModal(material, "INPUT")}
+                                                            className="text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded"
+                                                        >
+                                                            ✨ Regenerate
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => openSummaryModal(material, "INPUT")}
+                                                        className="text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded"
+                                                    >
+                                                        ✨ Generate Summary
+                                                    </button>
+                                                )}
                                                 {!readOnly && (
                                                     <button
                                                         onClick={() => setPendingDeleteId(material.id)}
@@ -246,6 +316,7 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                                                 )}
                                             </div>
                                         </td>
+
                                     </tr>
                                 ))
                             )}

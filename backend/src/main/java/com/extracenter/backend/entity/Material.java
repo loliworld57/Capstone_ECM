@@ -23,6 +23,9 @@ public class Material {
 
     private String fileType; // e.g., "PDF", "DOCX", "IMAGE", "VIDEO"
 
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
     @Column(name = "uploaded_date", updatable = false)
     private LocalDateTime uploadedDate = LocalDateTime.now();
 

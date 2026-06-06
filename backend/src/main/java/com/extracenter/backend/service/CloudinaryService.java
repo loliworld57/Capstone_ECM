@@ -39,7 +39,6 @@ public class CloudinaryService {
                     ObjectUtils.asMap(
                             "resource_type", resourceType,
                             "folder", "extracenter_materials",
-                            // BẮT BUỘC: Ép Cloudinary lấy tên này làm tên file thay vì chuỗi ngẫu nhiên
                             "public_id", publicId,
                             "overwrite", false));
 
