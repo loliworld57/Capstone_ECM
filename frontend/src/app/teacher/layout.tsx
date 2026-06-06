@@ -23,11 +23,15 @@ export default function TeacherLayout({
     const compactSidebarQuery = "(max-width: 1919px)";
     const pathname = usePathname();
     const router = useRouter();
-    const [user] = useState<StoredUser | null>(() => getStoredUser());
+    const [user, setUser] = useState<StoredUser | null>(null);
     const [collapsed, setCollapsed] = useState(false);
     const [isCompactSidebar, setIsCompactSidebar] = useState(false);
     const [pendingInvites, setPendingInvites] = useState(0);
     const sidebarRef = useRef<HTMLElement | null>(null);
+
+    useEffect(() => {
+        setUser(getStoredUser());
+    }, []);
 
     // fetch invitation count whenever user or route changes
     useEffect(() => {
