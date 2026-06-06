@@ -2,11 +2,12 @@ import { BookOpen, Users, UserCog, Book, NotebookPen, ClipboardCheck } from "luc
 
 interface Props {
     activeTab: string;
-    setActiveTab: (tab: "General Info" | "Students" | "Materials" | "Attendance" | "Enrollment" | "Assignments") => void;
+    setActiveTab: (tab: "General Info" | "Students" | "Materials" | "Attendance" | "Enrollment" | "Assignments" | "Gradebook") => void;
     isManager: boolean;
+    courseId: number;
 }
 
-export default function TabsInCourse({ activeTab, setActiveTab, isManager }: Props) {
+export default function TabsInCourse({ activeTab, setActiveTab, isManager, courseId }: Props) {
 
     const tabStyle = (tab: string) =>
         `px-4 py-2 font-medium flex items-center gap-2 border-b-4 border-r-2 transition
@@ -52,6 +53,14 @@ export default function TabsInCourse({ activeTab, setActiveTab, isManager }: Pro
             >
                 <NotebookPen size={18} />
                 Assignments
+            </button>
+
+            <button
+                onClick={() => setActiveTab("Gradebook")}
+                className={tabStyle("Gradebook")}
+            >
+                <ClipboardCheck size={18} />
+                Gradebook
             </button>
 
             <button

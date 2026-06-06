@@ -29,7 +29,7 @@ interface Assignment {
     fileName: string | null;
     createdDate: string;
     // Tạm thời giả lập dữ liệu trả về từ API có thêm thông tin submission
-    submissionStatus?: "SUBMITTED" | "NOT_SUBMITTED" | "LATE";
+    submissionStatus?: "SUBMITTED" | "NOT_SUBMITTED" | "LATE" | "SCORED";
     submittedAt?: string | null;
 }
 
@@ -45,16 +45,18 @@ export default function StudentCourseAssignments({ courseId }: Props) {
         setIsLoading(true);
         try {
             // Lưu ý: Sau này Backend cần trả về kèm theo trạng thái nộp bài của học sinh
-            const response = await api.get(`/assignments/course/${courseId}`);
+            const user = JSON.parse(
+                localStorage.getItem("user") || "{}"
+            );
 
-            // Tạm thời giả lập trạng thái cho UI (Bạn có thể xóa phần giả lập này sau khi Backend update)
-            const dataWithMockStatus = response.data.map((a: any, index: number) => ({
-                ...a,
-                submissionStatus: index % 2 === 0 ? "SUBMITTED" : "NOT_SUBMITTED",
-                submittedAt: index % 2 === 0 ? new Date(Date.now() - Math.random() * 86400000).toISOString() : null // Mock submit time
-            }));
+            const response = await api.get(
+                `/assignments/course/${courseId}/student/${user.id}`
+            );
 
-            setAssignments(dataWithMockStatus);
+            // TODO: when backend provides student submission status per assignment, remove this mock.
+            // For now we keep real assignment data only.
+            setAssignments(response.data);
+
         } catch (error) {
             console.error("Error fetching assignments:", error);
             toast.error("Unable to load the assignments list.");
@@ -95,9 +97,8 @@ export default function StudentCourseAssignments({ courseId }: Props) {
 
                 <button
                     onClick={() => setShowOverdueOnly(!showOverdueOnly)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition text-sm font-bold ${
-                        showOverdueOnly ? 'bg-red-600 hover:bg-red-700' : 'bg-white/20 hover:bg-white/30'
-                    }`}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition text-sm font-bold ${showOverdueOnly ? 'bg-red-600 hover:bg-red-700' : 'bg-white/20 hover:bg-white/30'
+                        }`}
                     title={showOverdueOnly ? 'Show all assignments' : 'Show overdue only'}
                 >
                     <Filter size={16} /> {showOverdueOnly ? 'Overdue Only' : 'All Assignments'}
@@ -147,8 +148,9 @@ export default function StudentCourseAssignments({ courseId }: Props) {
                             ) : (
                                 filteredAssignments.map((assignment) => {
                                     const overdue = isOverdue(assignment.dueDate);
-                                    const submitted = assignment.submissionStatus === "NOT_SUBMITTED"; // Giả lập, sau này sẽ dựa vào API trả về
-
+                                    const submitted =
+                                        assignment.submissionStatus === "SUBMITTED" ||
+                                        assignment.submissionStatus === "SCORED";
                                     return (
                                         <tr key={assignment.id} className="border-b last:border-0 border-gray-200 hover:bg-[var(--color-secondary)]/5 transition group">
                                             <td className="p-4">
