@@ -121,17 +121,7 @@ export default function CourseDetailPage() {
                             {course.center?.name || "Center not updated"}
 
                         </p>
-
                     </div>
-
-                    <Link
-                        href={`/teacher/courses/${courseId}/edit`}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-[var(--color-main)] bg-[var(--color-main)] text-white hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition font-medium"
-                    >
-                        <Edit size={18} />
-                        Edit
-                    </Link>
-
                 </div>
 
             </div>
@@ -161,9 +151,7 @@ export default function CourseDetailPage() {
 
                                 {course.description ||
                                     "No detailed description is available for this course."}
-
                             </p>
-
                         </div>
 
                     </div>

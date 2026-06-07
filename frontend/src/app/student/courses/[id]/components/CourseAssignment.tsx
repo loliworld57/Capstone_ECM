@@ -8,7 +8,6 @@ import {
     Loader2,
     Clock,
     Eye,
-    Paperclip,
     CheckCircle2,
     XCircle,
     Filter
@@ -28,7 +27,6 @@ interface Assignment {
     fileUrl: string | null;
     fileName: string | null;
     createdDate: string;
-    // Tạm thời giả lập dữ liệu trả về từ API có thêm thông tin submission
     submissionStatus?: "SUBMITTED" | "NOT_SUBMITTED" | "LATE" | "SCORED";
     submittedAt?: string | null;
 }
@@ -44,7 +42,6 @@ export default function StudentCourseAssignments({ courseId }: Props) {
     const fetchAssignments = async () => {
         setIsLoading(true);
         try {
-            // Lưu ý: Sau này Backend cần trả về kèm theo trạng thái nộp bài của học sinh
             const user = JSON.parse(
                 localStorage.getItem("user") || "{}"
             );
@@ -150,7 +147,8 @@ export default function StudentCourseAssignments({ courseId }: Props) {
                                     const overdue = isOverdue(assignment.dueDate);
                                     const submitted =
                                         assignment.submissionStatus === "SUBMITTED" ||
-                                        assignment.submissionStatus === "SCORED";
+                                        assignment.submissionStatus === "SCORED" ||
+                                        assignment.submissionStatus === "LATE";
                                     return (
                                         <tr key={assignment.id} className="border-b last:border-0 border-gray-200 hover:bg-[var(--color-secondary)]/5 transition group">
                                             <td className="p-4">

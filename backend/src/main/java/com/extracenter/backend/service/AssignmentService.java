@@ -2,7 +2,9 @@ package com.extracenter.backend.service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.extracenter.backend.dto.AssignmentSubmissionResponse;
 import com.extracenter.backend.dto.ScoreCategoryRequest;
 import com.extracenter.backend.dto.ScoreRequest;
+import com.extracenter.backend.dto.StudentAssignmentDTO;
 import com.extracenter.backend.dto.StudentAssignmentResponse;
 import com.extracenter.backend.dto.StudentScoreRequest;
 import com.extracenter.backend.entity.Assignment;
@@ -28,12 +31,14 @@ import com.extracenter.backend.repository.CourseRepository;
 import com.extracenter.backend.repository.ScoreCategoryRepository;
 import com.extracenter.backend.repository.ScoreItemRepository;
 import com.extracenter.backend.repository.UserRepository;
+import com.extracenter.backend.entity.AssignmentSubmission;
 
 @Service
 public class AssignmentService {
 
     @Autowired
     private AssignmentRepository assignmentRepository;
+
     @Autowired
     private AssignmentSubmissionRepository submissionRepository;
     @Autowired
@@ -329,6 +334,38 @@ public class AssignmentService {
 
     public List<Assignment> getPendingAssignments(Long studentId) {
         return assignmentRepository.findPendingAssignmentsByStudentId(studentId);
+    }
+
+    public List<StudentAssignmentDTO> getAssignmentsWithStudentStatus(Long courseId, Long studentId) {
+        // 1. Get all assignments for this course
+        List<Assignment> assignments = assignmentRepository.findByCourseId(courseId);
+        List<StudentAssignmentDTO> dtos = new ArrayList<>();
+
+        // 2. Loop through and attach the student's submission status
+        for (Assignment assignment : assignments) {
+            StudentAssignmentDTO dto = new StudentAssignmentDTO();
+            dto.setId(assignment.getId());
+            dto.setTitle(assignment.getTitle());
+            dto.setDescription(assignment.getDescription());
+            dto.setDueDate(assignment.getDueDate());
+
+            // 3. Look for a submission from this specific student
+            Optional<AssignmentSubmission> submissionOpt = submissionRepository
+                    .findByAssignmentIdAndStudentId(assignment.getId(), studentId);
+
+            if (submissionOpt.isPresent()) {
+                AssignmentSubmission sub = submissionOpt.get();
+                dto.setSubmissionStatus(sub.getStatus()); // Assuming status is an Enum
+                dto.setSubmittedAt(sub.getSubmittedAt());
+            } else {
+                dto.setSubmissionStatus("NOT_SUBMITTED");
+                dto.setSubmittedAt(null);
+            }
+
+            dtos.add(dto);
+        }
+
+        return dtos;
     }
 
 }
