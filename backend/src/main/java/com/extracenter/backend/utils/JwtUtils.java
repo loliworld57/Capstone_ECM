@@ -22,24 +22,18 @@ public class JwtUtils {
     @Value("${jwt.expiration}")
     private long expirationTime;
 
-    // Khóa bí mật (Nên để phức tạp và giấu trong file cấu hình .env)
-    private final String SECRET_KEY = secretKey;
-
-    // Thời gian hết hạn: 24 giờ (tính bằng mili giây)
-    private final long EXPIRATION_TIME = expirationTime;
-
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    // 1. Tạo Token từ User
+
     public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("role", user.getRole().getName())
                 .claim("userId", user.getId())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
