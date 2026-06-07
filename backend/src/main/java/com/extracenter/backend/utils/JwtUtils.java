@@ -1,34 +1,39 @@
 package com.extracenter.backend.utils;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Component;
-import com.extracenter.backend.entity.User;
-
 import java.security.Key;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import com.extracenter.backend.entity.User;
+
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+
 @Component
 public class JwtUtils {
+    
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    // Khóa bí mật (Nên để phức tạp và giấu trong file cấu hình .env)
-    private static final String SECRET_KEY = "DayLaKhoaBiMatCuaECMSystemRatDaiVaPhucTapDeBaoMat123456";
-
-    // Thời gian hết hạn: 24 giờ (tính bằng mili giây)
-    private static final long EXPIRATION_TIME = 86400000;
+    @Value("${jwt.expiration}")
+    private long expirationTime;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    // 1. Tạo Token từ User
+
     public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("role", user.getRole().getName())
                 .claim("userId", user.getId())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
