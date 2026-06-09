@@ -83,6 +83,10 @@ public class Course {
     @JoinColumn(name = "pending_teacher_id")
     private User pendingTeacher;
 
+    // Tuition fee base (VND). Students cannot pay online; this is used for tracking.
+    @Column(nullable = true)
+    private Long tuitionFeeVnd;
+
     // 4. List of enrollments (Replaces the old direct Set<User> students)
     // CascadeType.ALL & orphanRemoval: Deleting a Course safely deletes all
     // associated Enrollments

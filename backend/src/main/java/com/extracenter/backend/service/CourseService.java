@@ -100,6 +100,9 @@ public class CourseService {
         // 2. Create and save the Course
         Course course = new Course();
         course.setName(request.getName());
+        // Tuition fee base (VND) used for tracking student tuition offline
+        course.setTuitionFeeVnd(request.getTuitionFeeVnd());
+
 
         if (request.getSubjectId() != null) {
             Subject subject = subjectRepository.findById(request.getSubjectId())
@@ -447,9 +450,11 @@ public class CourseService {
         course.setEndDate(request.getEndDate());
         course.setCenter(center);
         course.setTeacher(teacher);
+        course.setTuitionFeeVnd(request.getTuitionFeeVnd());
 
         if (deriveStatusFromDates) {
             course.setStatus(deriveStatusFromDates(course.getStartDate(), course.getEndDate()));
+
         }
     }
 
