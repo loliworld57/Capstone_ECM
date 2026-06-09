@@ -78,8 +78,10 @@ public class SecurityConfig {
                                                                 "/api/centers/teacher/**",
                                                                 "/api/centers/teaching/**",
                                                                 "/api/tuition/**",
-                                                                "/api/centers/finance/**")
+                                                                "/api/centers/finance/**",
+                                                                "/api/courses/finance/**")
                                                 .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+
 
 
                                                 // CENTERS ACCESS
