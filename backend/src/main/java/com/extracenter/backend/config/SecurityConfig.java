@@ -77,8 +77,10 @@ public class SecurityConfig {
                                                                 "/api/courses/invitations/**",
                                                                 "/api/centers/teacher/**",
                                                                 "/api/centers/teaching/**",
-                                                                "/api/tuition/**")
+                                                                "/api/tuition/**",
+                                                                "/api/centers/finance/**")
                                                 .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+
 
                                                 // CENTERS ACCESS
                                                 .requestMatchers("/api/centers/**")
