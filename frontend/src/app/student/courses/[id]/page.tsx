@@ -22,6 +22,7 @@ import CourseMaterials from "./components/CourseMaterial";
 import CourseAssignments from "./components/CourseAssignment";
 import { formatDateValue } from "@/utils/dateFormat";
 import { getCourseStatusClasses, getCourseStatusLabel } from "@/utils/courseStatus";
+import CourseQuizzes from "./components/CourseQuizzes";
 
 export default function CourseDetailPage() {
     const params = useParams();
@@ -30,7 +31,7 @@ export default function CourseDetailPage() {
 
     const [course, setCourse] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<
-        "General Info" | "Attendance" | "Materials" | "Assignments"
+        "General Info" | "Attendance" | "Materials" | "Assignments" | "Quizzes"
     >("General Info");
 
     const [loading, setLoading] = useState(true);
@@ -241,6 +242,13 @@ export default function CourseDetailPage() {
             {activeTab === "Assignments" && (
                 <div>
                     <CourseAssignments courseId={courseId} />
+                </div>
+            )}
+
+            {/* QUIZZES */}
+            {activeTab === "Quizzes" && (
+                <div>
+                    <CourseQuizzes courseId={courseId} />
                 </div>
             )}
 

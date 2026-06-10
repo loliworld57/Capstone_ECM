@@ -21,6 +21,8 @@ public interface ClassSessionRepository extends JpaRepository<ClassSession, Long
         // Used on the "Course Details" page to show the syllabus/timeline.
         List<ClassSession> findByCourseIdOrderByDateAsc(Long courseId);
 
+        List<ClassSession> findByCourseId(Long courseId);
+
         // 2. Calendar View (Admin): Get ALL classes happening within a specific week or
         // month
         List<ClassSession> findByDateBetween(LocalDate startDate, LocalDate endDate);
@@ -60,4 +62,5 @@ public interface ClassSessionRepository extends JpaRepository<ClassSession, Long
         @Query("SELECT cs FROM ClassSession cs JOIN cs.course c JOIN c.enrollments e JOIN e.student s WHERE s.id = :studentId AND cs.startTime >= :now ORDER BY cs.startTime ASC")
         List<ClassSession> findUpcomingSessionsByStudentId(@Param("studentId") Long studentId,
                         @Param("now") LocalDateTime now);
+
 }

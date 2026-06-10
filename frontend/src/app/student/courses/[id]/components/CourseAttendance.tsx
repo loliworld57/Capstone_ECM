@@ -1,243 +1,255 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
+import { useEffect, useState, useMemo } from "react";
 import {
-    AttendanceStatus,
-    AttendanceSheetStudentRow,
-    CourseSession,
-    getAttendanceList,
-    getAttendanceSheet,
-    getCourseSessions,
-    saveAttendance,
-} from "@/services/attendanceService";
+    BrainCircuit,
+    Loader2,
+    Calendar,
+    CheckCircle,
+    XCircle,
+    AlertCircle,
+    HelpCircle,
+    ChevronLeft,
+    ChevronRight
+} from "lucide-react";
+import toast from "react-hot-toast";
+import api from '@/utils/axiosConfig';
 import { formatDateValue } from "@/utils/dateFormat";
 
 interface Props {
     courseId: number;
 }
 
-const STATUS_OPTIONS: AttendanceStatus[] = ["ATTEND", "ABSENT", "LATE", "EXCUSE"];
-
-const STATUS_LABELS: Record<AttendanceStatus, string> = {
-    ATTEND: "Attend",
-    ABSENT: "Absent",
-    LATE: "Late",
-    EXCUSE: "Excuse",
-};
+interface StudentAttendanceRecord {
+    sessionId: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+    classroomLocation: string | null;
+    status: "ATTEND" | "ABSENT" | "LATE" | "EXCUSE" | "NOT_TAKEN";
+}
 
 export default function CourseAttendance({ courseId }: Props) {
-    const [sessions, setSessions] = useState<CourseSession[]>([]);
-    const [selectedSessionId, setSelectedSessionId] = useState<number | "">("");
-    const [rows, setRows] = useState<AttendanceSheetStudentRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [isChecklistLocked, setIsChecklistLocked] = useState(false);
+    const [records, setRecords] = useState<StudentAttendanceRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const fetchSessions = async (targetSessionId?: number) => {
+    // --- PAGINATION STATES ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 10;
+
+    const fetchStudentAttendance = async () => {
+        setIsLoading(true);
         try {
-            setLoading(true);
-            const data = await getCourseSessions(courseId);
-            setSessions(data);
-
-            if (targetSessionId && data.some((s) => s.id === targetSessionId)) {
-                setSelectedSessionId(targetSessionId);
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            if (!user.id) {
+                toast.error("User session expired. Please log in again.");
                 return;
             }
 
-            if (data.length > 0) {
-                setSelectedSessionId(data[0].id);
-            } else {
-                setSelectedSessionId("");
-            }
+            const response = await api.get(`/attendance/course/${courseId}/student/${user.id}`);
+            setRecords(response.data || []);
+            setCurrentPage(1); // Reset back to page 1 whenever new data loads
         } catch (error: any) {
-            console.error(error);
-            toast.error(error?.response?.data?.error || "Cannot load sessions.");
+            console.error("Error loading student attendance logs:", error);
+            toast.error(error?.response?.data?.error || "Cannot load your attendance logs.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchSessions();
+        if (courseId) fetchStudentAttendance();
     }, [courseId]);
 
-    useEffect(() => {
-        if (!selectedSessionId) {
-            setRows([]);
-            return;
+    // --- REAL-TIME STATS CALCULATIONS ---
+    const stats = useMemo(() => {
+        const total = records.filter(r => r.status !== "NOT_TAKEN").length;
+        if (total === 0) return { attend: 0, absent: 0, late: 0, excuse: 0, rate: 100 };
+
+        const attend = records.filter(r => r.status === "ATTEND").length;
+        const absent = records.filter(r => r.status === "ABSENT").length;
+        const late = records.filter(r => r.status === "LATE").length;
+        const excuse = records.filter(r => r.status === "EXCUSE").length;
+        const rate = Math.round(((attend + late) / total) * 100);
+
+        return { attend, absent, late, excuse, rate };
+    }, [records]);
+
+    // --- PAGINATION LOGIC CALCULATIONS ---
+    const totalPages = Math.ceil(records.length / rowsPerPage) || 1;
+
+    // Slice the records array to isolate only the 10 slots for the current page view
+    const paginatedRecords = useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        return records.slice(startIndex, endIndex);
+    }, [records, currentPage]);
+
+    const renderStatusBadge = (status: StudentAttendanceRecord["status"]) => {
+        switch (status) {
+            case "ATTEND":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                        <CheckCircle size={12} /> Present
+                    </span>
+                );
+            case "ABSENT":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                        <XCircle size={12} /> Absent
+                    </span>
+                );
+            case "LATE":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-200">
+                        <AlertCircle size={12} /> Late
+                    </span>
+                );
+            case "EXCUSE":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        <HelpCircle size={12} /> Excused
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 italic">
+                        No record
+                    </span>
+                );
         }
+    };
 
-        const fetchSheet = async () => {
-            try {
-                setLoading(true);
-                const [sheet, attendance] = await Promise.all([
-                    getAttendanceSheet(Number(selectedSessionId)),
-                    getAttendanceList(Number(selectedSessionId)),
-                ]);
-                setRows(sheet.students || []);
-                setIsChecklistLocked((attendance || []).length > 0);
-            } catch (error: any) {
-                console.error(error);
-                toast.error(error?.response?.data?.error || "Cannot load attendance sheet.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchSheet();
-    }, [selectedSessionId]);
-
-    const selectedSession = useMemo(
-        () => sessions.find((s) => s.id === Number(selectedSessionId)) || null,
-        [sessions, selectedSessionId]
-    );
-
-
-    const setStatusForStudent = (studentId: number, status: AttendanceStatus) => {
-        if (isChecklistLocked) {
-            return;
-        }
-
-        setRows((prev) =>
-            prev.map((row) => (row.studentId === studentId ? { ...row, status } : row))
+    if (isLoading) {
+        return (
+            <div className="p-12 text-center text-gray-500">
+                <Loader2 size={24} className="animate-spin text-[var(--color-main)] mx-auto mb-2" />
+                <p>Syncing your academic attendance records...</p>
+            </div>
         );
-    };
-
-    const markAll = (status: AttendanceStatus) => {
-        if (isChecklistLocked) {
-            return;
-        }
-
-        setRows((prev) => prev.map((row) => ({ ...row, status })));
-    };
-
-    const handleSave = async () => {
-        if (!selectedSessionId) {
-            toast.error("Please select a session first.");
-            return;
-        }
-
-        try {
-            setSaving(true);
-            await saveAttendance({
-                classSessionId: Number(selectedSessionId),
-                studentStatuses: rows.map((row) => ({
-                    studentId: row.studentId,
-                    status: row.status,
-                    note: row.note,
-                })),
-            });
-            toast.success("Attendance saved.");
-            setIsChecklistLocked(true);
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error?.response?.data?.error || "Cannot save attendance.");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-
-    if (loading && sessions.length === 0) {
-        return <div className="p-6 text-center text-[var(--color-text)]">Loading attendance...</div>;
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-                <select
-                    value={selectedSessionId}
-                    onChange={(e) => setSelectedSessionId(e.target.value ? Number(e.target.value) : "")}
-                    className="rounded-lg border border-[var(--color-main)] bg-white px-3 py-2 text-sm text-[var(--color-text)] outline-none"
-                >
-                    <option value="">Select a session</option>
-                    {sessions.map((session) => (
-                        <option key={session.id} value={session.id}>
-                            {formatDateValue(session.date)} | {session.startTime?.slice(0, 5)} - {session.endTime?.slice(0, 5)}
-                            {session.classroomLocation ? ` | ${session.classroomLocation}` : ""}
-                        </option>
-                    ))}
-                </select>
+        <div className="space-y-6">
+
+            {/* TOP STATS DASHBOARD HERO */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-white border p-4 rounded-xl shadow-xs text-center flex flex-col justify-center">
+                    <span className="text-xs font-bold uppercase text-gray-400 tracking-wider">Attendance Rate</span>
+                    <span className={`text-2xl font-extrabold mt-1 ${stats.rate >= 80 ? "text-green-600" : "text-red-600"}`}>
+                        {stats.rate}%
+                    </span>
+                </div>
+                <div className="bg-green-50/50 border border-green-100 p-4 rounded-xl text-center">
+                    <span className="text-xs font-bold uppercase text-green-700 tracking-wider">Present</span>
+                    <span className="block text-2xl font-extrabold text-green-900 mt-1">{stats.attend}</span>
+                </div>
+                <div className="bg-yellow-50/50 border border-yellow-100 p-4 rounded-xl text-center">
+                    <span className="text-xs font-bold uppercase text-yellow-700 tracking-wider">Late</span>
+                    <span className="block text-2xl font-extrabold text-yellow-900 mt-1">{stats.late}</span>
+                </div>
+                <div className="bg-red-50/50 border border-red-100 p-4 rounded-xl text-center">
+                    <span className="text-xs font-bold uppercase text-red-700 tracking-wider">Absent</span>
+                    <span className="block text-2xl font-extrabold text-red-900 mt-1">{stats.absent}</span>
+                </div>
+                <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl text-center">
+                    <span className="text-xs font-bold uppercase text-blue-700 tracking-wider">Excused</span>
+                    <span className="block text-2xl font-extrabold text-blue-900 mt-1">{stats.excuse}</span>
+                </div>
             </div>
 
-            {selectedSession && (
-                <div className="rounded-lg border border-[var(--color-main)] bg-[var(--color-soft-white)] p-3 text-sm text-[var(--color-text)]">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                            Session: {formatDateValue(selectedSession.date)} | {selectedSession.startTime?.slice(0, 5)} - {selectedSession.endTime?.slice(0, 5)}
-                            {selectedSession.classroomLocation ? ` | ${selectedSession.classroomLocation}` : ""}
-                        </div>
-                        {isChecklistLocked && (
-                            <button
-                                type="button"
-                                onClick={() => setIsChecklistLocked(false)}
-                                className="rounded border border-[var(--color-main)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-main)]"
-                            >
-                                Edit
-                            </button>
-                        )}
-                    </div>
+            {/* ATTENDANCE LOGS HISTORY TABLE */}
+            <div className="bg-white rounded-xl border border-[var(--color-main)] shadow-xs overflow-hidden">
+                <div className="bg-[var(--color-main)] text-white px-6 py-3.5 flex items-center gap-2 font-semibold text-sm">
+                    <BrainCircuit size={16} />
+                    Your Detailed Attendance History ({records.length} Sessions)
                 </div>
-            )}
 
-            {rows.length === 0 ? (
-                <div className="rounded-lg border bg-white p-6 text-center text-gray-500">
-                    {sessions.length === 0 ? "No available sessions from active class slots." : "No students found for this session."}
-                </div>
-            ) : (
-                <div className="overflow-x-auto rounded-lg border border-[var(--color-main)] bg-white">
-                    <table className="min-w-full text-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm border-collapse">
                         <thead>
-                            <tr className="bg-[var(--color-main)] text-white">
-                                <th className="px-3 py-2 text-left">Student</th>
-                                {STATUS_OPTIONS.map((status) => (
-                                    <th key={status} className="px-3 py-2 text-center">
-                                        <button
-                                            onClick={() => markAll(status)}
-                                            disabled={isChecklistLocked}
-                                            className="rounded border border-white/40 px-2 py-1 text-xs hover:bg-white/20"
-                                            type="button"
-                                        >
-                                            {STATUS_LABELS[status]} (All)
-                                        </button>
-                                    </th>
-                                ))}
+                            <tr className="bg-gray-50 text-gray-600 border-b border-gray-200 text-xs uppercase tracking-wider font-bold">
+                                <th className="p-4 w-12 text-center">#</th>
+                                <th className="p-4">Session Date</th>
+                                <th className="p-4 w-48">Class Time</th>
+                                <th className="p-4 w-48">Location</th>
+                                <th className="p-4 w-40 text-center">Your Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {rows.map((row) => (
-                                <tr key={row.studentId} className="border-t">
-                                    <td className="px-3 py-2 text-[var(--color-text)]">
-                                        <div className="font-medium">{row.lastName} {row.firstName}</div>
-                                        <div className="text-xs text-gray-500">{row.email || "No email"}</div>
+                            {paginatedRecords.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="text-center text-gray-500 py-10 italic">
+                                        No session attendance records found for this course tracking branch.
                                     </td>
-                                    {STATUS_OPTIONS.map((status) => (
-                                        <td key={status} className="px-3 py-2 text-center">
-                                            <input
-                                                type="radio"
-                                                name={`attendance-${row.studentId}`}
-                                                disabled={isChecklistLocked}
-                                                checked={row.status === status}
-                                                onChange={() => setStatusForStudent(row.studentId, status)}
-                                            />
-                                        </td>
-                                    ))}
                                 </tr>
-                            ))}
+                            ) : (
+                                paginatedRecords.map((record, index) => {
+                                    // Calculate chronological sequence number across pages
+                                    const globalIndex = (currentPage - 1) * rowsPerPage + index + 1;
+
+                                    return (
+                                        <tr key={record.sessionId} className="border-b last:border-0 hover:bg-gray-50/70 transition">
+                                            <td className="p-4 text-center text-gray-400 font-mono text-xs">{globalIndex}</td>
+                                            <td className="p-4 font-semibold text-gray-900">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar size={14} className="text-[var(--color-main)]" />
+                                                    {formatDateValue(record.date)}
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-gray-600 font-medium whitespace-nowrap">
+                                                {record.startTime?.slice(0, 5)} - {record.endTime?.slice(0, 5)}
+                                            </td>
+                                            <td className="p-4 text-gray-500 font-medium">
+                                                {record.classroomLocation || "Online / Virtual Group"}
+                                            </td>
+                                            <td className="p-4 text-center whitespace-nowrap">
+                                                {renderStatusBadge(record.status)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>
-            )}
 
-            <div className="flex justify-center pt-2">
-                <button
-                    onClick={handleSave}
-                    disabled={saving || !selectedSessionId || rows.length === 0 || isChecklistLocked}
-                    className="rounded-lg border-2 border-[var(--color-main)] bg-[var(--color-main)] px-6 py-2 text-sm font-bold text-white transition hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] disabled:opacity-50"
-                >
-                    {saving ? "Saving..." : "Save Attendance"}
-                </button>
+                {/* --- FOOTER PAGINATION NAVIGATION BAR --- */}
+                {records.length > rowsPerPage && (
+                    <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between text-xs font-medium text-gray-600">
+                        <div>
+                            Showing <span className="font-bold">{(currentPage - 1) * rowsPerPage + 1}</span> to{" "}
+                            <span className="font-bold">
+                                {Math.min(currentPage * rowsPerPage, records.length)}
+                            </span>{" "}
+                            of <span className="font-bold">{records.length}</span> entries
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="p-1.5 rounded-md border bg-white text-gray-500 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+
+                            <div className="px-3 py-1 bg-white border rounded-md font-bold text-gray-800 shadow-3xs">
+                                Page {currentPage} of {totalPages}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="p-1.5 rounded-md border bg-white text-gray-500 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
