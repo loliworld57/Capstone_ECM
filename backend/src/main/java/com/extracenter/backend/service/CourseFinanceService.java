@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,10 +49,14 @@ public class CourseFinanceService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found: " + courseId));
 
-        assertCourseOwnerPermission(courseId, request.getActorUserId());
-        validateAmount(request.getAmountVnd());
+        User currentUser = getCurrentUser();
+        Long actorUserId = currentUser.getId();
+        assertCourseOwnerPermission(courseId, actorUserId);
 
+
+        validateAmount(request.getAmountVnd());
         CourseFinanceRecord record = new CourseFinanceRecord();
+
         record.setCourse(course);
         record.setName(request.getName());
         record.setType(request.getType());
@@ -59,9 +64,8 @@ public class CourseFinanceService {
         record.setDescription(request.getDescription());
         record.setDate(request.getDate());
 
-        User actor = userRepository.findById(request.getActorUserId())
-                .orElseThrow(() -> new RuntimeException("Actor user not found"));
-        record.setCreatedBy(actor);
+        record.setCreatedBy(currentUser);
+
 
         return courseFinanceRecordRepository.save(record);
     }
@@ -72,15 +76,15 @@ public class CourseFinanceService {
                 .orElseThrow(() -> new RuntimeException("Course finance record not found: " + recordId));
 
         Course course = existing.getCourse();
-        assertCourseOwnerPermission(course.getId(), request.getActorUserId());
+        Long actorUserId = getCurrentUser().getId();
+        assertCourseOwnerPermission(course.getId(), actorUserId);
+
         validateAmount(request.getAmountVnd());
 
-        User actor = userRepository.findById(request.getActorUserId())
-                .orElseThrow(() -> new RuntimeException("Actor user not found"));
-
         // Teacher can only update what they created.
-        if (!isCourseOwner(course, request.getActorUserId())
-                && (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(request.getActorUserId()))) {
+        if (!isCourseOwner(course, actorUserId)
+                && (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(actorUserId))) {
+
             throw new RuntimeException("You do not have permission to update this record.");
         }
 
@@ -89,13 +93,16 @@ public class CourseFinanceService {
         existing.setAmountVnd(request.getAmountVnd());
         existing.setDescription(request.getDescription());
         existing.setDate(request.getDate());
-        existing.setCreatedBy(actor);
 
+        // Do NOT overwrite createdBy on update.
         return courseFinanceRecordRepository.save(existing);
+
     }
 
     @Transactional
-    public void deleteRecord(Long recordId, Long actorUserId) {
+    public void deleteRecord(Long recordId) {
+        Long actorUserId = getCurrentUser().getId();
+
         CourseFinanceRecord existing = courseFinanceRecordRepository.findById(recordId)
                 .orElseThrow(() -> new RuntimeException("Course finance record not found: " + recordId));
 
@@ -134,16 +141,13 @@ public class CourseFinanceService {
         // - TuitionPayment amounts for enrollments of this course (auto-included)
         // - CourseFinanceRecord INCOME
 
-        // Currently no efficient repository for tuition payments by course.
-        // Fallback: sum all TuitionPayment and filter by course.
-        List<TuitionPayment> allPayments = tuitionPaymentRepository.findAll();
-        long tuitionRevenueVnd = allPayments.stream()
-                .filter(Objects::nonNull)
-                .filter(p -> p.getPaidAt() != null && !p.getPaidAt().isBefore(start) && !p.getPaidAt().isAfter(end))
-                .filter(p -> p.getEnrollment() != null && p.getEnrollment().getCourse() != null
-                        && p.getEnrollment().getCourse().getId().equals(courseId))
-                .mapToLong(TuitionPayment::getAmountVnd)
-                .sum();
+        // Use repository-level aggregation to avoid loading all TuitionPayments into memory.
+        Long tuitionRevenueVnd = tuitionPaymentRepository.sumTuitionRevenueByCourseIdAndPaidAtBetween(
+                courseId,
+                start,
+                end);
+        tuitionRevenueVnd = tuitionRevenueVnd != null ? tuitionRevenueVnd : 0L;
+
 
         long incomeVnd = courseFinanceRecordRepository
                 .findByCourseIdAndDateBetween(courseId, start, end)

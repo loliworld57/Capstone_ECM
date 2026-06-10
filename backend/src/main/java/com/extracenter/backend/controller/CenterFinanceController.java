@@ -33,11 +33,11 @@ public class CenterFinanceController {
     @Autowired
     private CenterFinanceService centerFinanceService;
 
-    // POST: /api/centers/finance/records?centerId=...
+    // POST: /api/centers/finance/records
     @PostMapping("/records")
     public ResponseEntity<?> createRecord(
-            @RequestParam Long centerId,
             @Valid @RequestBody FinanceRecordRequest request) {
+
         try {
             // centerId is resolved/validated inside service (current manager center)
             // but we keep signature aligned to UI.
@@ -61,27 +61,29 @@ public class CenterFinanceController {
         }
     }
 
-    // DELETE: /api/centers/finance/records/{recordId}?actorUserId=...
+    // DELETE: /api/centers/finance/records/{recordId}
     @DeleteMapping("/records/{recordId}")
-    public ResponseEntity<?> deleteRecord(
-            @PathVariable Long recordId,
-            @RequestParam Long actorUserId) {
+    public ResponseEntity<?> deleteRecord(@PathVariable Long recordId) {
         try {
-            centerFinanceService.deleteRecord(recordId, actorUserId);
+            centerFinanceService.deleteRecord(recordId);
             return ResponseEntity.ok(Map.of("message", "Record deleted successfully."));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // GET: /api/centers/finance/records?centerId=...&start=yyyy-MM-dd&end=yyyy-MM-dd
+
+    // GET: /api/centers/finance/records?start=yyyy-MM-dd&end=yyyy-MM-dd
     @GetMapping("/records")
     public ResponseEntity<?> listRecords(
-            @RequestParam Long centerId,
             @RequestParam LocalDate start,
             @RequestParam LocalDate end) {
+
         try {
-            List<CenterFinanceRecord> records = centerFinanceService.listRecordsForCenter(centerId, start, end);
+            List<CenterFinanceRecord> records = centerFinanceService.listRecordsForCenter(null, start, end);
+
+
+
             return ResponseEntity.ok(records);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

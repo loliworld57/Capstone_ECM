@@ -29,7 +29,9 @@ public class StudentTuitionResponse {
     private Long totalPaidVnd;
     private Long remainingVnd;
 
-    private String tuitionStatus; // e.g. PARTIAL / PAID / UNPAID
+    private com.extracenter.backend.entity.TuitionStatus tuitionStatus; // PAID / PARTIAL / UNPAID
+
+
 
     private List<PaymentHistoryItem> paymentHistory;
 

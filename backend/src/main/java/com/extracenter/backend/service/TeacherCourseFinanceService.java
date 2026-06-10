@@ -15,11 +15,11 @@ import com.extracenter.backend.dto.FinanceReportResponse;
 import com.extracenter.backend.entity.Course;
 import com.extracenter.backend.entity.CourseFinanceRecord;
 import com.extracenter.backend.entity.FinanceType;
-import com.extracenter.backend.entity.TuitionPayment;
+
 import com.extracenter.backend.entity.User;
 import com.extracenter.backend.repository.CourseFinanceRecordRepository;
 import com.extracenter.backend.repository.CourseRepository;
-import com.extracenter.backend.repository.TuitionPaymentRepository;
+
 import com.extracenter.backend.repository.UserRepository;
 
 @Service
@@ -31,8 +31,7 @@ public class TeacherCourseFinanceService {
     @Autowired
     private CourseFinanceRecordRepository courseFinanceRecordRepository;
 
-    @Autowired
-    private TuitionPaymentRepository tuitionPaymentRepository;
+
 
     @Autowired
     private UserRepository userRepository;
@@ -73,10 +72,7 @@ public class TeacherCourseFinanceService {
             throw new RuntimeException("You can only update your own course finance records.");
         }
 
-        if (request.getActorUserId() == null || !request.getActorUserId().equals(actor.getId())) {
-            throw new RuntimeException("actorUserId must match the authenticated teacher.");
-        }
-
+        // createdBy is immutable; update only business fields.
         validateAmount(request.getAmountVnd());
 
         existing.setName(request.getName());
@@ -84,21 +80,17 @@ public class TeacherCourseFinanceService {
         existing.setAmountVnd(request.getAmountVnd());
         existing.setDescription(request.getDescription());
         existing.setDate(request.getDate());
-        existing.setCreatedBy(actor);
+
 
         return courseFinanceRecordRepository.save(existing);
     }
 
     @Transactional
-    public void deleteRecord(Long recordId, Long actorUserId) {
+    public void deleteRecord(Long recordId) {
         CourseFinanceRecord existing = courseFinanceRecordRepository.findById(recordId)
                 .orElseThrow(() -> new RuntimeException("Course finance record not found: " + recordId));
 
         User actor = resolveCurrentTeacher();
-
-        if (actorUserId == null || !actor.getId().equals(actorUserId)) {
-            throw new RuntimeException("actorUserId must match the authenticated teacher.");
-        }
 
         if (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(actor.getId())) {
             throw new RuntimeException("You can only delete your own course finance records.");
@@ -106,6 +98,7 @@ public class TeacherCourseFinanceService {
 
         courseFinanceRecordRepository.delete(existing);
     }
+
 
     @Transactional(readOnly = true)
     public List<CourseFinanceRecord> listRecords(Long courseId, LocalDate start, LocalDate end) {

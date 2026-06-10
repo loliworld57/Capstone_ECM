@@ -2,7 +2,6 @@ package com.extracenter.backend.dto;
 
 import java.time.LocalDate;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -25,9 +24,5 @@ public class TuitionPaymentRequest {
     private LocalDate paidAt;
 
     private String note;
-
-    // actor/manager who records the payment
-    @NotNull
-    private Long recordedByUserId;
 }
 

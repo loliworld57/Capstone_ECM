@@ -59,18 +59,19 @@ public class TeacherCourseFinanceController {
         }
     }
 
-    // DELETE: /api/teacher/courses/finance/records/{recordId}?actorUserId=...
+    // DELETE: /api/teacher/courses/finance/records/{recordId}
     @DeleteMapping("/records/{recordId}")
     public ResponseEntity<?> deleteRecord(
-            @PathVariable Long recordId,
-            @RequestParam Long actorUserId) {
+            @PathVariable Long recordId) {
         try {
-            teacherCourseFinanceService.deleteRecord(recordId, actorUserId);
+            teacherCourseFinanceService.deleteRecord(recordId);
+
             return ResponseEntity.ok(Map.of("message", "Record deleted successfully."));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
 
     // GET: /api/teacher/courses/finance/records?courseId=...&start=yyyy-MM-dd&end=yyyy-MM-dd
     @GetMapping("/records")

@@ -59,10 +59,11 @@ public class TuitionService {
             remainingVnd = 0;
         }
 
-        String status = deriveStatus(totalPaidVnd, finalTuitionVnd);
+        com.extracenter.backend.entity.TuitionStatus status = deriveStatus(totalPaidVnd, finalTuitionVnd);
 
         List<PaymentHistoryItem> history = payments.stream()
                 .map(p -> PaymentHistoryItem.builder()
+
                         .paidAt(p.getPaidAt())
                         .amountVnd(p.getAmountVnd())
                         .note(p.getNote())
@@ -97,18 +98,20 @@ public class TuitionService {
         return (long) Math.round(discount);
     }
 
-    private String deriveStatus(long totalPaidVnd, long finalTuitionVnd) {
+    private com.extracenter.backend.entity.TuitionStatus deriveStatus(long totalPaidVnd, long finalTuitionVnd) {
         if (finalTuitionVnd <= 0) {
-            return "PAID";
+            return com.extracenter.backend.entity.TuitionStatus.PAID;
         }
         if (totalPaidVnd <= 0) {
-            return "UNPAID";
+            return com.extracenter.backend.entity.TuitionStatus.UNPAID;
         }
         if (totalPaidVnd >= finalTuitionVnd) {
-            return "PAID";
+            return com.extracenter.backend.entity.TuitionStatus.PAID;
         }
-        return "PARTIAL";
+        return com.extracenter.backend.entity.TuitionStatus.PARTIAL;
     }
+
+
 
     public List<TuitionPayment> listPaymentsForEnrollment(Long enrollmentId) {
         return tuitionPaymentRepository.findByEnrollmentIdOrderByPaidAtAsc(enrollmentId);

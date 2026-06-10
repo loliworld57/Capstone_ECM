@@ -15,96 +15,90 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.extracenter.backend.dto.FinanceRecordRequest;
 import com.extracenter.backend.dto.FinanceReportResponse;
-import com.extracenter.backend.entity.CourseFinanceRecord;
-import com.extracenter.backend.service.CourseFinanceService;
+import com.extracenter.backend.entity.TeacherFinanceRecord;
+import com.extracenter.backend.service.TeacherFinanceService;
 
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/courses/finance")
+@RequestMapping("/api/teacher/finance")
 @CrossOrigin(originPatterns = "*")
-public class CourseFinanceController {
+public class TeacherFinanceController {
 
     @Autowired
-    private CourseFinanceService courseFinanceService;
+    private TeacherFinanceService teacherFinanceService;
 
-    // POST: /api/courses/finance/records?courseId=...
+    // POST: /api/teacher/finance/records
     @PostMapping("/records")
-    public ResponseEntity<?> createRecord(
-            @RequestParam Long courseId,
-            @Valid @RequestBody FinanceRecordRequest request) {
+    public ResponseEntity<?> createRecord(@Valid @RequestBody FinanceRecordRequest request) {
         try {
-            CourseFinanceRecord created = courseFinanceService.createRecord(courseId, request);
+            TeacherFinanceRecord created = teacherFinanceService.createRecord(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // PUT: /api/courses/finance/records/{recordId}
+    // PUT: /api/teacher/finance/records/{recordId}
     @PutMapping("/records/{recordId}")
     public ResponseEntity<?> updateRecord(
             @PathVariable Long recordId,
             @Valid @RequestBody FinanceRecordRequest request) {
         try {
-            CourseFinanceRecord updated = courseFinanceService.updateRecord(recordId, request);
+            TeacherFinanceRecord updated = teacherFinanceService.updateRecord(recordId, request);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // DELETE: /api/courses/finance/records/{recordId}
+    // DELETE: /api/teacher/finance/records/{recordId}
     @DeleteMapping("/records/{recordId}")
     public ResponseEntity<?> deleteRecord(@PathVariable Long recordId) {
         try {
-            courseFinanceService.deleteRecord(recordId);
+            teacherFinanceService.deleteRecord(recordId);
             return ResponseEntity.ok(Map.of("message", "Record deleted successfully."));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-
-    // GET: /api/courses/finance/records?courseId=...&start=yyyy-MM-dd&end=yyyy-MM-dd
+    // GET: /api/teacher/finance/records?start=yyyy-MM-dd&end=yyyy-MM-dd
     @GetMapping("/records")
     public ResponseEntity<?> listRecords(
-            @RequestParam Long courseId,
-            @RequestParam LocalDate start,
-            @RequestParam LocalDate end) {
+            @org.springframework.web.bind.annotation.RequestParam LocalDate start,
+            @org.springframework.web.bind.annotation.RequestParam LocalDate end) {
+
         try {
-            List<CourseFinanceRecord> records = courseFinanceService.listRecords(courseId, start, end);
+            List<TeacherFinanceRecord> records = teacherFinanceService.listRecords(start, end);
             return ResponseEntity.ok(records);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // GET: /api/courses/finance/reports/monthly?courseId=...&date=yyyy-MM-dd
+    // GET: /api/teacher/finance/reports/monthly?date=yyyy-MM-dd
     @GetMapping("/reports/monthly")
     public ResponseEntity<?> monthlyReport(
-            @RequestParam Long courseId,
-            @RequestParam LocalDate date) {
+            @org.springframework.web.bind.annotation.RequestParam LocalDate date) {
         try {
-            FinanceReportResponse report = courseFinanceService.monthlyReport(courseId, date);
+            FinanceReportResponse report = teacherFinanceService.monthlyReport(date);
             return ResponseEntity.ok(report);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // GET: /api/courses/finance/reports/profit?courseId=...&date=yyyy-MM-dd
-    @GetMapping("/reports/profit")
-    public ResponseEntity<?> profitReport(
-            @RequestParam Long courseId,
-            @RequestParam LocalDate date) {
+    // GET: /api/teacher/finance/reports/yearly?year=2026
+    @GetMapping("/reports/yearly")
+    public ResponseEntity<?> yearlyReport(
+            @org.springframework.web.bind.annotation.RequestParam int year) {
         try {
-            FinanceReportResponse report = courseFinanceService.profitReport(courseId, date);
+            FinanceReportResponse report = teacherFinanceService.yearlyReport(year);
             return ResponseEntity.ok(report);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

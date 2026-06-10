@@ -54,18 +54,17 @@ public class TuitionPaymentController {
         }
     }
 
-    // DELETE: /api/tuition/payments/{paymentId}?actorUserId=...
+    // DELETE: /api/tuition/payments/{paymentId}
     @DeleteMapping("/payments/{paymentId}")
-    public ResponseEntity<?> deletePayment(
-            @PathVariable Long paymentId,
-            @org.springframework.web.bind.annotation.RequestParam Long actorUserId) {
+    public ResponseEntity<?> deletePayment(@PathVariable Long paymentId) {
         try {
-            tuitionPaymentService.deletePayment(paymentId, actorUserId);
+            tuitionPaymentService.deletePayment(paymentId);
             return ResponseEntity.ok(Map.of("message", "Payment deleted successfully."));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
 
 
     // GET: /api/tuition/enrollments/{enrollmentId}/payments

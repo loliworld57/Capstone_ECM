@@ -58,9 +58,10 @@ public class CenterFinanceService {
         record.setDate(request.getDate());
         record.setCenter(centerRepository.findById(centerId).orElseThrow(() -> new RuntimeException("Center not found")));
 
-        User actor = userRepository.findById(request.getActorUserId())
-                .orElseThrow(() -> new RuntimeException("Actor user not found"));
-        record.setCreatedBy(actor);
+        User currentUser = getCurrentUser();
+        record.setCreatedBy(currentUser);
+
+
 
         return centerFinanceRecordRepository.save(record);
     }
@@ -75,10 +76,13 @@ public class CenterFinanceService {
             throw new RuntimeException("You do not have permission to update this record.");
         }
 
-        // Keep simple ownership: actor must match existing.createdBy
-        if (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(request.getActorUserId())) {
+        // Ownership: update/delete only allowed for the original creator (createdBy immutable)
+        User currentUser = getCurrentUser();
+        if (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(currentUser.getId())) {
             throw new RuntimeException("You do not have permission to update this record.");
         }
+
+
 
         validateAmount(request.getAmountVnd());
         existing.setName(request.getName());
@@ -87,15 +91,14 @@ public class CenterFinanceService {
         existing.setDescription(request.getDescription());
         existing.setDate(request.getDate());
 
-        User actor = userRepository.findById(request.getActorUserId())
-                .orElseThrow(() -> new RuntimeException("Actor user not found"));
-        existing.setCreatedBy(actor);
-
+        // Do NOT overwrite createdBy on update.
         return centerFinanceRecordRepository.save(existing);
+
     }
 
     @Transactional
-    public void deleteRecord(Long recordId, Long actorUserId) {
+    public void deleteRecord(Long recordId) {
+
         CenterFinanceRecord existing = centerFinanceRecordRepository.findById(recordId)
                 .orElseThrow(() -> new RuntimeException("Center finance record not found: " + recordId));
 
@@ -104,16 +107,23 @@ public class CenterFinanceService {
             throw new RuntimeException("You do not have permission to delete this record.");
         }
 
-        if (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(actorUserId)) {
+        User currentUser = getCurrentUser();
+        if (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(currentUser.getId())) {
             throw new RuntimeException("You do not have permission to delete this record.");
         }
+
 
         centerFinanceRecordRepository.delete(existing);
     }
 
     public List<CenterFinanceRecord> listRecordsForCenter(Long centerId, LocalDate start, LocalDate end) {
-        return centerFinanceRecordRepository.findByCenterIdAndDateBetween(centerId, start, end);
+        Long resolvedCenterId = centerId;
+        if (resolvedCenterId == null) {
+            resolvedCenterId = resolveCenterIdForCurrentManager();
+        }
+        return centerFinanceRecordRepository.findByCenterIdAndDateBetween(resolvedCenterId, start, end);
     }
+
 
     // =========================
     // Reports
@@ -171,17 +181,13 @@ public class CenterFinanceService {
         // Therefore, use a simple fallback: sum TuitionPayment by enrollment/course association by querying all payments
         // and filtering in-memory.
 
-        // WARNING: Could be slower with many records; can be optimized later by adding a repository query.
-        List<TuitionPayment> allPayments = tuitionPaymentRepository.findAll();
+        // Use repository-level aggregation to avoid loading all TuitionPayments into memory.
+        Long tuitionRevenue = tuitionPaymentRepository.sumTuitionRevenueByCenterIdAndPaidAtBetween(
+                centerId,
+                start,
+                end);
+        return tuitionRevenue != null ? tuitionRevenue : 0L;
 
-        return allPayments.stream()
-                .filter(Objects::nonNull)
-                .filter(p -> p.getPaidAt() != null && !p.getPaidAt().isBefore(start) && !p.getPaidAt().isAfter(end))
-                .filter(p -> p.getEnrollment() != null && p.getEnrollment().getCourse() != null
-                        && p.getEnrollment().getCourse().getCenter() != null
-                        && p.getEnrollment().getCourse().getCenter().getId().equals(centerId))
-                .mapToLong(TuitionPayment::getAmountVnd)
-                .sum();
     }
 
     private void validateAmount(Long amountVnd) {

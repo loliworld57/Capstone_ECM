@@ -29,14 +29,10 @@ public class TeacherFinanceService {
 
     @Transactional
     public TeacherFinanceRecord createRecord(FinanceRecordRequest request) {
-        User actor = userRepository.findById(request.getActorUserId())
-                .orElseThrow(() -> new RuntimeException("Actor user not found"));
-
-        // Teacher personal finance: only create for yourself
+        // Teacher personal finance: only create for yourself (JWT)
         Long currentTeacherId = resolveCurrentUserId();
-        if (!actor.getId().equals(currentTeacherId)) {
-            throw new RuntimeException("You can only create records for yourself.");
-        }
+        User actor = userRepository.findById(currentTeacherId)
+                .orElseThrow(() -> new RuntimeException("Authenticated teacher not found"));
 
         validateAmount(request.getAmountVnd());
 
@@ -52,6 +48,7 @@ public class TeacherFinanceService {
         return teacherFinanceRecordRepository.save(record);
     }
 
+
     @Transactional
     public TeacherFinanceRecord updateRecord(Long recordId, FinanceRecordRequest request) {
         TeacherFinanceRecord existing = teacherFinanceRecordRepository.findById(recordId)
@@ -60,11 +57,6 @@ public class TeacherFinanceService {
         Long currentTeacherId = resolveCurrentUserId();
         if (existing.getTeacher() == null || !existing.getTeacher().getId().equals(currentTeacherId)) {
             throw new RuntimeException("You can only update your own records.");
-        }
-
-        // keep actorUserId consistent with current teacher
-        if (request.getActorUserId() == null || !request.getActorUserId().equals(currentTeacherId)) {
-            throw new RuntimeException("actorUserId must match current teacher.");
         }
 
         validateAmount(request.getAmountVnd());
@@ -77,10 +69,12 @@ public class TeacherFinanceService {
 
         // createdAt is immutable; keep it
         return teacherFinanceRecordRepository.save(existing);
+
     }
 
     @Transactional
-    public void deleteRecord(Long recordId, Long actorUserId) {
+    public void deleteRecord(Long recordId) {
+
         TeacherFinanceRecord existing = teacherFinanceRecordRepository.findById(recordId)
                 .orElseThrow(() -> new RuntimeException("Teacher finance record not found: " + recordId));
 
@@ -89,12 +83,9 @@ public class TeacherFinanceService {
             throw new RuntimeException("You can only delete your own records.");
         }
 
-        if (actorUserId == null || !actorUserId.equals(currentTeacherId)) {
-            throw new RuntimeException("actorUserId must match current teacher.");
-        }
-
         teacherFinanceRecordRepository.delete(existing);
     }
+
 
     @Transactional(readOnly = true)
     public List<TeacherFinanceRecord> listRecords(LocalDate start, LocalDate end) {

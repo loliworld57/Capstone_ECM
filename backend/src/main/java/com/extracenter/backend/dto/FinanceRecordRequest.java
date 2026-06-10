@@ -32,9 +32,5 @@ public class FinanceRecordRequest {
 
     @NotNull
     private LocalDate date;
-
-    // Ownership/actor fields (sent from client)
-    @NotNull
-    private Long actorUserId;
 }
 

@@ -19,6 +19,7 @@ import com.extracenter.backend.service.TuitionService;
 @CrossOrigin(originPatterns = "*")
 public class StudentTuitionController {
 
+
     @Autowired
     private TuitionService tuitionService;
 
@@ -32,5 +33,6 @@ public class StudentTuitionController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
 }
 

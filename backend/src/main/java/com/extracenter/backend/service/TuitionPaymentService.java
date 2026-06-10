@@ -28,6 +28,20 @@ public class TuitionPaymentService {
     @Autowired
     private UserRepository userRepository;
 
+
+
+    private User getCurrentUser() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new RuntimeException("Authentication is required");
+        }
+
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+    }
+
+
+
     @Transactional
     public TuitionPayment createPayment(TuitionPaymentRequest request) {
         if (request.getAmountVnd() == null || request.getAmountVnd() <= 0) {
@@ -38,15 +52,16 @@ public class TuitionPaymentService {
         Enrollment enrollment = enrollmentRepository.findById(request.getEnrollmentId())
                 .orElseThrow(() -> new RuntimeException("Enrollment not found: " + request.getEnrollmentId()));
 
-        User actor = userRepository.findById(request.getRecordedByUserId())
-                .orElseThrow(() -> new RuntimeException("Actor/recorder user not found: " + request.getRecordedByUserId()));
+        User currentUser = getCurrentUser();
 
         TuitionPayment payment = new TuitionPayment();
+
         payment.setEnrollment(enrollment);
         payment.setAmountVnd(request.getAmountVnd());
         payment.setPaidAt(request.getPaidAt());
         payment.setNote(request.getNote());
-        payment.setRecordedBy(actor);
+        payment.setRecordedBy(currentUser);
+
         payment.setCreatedAt(LocalDateTime.now());
 
         return tuitionPaymentRepository.save(payment);
@@ -70,19 +85,22 @@ public class TuitionPaymentService {
                 .orElseThrow(() -> new RuntimeException("Enrollment not found: " + request.getEnrollmentId()));
         existing.setEnrollment(enrollment);
 
-        User actor = userRepository.findById(request.getRecordedByUserId())
-                .orElseThrow(() -> new RuntimeException("Actor/recorder user not found: " + request.getRecordedByUserId()));
+        User currentUser = getCurrentUser();
 
         existing.setAmountVnd(request.getAmountVnd());
+
         existing.setPaidAt(request.getPaidAt() != null ? request.getPaidAt() : existing.getPaidAt());
         existing.setNote(request.getNote());
-        existing.setRecordedBy(actor);
+        existing.setRecordedBy(currentUser);
+
 
         return tuitionPaymentRepository.save(existing);
     }
 
     @Transactional
-    public void deletePayment(Long paymentId, Long actorUserId) {
+    public void deletePayment(Long paymentId) {
+        Long actorUserId = getCurrentUser().getId();
+
         TuitionPayment existing = tuitionPaymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("TuitionPayment not found: " + paymentId));
 
