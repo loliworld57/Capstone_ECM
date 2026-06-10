@@ -2,7 +2,7 @@ import { BookOpen, Book, NotebookPen, ClipboardCheck } from "lucide-react";
 
 interface Props {
     activeTab: string;
-    setActiveTab: (tab: "General Info" | "Materials" | "Attendance" | "Assignments") => void;
+    setActiveTab: (tab: "General Info" | "Materials" | "Attendance" | "Assignments" | "Quizzes") => void;
     isManager: boolean;
 }
 
@@ -44,6 +44,15 @@ export default function TabsInCourse({ activeTab, setActiveTab, isManager }: Pro
             >
                 <NotebookPen size={18} />
                 Assignments
+            </button>
+
+            {/* QUIZZES */}
+            <button
+                onClick={() => setActiveTab("Quizzes")}
+                className={tabStyle("Quizzes")}
+            >
+                <ClipboardCheck size={18} />
+                Quizzes
             </button>
 
             {/* ATTENDANCE */}

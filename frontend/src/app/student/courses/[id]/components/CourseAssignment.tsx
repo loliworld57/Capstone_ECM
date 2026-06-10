@@ -145,10 +145,11 @@ export default function StudentCourseAssignments({ courseId }: Props) {
                             ) : (
                                 filteredAssignments.map((assignment) => {
                                     const overdue = isOverdue(assignment.dueDate);
-                                    const submitted =
-                                        assignment.submissionStatus === "SUBMITTED" ||
-                                        assignment.submissionStatus === "SCORED" ||
-                                        assignment.submissionStatus === "LATE";
+
+                                    // --- MATCH BACKEND StudentAssignmentResponse FIELD NAMING ---
+                                    const assignmentId = assignment.id;
+                                    const status = assignment.submissionStatus || "NOT_SUBMITTED"; // Change back from assignment.status
+                                    const submitted = ["SUBMITTED", "SCORED", "LATE", "GRADED"].includes(status);
                                     return (
                                         <tr key={assignment.id} className="border-b last:border-0 border-gray-200 hover:bg-[var(--color-secondary)]/5 transition group">
                                             <td className="p-4">

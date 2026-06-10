@@ -242,7 +242,7 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
             <div className="bg-[var(--color-main)] text-white px-6 py-4 flex items-center justify-between font-semibold">
                 <div className="flex items-center gap-2">
                     <ClipboardList size={18} />
-                    Assignments & Quizzes ({assignments.length})
+                    Assignments ({assignments.length})
                 </div>
 
                 <div className="flex items-center gap-3">
