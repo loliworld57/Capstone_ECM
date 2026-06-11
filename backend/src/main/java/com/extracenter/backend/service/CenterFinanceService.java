@@ -52,8 +52,8 @@ public class CenterFinanceService {
     // =========================
 
     @Transactional
-    public CenterFinanceRecord createRecord(FinanceRecordRequest request) {
-        Long centerId = resolveCenterIdForCurrentManager();
+    public CenterFinanceRecord createRecord(Long centerId, FinanceRecordRequest request) {
+        assertCenterAccess(centerId);
 
         validateAmount(request.getAmountVnd());
 
@@ -78,18 +78,7 @@ public class CenterFinanceService {
         CenterFinanceRecord existing = centerFinanceRecordRepository.findById(recordId)
                 .orElseThrow(() -> new RuntimeException("Center finance record not found: " + recordId));
 
-        Long centerId = resolveCenterIdForCurrentManager();
-        if (!existing.getCenter().getId().equals(centerId)) {
-            throw new RuntimeException("You do not have permission to update this record.");
-        }
-
-        // Ownership: update/delete only allowed for the original creator (createdBy immutable)
-        User currentUser = getCurrentUser();
-        if (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You do not have permission to update this record.");
-        }
-
-
+        assertCenterAccess(existing.getCenter().getId());
 
         validateAmount(request.getAmountVnd());
         existing.setName(request.getName());
@@ -109,26 +98,14 @@ public class CenterFinanceService {
         CenterFinanceRecord existing = centerFinanceRecordRepository.findById(recordId)
                 .orElseThrow(() -> new RuntimeException("Center finance record not found: " + recordId));
 
-        Long centerId = resolveCenterIdForCurrentManager();
-        if (!existing.getCenter().getId().equals(centerId)) {
-            throw new RuntimeException("You do not have permission to delete this record.");
-        }
-
-        User currentUser = getCurrentUser();
-        if (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You do not have permission to delete this record.");
-        }
-
+        assertCenterAccess(existing.getCenter().getId());
 
         centerFinanceRecordRepository.delete(existing);
     }
 
     public List<CenterFinanceRecord> listRecordsForCenter(Long centerId, LocalDate start, LocalDate end) {
-        Long resolvedCenterId = centerId;
-        if (resolvedCenterId == null) {
-            resolvedCenterId = resolveCenterIdForCurrentManager();
-        }
-        return centerFinanceRecordRepository.findByCenterIdAndDateBetween(resolvedCenterId, start, end);
+        assertCenterAccess(centerId);
+        return centerFinanceRecordRepository.findByCenterIdAndDateBetween(centerId, start, end);
     }
 
 

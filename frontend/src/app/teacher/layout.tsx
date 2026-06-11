@@ -8,6 +8,7 @@ import {
     CalendarDays,
     Users,
     Building2,
+    WalletCards,
     ChevronLeft,
     ChevronRight
 } from "lucide-react";
@@ -51,7 +52,7 @@ export default function TeacherLayout({
         }
 
         const roleName = getRoleName(storedUser.role);
-        if (roleName !== "TEACHER" && roleName !== "MANAGER") {
+        if (roleName !== "TEACHER") {
             router.replace("/AccessDenied");
             return;
         }
@@ -111,6 +112,7 @@ export default function TeacherLayout({
         { name: "Courses", href: "/teacher/courses", icon: BookOpen },
         { name: "Schedule", href: "/teacher/schedule", icon: CalendarDays },
         { name: "Students", href: "/teacher/students", icon: Users },
+        { name: "Finance", href: "/teacher/finance", icon: WalletCards },
     ];
 
     const hideAllSidebarContent = isCompactSidebar && collapsed;

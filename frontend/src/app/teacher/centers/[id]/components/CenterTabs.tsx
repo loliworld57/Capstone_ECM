@@ -1,7 +1,7 @@
-import { BookOpen, Building2, Users, UserCog, BookA, BookPlus, CalendarDays } from "lucide-react";
+import { BookOpen, Building2, Users, UserCog, BookA, BookPlus, CalendarDays, WalletCards } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 
-type TabKey = "courses" | "students" | "teachers" | "subjects" | "grades" | "classrooms" | "class-slots";
+type TabKey = "courses" | "students" | "teachers" | "subjects" | "grades" | "classrooms" | "class-slots" | "finance";
 
 interface Props {
     activeTab: TabKey;
@@ -90,6 +90,17 @@ export default function CenterTabs({ activeTab, setActiveTab, isManager }: Props
                             }`}
                         >
                             <UserCog size={18} /> Teachers
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("finance")}
+                            className={`shrink-0 whitespace-nowrap rounded-t-lg px-3 py-2 text-sm font-medium flex items-center gap-2 border-b-4 border-r-2 transition sm:px-4 sm:text-base
+                        ${activeTab === "finance"
+                                ? "border-[var(--color-main)] text-[var(--color-main)]"
+                                : "border-transparent text-[var(--color-text)] hover:text-[var(--color-secondary)]"
+                            }`}
+                        >
+                            <WalletCards size={18} /> Finance
                         </button>
                     </>
                 )}

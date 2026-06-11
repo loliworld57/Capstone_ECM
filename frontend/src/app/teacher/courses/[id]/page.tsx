@@ -23,6 +23,7 @@ import NotFound from "@/app/not-found";
 import CourseMaterials from "./components/CourseMaterial";
 import CourseAssignments from "./components/CourseAssignment";
 import GradebookSection from "./components/GradebookSection";
+import CourseFinanceTab from "./components/CourseFinanceTab";
 import { formatDateValue } from "@/utils/dateFormat";
 import { getCourseStatusClasses, getCourseStatusLabel } from "@/utils/courseStatus";
 
@@ -33,7 +34,7 @@ export default function CourseDetailPage() {
 
     const [course, setCourse] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<
-        "General Info" | "Students" | "Attendance" | "Enrollment" | "Materials" | "Assignments" | "Gradebook"
+        "General Info" | "Students" | "Attendance" | "Enrollment" | "Materials" | "Assignments" | "Gradebook" | "Finance"
     >("General Info");
 
     const [loading, setLoading] = useState(true);
@@ -351,6 +352,10 @@ export default function CourseDetailPage() {
                     <CourseEnrollment courseId={courseId} />
                 </div>
 
+            )}
+
+            {activeTab === "Finance" && isManager && (
+                <CourseFinanceTab courseId={courseId} isManager={isManager} />
             )}
 
         </div>

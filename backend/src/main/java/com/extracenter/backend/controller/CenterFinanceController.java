@@ -36,12 +36,13 @@ public class CenterFinanceController {
     // POST: /api/centers/finance/records
     @PostMapping("/records")
     public ResponseEntity<?> createRecord(
+            @RequestParam Long centerId,
             @Valid @RequestBody FinanceRecordRequest request) {
 
         try {
             // centerId is resolved/validated inside service (current manager center)
             // but we keep signature aligned to UI.
-            CenterFinanceRecord created = centerFinanceService.createRecord(request);
+            CenterFinanceRecord created = centerFinanceService.createRecord(centerId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -76,11 +77,12 @@ public class CenterFinanceController {
     // GET: /api/centers/finance/records?start=yyyy-MM-dd&end=yyyy-MM-dd
     @GetMapping("/records")
     public ResponseEntity<?> listRecords(
+            @RequestParam Long centerId,
             @RequestParam LocalDate start,
             @RequestParam LocalDate end) {
 
         try {
-            List<CenterFinanceRecord> records = centerFinanceService.listRecordsForCenter(null, start, end);
+            List<CenterFinanceRecord> records = centerFinanceService.listRecordsForCenter(centerId, start, end);
 
 
 

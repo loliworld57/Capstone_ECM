@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +23,7 @@ import com.extracenter.backend.repository.EnrollmentRepository;
 import com.extracenter.backend.repository.TuitionAccountRepository;
 import com.extracenter.backend.repository.TuitionInstallmentRepository;
 import com.extracenter.backend.repository.TuitionPaymentRepository;
+import com.extracenter.backend.repository.UserRepository;
 
 @Service
 public class TuitionAccountService {
@@ -39,6 +39,9 @@ public class TuitionAccountService {
 
     @Autowired
     private TuitionPaymentRepository tuitionPaymentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Transactional
     public TuitionAccount createDefaultAccount(Enrollment enrollment) {
@@ -59,9 +62,14 @@ public class TuitionAccountService {
     public TuitionAccount createOrUpdateAccount(TuitionAccountRequest request) {
         Enrollment enrollment = enrollmentRepository.findById(request.getEnrollmentId())
                 .orElseThrow(() -> new RuntimeException("Enrollment not found: " + request.getEnrollmentId()));
+        assertCanManageEnrollment(enrollment);
 
         TuitionAccount account = tuitionAccountRepository.findByEnrollmentId(enrollment.getId())
                 .orElseGet(TuitionAccount::new);
+
+        if (account.getId() != null && !tuitionPaymentRepository.findByEnrollmentIdOrderByPaidAtAsc(enrollment.getId()).isEmpty()) {
+            throw new RuntimeException("Tuition plan cannot be changed after payments have been recorded.");
+        }
 
         TuitionAccount base = buildBaseAccount(enrollment, request.getPaymentPlanType(), request.getStartDate(), request.getEndDate());
         account.setEnrollment(enrollment);
@@ -153,6 +161,10 @@ public class TuitionAccountService {
             for (TuitionAccountRequest.InstallmentRequest item : request.getInstallments()) {
                 installments.add(newInstallment(account, number++, item.getDueDate(), item.getAmountDueVnd()));
             }
+            long scheduleTotal = installments.stream().mapToLong(i -> safe(i.getAmountDueVnd())).sum();
+            if (scheduleTotal != safe(account.getFinalAmountVnd())) {
+                throw new RuntimeException("Custom installment total must equal final tuition amount.");
+            }
             return installments;
         }
 
@@ -224,5 +236,23 @@ public class TuitionAccountService {
 
     private long safe(Long value) {
         return value != null ? value : 0L;
+    }
+
+    private void assertCanManageEnrollment(Enrollment enrollment) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new RuntimeException("Authentication is required");
+        }
+
+        var actor = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+        if (actor.getRole() != null && "ADMIN".equalsIgnoreCase(actor.getRole().getName())) {
+            return;
+        }
+
+        var center = enrollment.getCourse().getCenter();
+        if (center == null || center.getManager() == null || !center.getManager().getId().equals(actor.getId())) {
+            throw new RuntimeException("Only the center owner can manage tuition plans.");
+        }
     }
 }

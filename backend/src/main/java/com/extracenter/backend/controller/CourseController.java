@@ -143,7 +143,7 @@ public class CourseController {
     public ResponseEntity<?> deleteCourse(@PathVariable Long id) {
         try {
             courseService.deleteCourse(id);
-            return ResponseEntity.ok(Map.of("message", "Course deleted successfully!"));
+            return ResponseEntity.ok(Map.of("message", "Course archived successfully!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -195,6 +195,20 @@ public class CourseController {
         }
         // Best Practice: If no centerId is provided, return all courses instead of null
         return ResponseEntity.ok(courseService.getAllCourses());
+    }
+
+    @GetMapping("/archived")
+    public ResponseEntity<List<Course>> getArchivedCourses(@RequestParam Long centerId) {
+        return ResponseEntity.ok(courseService.getArchivedCoursesByCenter(centerId));
+    }
+
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<?> restoreCourse(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(courseService.restoreCourse(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // API: Invite a teacher to a course (Used by Center Managers)

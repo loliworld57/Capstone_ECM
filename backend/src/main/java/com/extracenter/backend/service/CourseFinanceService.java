@@ -1,9 +1,7 @@
 package com.extracenter.backend.service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +15,8 @@ import com.extracenter.backend.dto.FinanceReportResponse;
 import com.extracenter.backend.entity.Course;
 import com.extracenter.backend.entity.CourseFinanceRecord;
 import com.extracenter.backend.entity.FinanceType;
-import com.extracenter.backend.entity.TuitionPayment;
 import com.extracenter.backend.entity.User;
 import com.extracenter.backend.repository.CourseFinanceRecordRepository;
-import com.extracenter.backend.repository.CourseRepository;
-import com.extracenter.backend.repository.EnrollmentRepository;
 import com.extracenter.backend.repository.TuitionPaymentRepository;
 import com.extracenter.backend.repository.UserRepository;
 
@@ -37,9 +32,6 @@ public class CourseFinanceService {
 
     @Autowired
     private TuitionPaymentRepository tuitionPaymentRepository;
-
-    @Autowired
-    private EnrollmentRepository enrollmentRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -81,13 +73,6 @@ public class CourseFinanceService {
 
         validateAmount(request.getAmountVnd());
 
-        // Teacher can only update what they created.
-        if (!isCourseOwner(course, actorUserId)
-                && (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(actorUserId))) {
-
-            throw new RuntimeException("You do not have permission to update this record.");
-        }
-
         existing.setName(request.getName());
         existing.setType(request.getType());
         existing.setAmountVnd(request.getAmountVnd());
@@ -109,15 +94,11 @@ public class CourseFinanceService {
         Course course = existing.getCourse();
         assertCourseOwnerPermission(course.getId(), actorUserId);
 
-        if (!isCourseOwner(course, actorUserId)
-                && (existing.getCreatedBy() == null || !existing.getCreatedBy().getId().equals(actorUserId))) {
-            throw new RuntimeException("You do not have permission to delete this record.");
-        }
-
         courseFinanceRecordRepository.delete(existing);
     }
 
     public List<CourseFinanceRecord> listRecords(Long courseId, LocalDate start, LocalDate end) {
+        assertCourseOwnerPermission(courseId, getCurrentUser().getId());
         return courseFinanceRecordRepository.findByCourseIdAndDateBetween(courseId, start, end);
     }
 
@@ -126,6 +107,7 @@ public class CourseFinanceService {
     // =========================
 
     public FinanceReportResponse monthlyReport(Long courseId, LocalDate date) {
+        assertCourseOwnerPermission(courseId, getCurrentUser().getId());
         LocalDate start = date.withDayOfMonth(1);
         LocalDate end = date.withDayOfMonth(date.lengthOfMonth());
 
@@ -188,20 +170,13 @@ public class CourseFinanceService {
             return;
         }
 
-        // Teacher can manage only if teacher owns (createdBy check later).
-        if (course.getTeacher() != null && course.getTeacher().getId().equals(actorUserId)) {
+        User actor = userRepository.findById(actorUserId)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+        if (actor.getRole() != null && "ADMIN".equalsIgnoreCase(actor.getRole().getName())) {
             return;
         }
 
         throw new RuntimeException("You do not have permission to manage this course finance.");
-    }
-
-    private boolean isCourseOwner(Course course, Long actorUserId) {
-        if (course.getCenter() != null && course.getCenter().getManager() != null
-                && course.getCenter().getManager().getId().equals(actorUserId)) {
-            return true;
-        }
-        return course.getTeacher() != null && course.getTeacher().getId().equals(actorUserId);
     }
 
     private User getCurrentUser() {

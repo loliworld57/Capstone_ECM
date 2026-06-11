@@ -108,7 +108,7 @@ public class AttendanceService {
             .orElseThrow(() -> new RuntimeException("Error: Class session not found!"));
 
         Long courseId = session.getCourse().getId();
-        List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
+        List<Enrollment> enrollments = enrollmentRepository.findByCourseIdAndArchivedAtIsNull(courseId);
 
         Map<Long, Attendance> existingByStudentId = attendanceRepository.findByClassSessionId(classSessionId)
             .stream()

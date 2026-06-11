@@ -46,7 +46,7 @@ public class TuitionService {
 
     public List<StudentTuitionResponse> getTuitionForStudent(Long studentId) {
         assertStudentCanAccess(studentId);
-        List<Enrollment> enrollments = enrollmentRepository.findByStudentId(studentId);
+        List<Enrollment> enrollments = enrollmentRepository.findByStudentIdAndArchivedAtIsNull(studentId);
 
         return enrollments.stream()
                 .map(this::mapEnrollmentToStudentTuitionResponse)
@@ -149,6 +149,10 @@ public class TuitionService {
                 .courseId(course.getId())
                 .courseName(course.getName())
                 .paymentPlanType(account != null ? account.getPaymentPlanType() : PaymentPlanType.FULL_COURSE)
+                .planStartDate(account != null ? account.getStartDate() : enrollment.getEnrollmentDate())
+                .planEndDate(account != null ? account.getEndDate() : course.getEndDate())
+                .totalSessions(account != null ? account.getTotalSessions() : null)
+                .purchasedSessions(account != null ? account.getPurchasedSessions() : null)
                 .tuitionFeeVnd(tuitionFeeVnd)
                 .scholarshipDiscountPercentage(scholarshipDiscountPercentage)
                 .scholarshipDiscountVnd(scholarshipDiscountVnd)

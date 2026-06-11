@@ -1,6 +1,7 @@
 package com.extracenter.backend.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -59,6 +60,9 @@ public class Course {
 
     @Column(length = 20)
     private String invitationStatus = "ACCEPTED";
+
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
 
     // --- RELATIONSHIPS ---
 

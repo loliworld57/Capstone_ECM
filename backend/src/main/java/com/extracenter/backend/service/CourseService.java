@@ -89,6 +89,9 @@ public class CourseService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private TuitionAccountService tuitionAccountService;
+
     @Transactional
     public Course createCourse(CourseRequest request) {
         // 1. Find Center and Teacher
@@ -200,14 +203,14 @@ public class CourseService {
 
 
     public List<Course> getAllCourses() {
-        return courseRepository.findAll().stream()
+        return courseRepository.findByArchivedAtIsNull().stream()
             .map(this::syncCourseStatus)
             .collect(Collectors.toList());
     }
 
     public List<Course> getCoursesByTeacher(Long teacherId) {
         validateTeacherCourseAccess(teacherId);
-        return courseRepository.findByTeacherId(teacherId).stream()
+        return courseRepository.findByTeacherIdAndArchivedAtIsNull(teacherId).stream()
             .map(this::syncCourseStatus)
             .collect(Collectors.toList());
     }
@@ -219,9 +222,20 @@ public class CourseService {
     }
 
     public List<Course> getCoursesByCenter(Long centerId) {
-        return courseRepository.findByCenterId(centerId).stream()
+        return courseRepository.findByCenterIdAndArchivedAtIsNull(centerId).stream()
             .map(this::syncCourseStatus)
             .collect(Collectors.toList());
+    }
+
+    public List<Course> getArchivedCoursesByCenter(Long centerId) {
+        Center center = centerRepository.findById(centerId)
+                .orElseThrow(() -> new RuntimeException("Center not found!"));
+        User actor = getCurrentUser();
+        boolean isOwner = center.getManager() != null && center.getManager().getId().equals(actor.getId());
+        if (!isAdmin(actor) && !isOwner) {
+            throw new RuntimeException("Only the center owner can view archived courses.");
+        }
+        return courseRepository.findByCenterIdAndArchivedAtIsNotNullOrderByArchivedAtDesc(centerId);
     }
 
     public List<Course> getVisibleCoursesByCenter(Long centerId) {
@@ -239,7 +253,7 @@ public class CourseService {
         }
 
         if (isTeacher(currentUser)) {
-            return courseRepository.findByCenterIdAndTeacherId(centerId, currentUser.getId()).stream()
+            return courseRepository.findByCenterIdAndTeacherIdAndArchivedAtIsNull(centerId, currentUser.getId()).stream()
                     .map(this::syncCourseStatus)
                     .collect(Collectors.toList());
         }
@@ -515,7 +529,7 @@ public class CourseService {
 
         validateCourseDeletionEligibility(course);
 
-        deleteCourseAndRelatedData(courseId);
+        archiveCourse(course);
         verificationTokenRepository.delete(token);
     }
 
@@ -535,19 +549,32 @@ public class CourseService {
         }
     }
 
-    private void deleteCourseAndRelatedData(Long courseId) {
-        try {
-            attendanceRepository.deleteByCourseId(courseId);
-            assignmentSubmissionRepository.deleteByCourseId(courseId);
-            assignmentRepository.deleteByCourseId(courseId);
-            materialRepository.deleteByCourseId(courseId);
-            enrollmentRepository.deleteByCourseId(courseId);
-            classSessionRepository.deleteByCourseId(courseId);
-            classSlotRepository.deleteByCourseId(courseId);
-            courseRepository.deleteById(courseId);
-        } catch (Exception e) {
-            throw new RuntimeException("Error deleting course: " + e.getMessage());
+    private void archiveCourse(Course course) {
+        if (course.getArchivedAt() != null) {
+            throw new RuntimeException("Course is already archived.");
         }
+        course.setArchivedAt(LocalDateTime.now());
+        course.setStatus(CourseStatus.ENDED);
+        courseRepository.save(course);
+    }
+
+    @Transactional
+    public Course restoreCourse(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found!"));
+        User actor = getCurrentUser();
+        boolean isOwner = course.getCenter() != null
+                && course.getCenter().getManager() != null
+                && course.getCenter().getManager().getId().equals(actor.getId());
+        if (!isAdmin(actor) && !isOwner) {
+            throw new RuntimeException("Only the center owner can restore this course.");
+        }
+        if (course.getArchivedAt() == null) {
+            throw new RuntimeException("Course is not archived.");
+        }
+        course.setArchivedAt(null);
+        course.setStatus(deriveStatusFromDates(course.getStartDate(), course.getEndDate()));
+        return courseRepository.save(course);
     }
 
     private String generateOtp() {
@@ -633,7 +660,7 @@ public class CourseService {
                 .orElseThrow(() -> new RuntimeException("Student not found!"));
 
         // 1. Check if enrollment already exists
-        boolean exists = enrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId);
+        boolean exists = enrollmentRepository.existsByStudentIdAndCourseIdAndArchivedAtIsNull(studentId, courseId);
         if (exists) {
             throw new RuntimeException("Student is already enrolled in this class!");
         }
@@ -658,10 +685,11 @@ public class CourseService {
 
     @Transactional
     public void removeStudentFromCourse(Long courseId, Long studentId) {
-        Enrollment enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId)
+        Enrollment enrollment = enrollmentRepository.findByStudentIdAndCourseIdAndArchivedAtIsNull(studentId, courseId)
                 .orElseThrow(() -> new RuntimeException("Student is not enrolled in this class!"));
-
-        enrollmentRepository.delete(enrollment);
+        enrollment.setArchivedAt(LocalDateTime.now());
+        Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+        tuitionAccountService.createDefaultAccount(savedEnrollment);
     }
 
     // Retrieve list of students via Enrollment repository for better performance
@@ -672,7 +700,7 @@ public class CourseService {
 
         // OPTIMIZATION: Instead of loading the Course and relying on Lazy Loading,
         // we query the EnrollmentRepository directly!
-        List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
+        List<Enrollment> enrollments = enrollmentRepository.findByCourseIdAndArchivedAtIsNull(courseId);
 
         return enrollments.stream()
                 .map(Enrollment::getStudent)
@@ -705,7 +733,7 @@ public class CourseService {
                 && course.getTeacher().getId().equals(currentUser.getId());
 
         boolean isEnrolledStudent = isStudent(currentUser)
-                && enrollmentRepository.existsByStudentIdAndCourseId(currentUser.getId(), course.getId());
+                && enrollmentRepository.existsByStudentIdAndCourseIdAndArchivedAtIsNull(currentUser.getId(), course.getId());
 
         if (!isManager && !isAssignedTeacher && !isEnrolledStudent) {
             throw new RuntimeException("You do not have permission to view this course.");

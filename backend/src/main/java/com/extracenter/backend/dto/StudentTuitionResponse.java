@@ -24,6 +24,10 @@ public class StudentTuitionResponse {
     private String courseName;
 
     private PaymentPlanType paymentPlanType;
+    private LocalDate planStartDate;
+    private LocalDate planEndDate;
+    private Integer totalSessions;
+    private Integer purchasedSessions;
 
     // Tuition fee baseline
     private Long tuitionFeeVnd;

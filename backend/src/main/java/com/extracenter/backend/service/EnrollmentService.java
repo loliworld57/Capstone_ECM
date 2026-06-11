@@ -53,7 +53,7 @@ public class EnrollmentService {
                 .orElseThrow(() -> new RuntimeException("Course not found with ID: " + request.getCourseId()));
 
         // 4. Check if already enrolled (Prevents duplicate data)
-        if (enrollmentRepository.existsByStudentIdAndCourseId(student.getId(), request.getCourseId())) {
+        if (enrollmentRepository.existsByStudentIdAndCourseIdAndArchivedAtIsNull(student.getId(), request.getCourseId())) {
             throw new RuntimeException("This student is already enrolled in this class!");
         }
 

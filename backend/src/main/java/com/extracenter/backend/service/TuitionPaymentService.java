@@ -59,6 +59,7 @@ public class TuitionPaymentService {
                 .orElseThrow(() -> new RuntimeException("Enrollment not found: " + request.getEnrollmentId()));
 
         User currentUser = getCurrentUser();
+        assertCanManageEnrollment(currentUser, enrollment);
 
         TuitionPayment payment = new TuitionPayment();
 
@@ -95,6 +96,7 @@ public class TuitionPaymentService {
         existing.setEnrollment(enrollment);
 
         User currentUser = getCurrentUser();
+        assertCanManageEnrollment(currentUser, enrollment);
 
         existing.setAmountVnd(request.getAmountVnd());
 
@@ -111,7 +113,7 @@ public class TuitionPaymentService {
 
     @Transactional
     public void deletePayment(Long paymentId) {
-        Long currentUserId = getCurrentUser().getId();
+        User currentUser = getCurrentUser();
 
 
         TuitionPayment existing = tuitionPaymentRepository.findById(paymentId)
@@ -119,10 +121,7 @@ public class TuitionPaymentService {
 
         // Minimal ownership rule for now: actor must be the recorder
         // (Authorization can be tightened later using SecurityContext)
-        if (existing.getRecordedBy() == null || !existing.getRecordedBy().getId().equals(currentUserId)) {
-
-            throw new RuntimeException("You do not have permission to delete this payment.");
-        }
+        assertCanManageEnrollment(currentUser, existing.getEnrollment());
 
         Long enrollmentId = existing.getEnrollment().getId();
         tuitionPaymentRepository.delete(existing);
@@ -132,8 +131,9 @@ public class TuitionPaymentService {
     @Transactional(readOnly = true)
     public List<TuitionPayment> listPaymentsByEnrollment(Long enrollmentId) {
         // Ensure enrollment exists (nice error message)
-        enrollmentRepository.findById(enrollmentId)
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new RuntimeException("Enrollment not found: " + enrollmentId));
+        assertCanManageEnrollment(getCurrentUser(), enrollment);
         return tuitionPaymentRepository.findByEnrollmentIdOrderByPaidAtAsc(enrollmentId);
     }
 
@@ -154,6 +154,16 @@ public class TuitionPaymentService {
             throw new RuntimeException("Installment does not belong to this enrollment.");
         }
         return installment;
+    }
+
+    private void assertCanManageEnrollment(User actor, Enrollment enrollment) {
+        if (actor.getRole() != null && "ADMIN".equalsIgnoreCase(actor.getRole().getName())) {
+            return;
+        }
+        var center = enrollment.getCourse().getCenter();
+        if (center == null || center.getManager() == null || !center.getManager().getId().equals(actor.getId())) {
+            throw new RuntimeException("Only the center owner can manage tuition payments.");
+        }
     }
 }
 
