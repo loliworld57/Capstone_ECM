@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from '@/utils/axiosConfig';
+import AiSummaryModalStudent from "./AiSummaryModalStudent";
 
 
 interface Props {
@@ -28,6 +29,7 @@ interface Material {
     fileName: string;
     fileUrl: string;
     fileType: string;
+    summary?: string;
     uploadedDate: string;
 }
 
@@ -36,6 +38,13 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
     const [keyword, setKeyword] = useState("");
     const [isLoading, setIsLoading] = useState(true);
 
+    const [isAiSummaryModalOpen, setIsAiSummaryModalOpen] = useState(false);
+    const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+
+    const openSummaryModal = (material: Material, startingState: "INPUT" | "REVIEW") => {
+        setSelectedMaterial(material);
+        setIsAiSummaryModalOpen(true);
+    }
     // Fetch materials from the backend
     const fetchMaterials = async () => {
         setIsLoading(true);
@@ -83,6 +92,31 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
     return (
         <div className="bg-[var(--color-soft-white)] rounded-xl border border-[var(--color-main)] shadow-sm mt-6 overflow-hidden">
 
+            {isAiSummaryModalOpen && selectedMaterial && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-xl rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                            <h2 className="font-bold text-gray-800 text-lg">
+                                ✨ AI Summary: {selectedMaterial.fileName}
+                            </h2>
+                            <button
+                                onClick={() => setIsAiSummaryModalOpen(false)}
+                                className="text-gray-500 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-4">
+                            <AiSummaryModalStudent
+                                materialId={selectedMaterial.id}
+                                existingSummary={selectedMaterial.summary}
+                                onCancel={() => setIsAiSummaryModalOpen(false)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* HEADER */}
             <div className="bg-[var(--color-main)] text-white px-6 py-4 flex items-center justify-between font-semibold">
                 <div className="flex items-center gap-2">
@@ -155,7 +189,7 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                                             {formatDate(material.uploadedDate)}
                                         </td>
                                         <td className="p-4">
-                                            <div className="flex items-center justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center justify-center gap-2">
                                                 <a
                                                     href={material.fileUrl}
                                                     target="_blank"
@@ -166,6 +200,18 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                                                 >
                                                     <Download size={18} />
                                                 </a>
+                                                {material.summary != null && (
+                                                    <>
+                                                        {/* Button 1: Just view the existing summary */}
+                                                        <button
+                                                            onClick={() => openSummaryModal(material, "REVIEW")}
+                                                            className="text-green-600 hover:text-green-800 bg-green-50 px-2 py-1 rounded"
+                                                        >
+                                                            👁️ View
+                                                        </button>
+
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

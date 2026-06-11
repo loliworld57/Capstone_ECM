@@ -26,6 +26,7 @@ import GradebookSection from "./components/GradebookSection";
 import CourseFinanceTab from "./components/CourseFinanceTab";
 import { formatDateValue } from "@/utils/dateFormat";
 import { getCourseStatusClasses, getCourseStatusLabel } from "@/utils/courseStatus";
+import CourseQuizzes from "./components/CourseQuizzes";
 
 export default function CourseDetailPage() {
     const params = useParams();
@@ -34,7 +35,7 @@ export default function CourseDetailPage() {
 
     const [course, setCourse] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<
-        "General Info" | "Students" | "Attendance" | "Enrollment" | "Materials" | "Assignments" | "Gradebook" | "Finance"
+        "General Info" | "Students" | "Attendance" | "Enrollment" | "Materials" | "Assignments" | "Gradebook" | "Quiz" | "Finance"
     >("General Info");
 
     const [loading, setLoading] = useState(true);
@@ -337,6 +338,13 @@ export default function CourseDetailPage() {
             {activeTab === "Gradebook" && (
                 <div>
                     <GradebookSection courseId={courseId} />
+                </div>
+            )}
+
+            {/* Quiz */}
+            {activeTab === "Quiz" && (
+                <div>
+                    <CourseQuizzes courseId={courseId} />
                 </div>
             )}
 

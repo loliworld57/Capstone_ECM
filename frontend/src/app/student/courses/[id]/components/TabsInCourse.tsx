@@ -2,7 +2,7 @@ import { BookOpen, Book, NotebookPen, ClipboardCheck, WalletCards } from "lucide
 
 interface Props {
     activeTab: string;
-    setActiveTab: (tab: "General Info" | "Materials" | "Attendance" | "Assignments" | "Finance") => void;
+    setActiveTab: (tab: "General Info" | "Materials" | "Attendance" | "Assignments" | "Quizzes" | "Finance") => void;
     isManager: boolean;
 }
 
@@ -46,6 +46,15 @@ export default function TabsInCourse({ activeTab, setActiveTab, isManager }: Pro
                 Assignments
             </button>
 
+            {/* QUIZZES */}
+            <button
+                onClick={() => setActiveTab("Quizzes")}
+                className={tabStyle("Quizzes")}
+            >
+                <ClipboardCheck size={18} />
+                Quizzes
+            </button>
+
             {/* ATTENDANCE */}
             <button
                 onClick={() => setActiveTab("Attendance")}
@@ -54,7 +63,7 @@ export default function TabsInCourse({ activeTab, setActiveTab, isManager }: Pro
                 <ClipboardCheck size={18} />
                 Attendance
             </button>
-
+            {/* FINANCE */}
             <button
                 onClick={() => setActiveTab("Finance")}
                 className={tabStyle("Finance")}

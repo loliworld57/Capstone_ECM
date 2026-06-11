@@ -30,10 +30,6 @@ export default function StudentAssignmentDetailPage() {
                 const assignRes = await api.get(`/assignments/${assignmentId}`);
                 setAssignment(assignRes.data);
 
-                // 2. Lấy thông tin bài nộp của học sinh này (Nếu Backend có API này)
-                // const user = JSON.parse(localStorage.getItem('user') || '{}');
-                // const subRes = await api.get(`/assignments/${assignmentId}/submissions/student/${user.id}`);
-                // setSubmission(subRes.data);
 
                 // Lấy submission của student hiện tại
                 const user = JSON.parse(localStorage.getItem('user') || '{}');

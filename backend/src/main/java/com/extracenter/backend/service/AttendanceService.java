@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.extracenter.backend.dto.AttendanceRequest;
 import com.extracenter.backend.dto.AttendanceSheetResponse;
+import com.extracenter.backend.dto.StudentAttendanceRecordDTO;
 import com.extracenter.backend.entity.Attendance;
 import com.extracenter.backend.entity.AttendanceStatus;
 import com.extracenter.backend.entity.ClassSession;
@@ -103,59 +105,59 @@ public class AttendanceService {
         return attendanceRepository.findByClassSessionId(classSessionId);
     }
 
-        public AttendanceSheetResponse getAttendanceSheet(Long classSessionId) {
+    public AttendanceSheetResponse getAttendanceSheet(Long classSessionId) {
         ClassSession session = classSessionRepository.findById(classSessionId)
-            .orElseThrow(() -> new RuntimeException("Error: Class session not found!"));
+                .orElseThrow(() -> new RuntimeException("Error: Class session not found!"));
 
         Long courseId = session.getCourse().getId();
         List<Enrollment> enrollments = enrollmentRepository.findByCourseIdAndArchivedAtIsNull(courseId);
 
         Map<Long, Attendance> existingByStudentId = attendanceRepository.findByClassSessionId(classSessionId)
-            .stream()
-            .filter(att -> att.getEnrollment() != null && att.getEnrollment().getStudent() != null)
-            .collect(Collectors.toMap(
-                att -> att.getEnrollment().getStudent().getId(),
-                att -> att,
-                (a, b) -> b));
+                .stream()
+                .filter(att -> att.getEnrollment() != null && att.getEnrollment().getStudent() != null)
+                .collect(Collectors.toMap(
+                        att -> att.getEnrollment().getStudent().getId(),
+                        att -> att,
+                        (a, b) -> b));
 
         List<AttendanceSheetResponse.StudentAttendanceRow> students = enrollments.stream()
-            .filter(enrollment -> enrollment.getStudent() != null)
-            .map(enrollment -> {
-                Long studentId = enrollment.getStudent().getId();
-                Attendance existing = existingByStudentId.get(studentId);
+                .filter(enrollment -> enrollment.getStudent() != null)
+                .map(enrollment -> {
+                    Long studentId = enrollment.getStudent().getId();
+                    Attendance existing = existingByStudentId.get(studentId);
 
-                AttendanceStatus status = AttendanceStatus.ABSENT;
-                String note = null;
+                    AttendanceStatus status = AttendanceStatus.ABSENT;
+                    String note = null;
 
-                if (existing != null) {
-                status = existing.getStatus() != null
-                    ? existing.getStatus()
-                    : (Boolean.TRUE.equals(existing.getIsPresent())
-                        ? AttendanceStatus.ATTEND
-                        : AttendanceStatus.ABSENT);
-                note = existing.getNote();
-                }
+                    if (existing != null) {
+                        status = existing.getStatus() != null
+                                ? existing.getStatus()
+                                : (Boolean.TRUE.equals(existing.getIsPresent())
+                                        ? AttendanceStatus.ATTEND
+                                        : AttendanceStatus.ABSENT);
+                        note = existing.getNote();
+                    }
 
-                return AttendanceSheetResponse.StudentAttendanceRow.builder()
-                    .studentId(studentId)
-                    .firstName(enrollment.getStudent().getFirstName())
-                    .lastName(enrollment.getStudent().getLastName())
-                    .email(enrollment.getStudent().getEmail())
-                    .status(status)
-                    .note(note)
-                    .build();
-            })
-            .collect(Collectors.toList());
+                    return AttendanceSheetResponse.StudentAttendanceRow.builder()
+                            .studentId(studentId)
+                            .firstName(enrollment.getStudent().getFirstName())
+                            .lastName(enrollment.getStudent().getLastName())
+                            .email(enrollment.getStudent().getEmail())
+                            .status(status)
+                            .note(note)
+                            .build();
+                })
+                .collect(Collectors.toList());
 
         return AttendanceSheetResponse.builder()
-            .classSessionId(session.getId())
-            .courseId(courseId)
-            .date(session.getDate())
-            .startTime(session.getStartTime())
-            .endTime(session.getEndTime())
-            .students(students)
-            .build();
-        }
+                .classSessionId(session.getId())
+                .courseId(courseId)
+                .date(session.getDate())
+                .startTime(session.getStartTime())
+                .endTime(session.getEndTime())
+                .students(students)
+                .build();
+    }
 
     private ClassSlot resolveRequiredSlotForSession(ClassSession session) {
         Long courseId = session.getCourse().getId();
@@ -178,6 +180,52 @@ public class AttendanceService {
             }
         }
 
-        throw new RuntimeException("No valid class slot found for this session. Please edit the session to match an existing class slot.");
+        throw new RuntimeException(
+                "No valid class slot found for this session. Please edit the session to match an existing class slot.");
+    }
+
+    public List<StudentAttendanceRecordDTO> getStudentAttendanceLog(Long courseId, Long studentId) {
+        List<ClassSession> sessions = classSessionRepository.findByCourseId(courseId);
+        List<ClassSlot> courseSlots = classSlotRepository.findByCourseId(courseId);
+
+        // Explicitly defining the map parameter type (ClassSession session) removes
+        // lambda ambiguity
+        return sessions.stream().map((ClassSession session) -> {
+
+            Optional<Attendance> attendanceOpt = attendanceRepository
+                    .findByClassSessionIdAndEnrollmentStudentId(session.getId(), studentId);
+
+            String activeStatus = "NOT_TAKEN";
+
+            if (attendanceOpt != null && attendanceOpt.isPresent()) {
+                Attendance att = attendanceOpt.get();
+                if (att.getStatus() != null) {
+                    activeStatus = att.getStatus().toString(); // Safely converts String or Enum types
+                }
+            }
+
+            java.time.DayOfWeek sessionDay = session.getDate().getDayOfWeek();
+            String resolvedLocation = "Online / Unassigned";
+
+            for (ClassSlot slot : courseSlots) {
+                if (slot.getDaysOfWeek() != null && slot.getDaysOfWeek().contains(sessionDay) &&
+                        slot.getStartTime().equals(session.getStartTime()) &&
+                        slot.getEndTime().equals(session.getEndTime())) {
+
+                    if (slot.getClassroom() != null) {
+                        resolvedLocation = slot.getClassroom().getLocation();
+                        break;
+                    }
+                }
+            }
+
+            return new StudentAttendanceRecordDTO(
+                    session.getId(),
+                    session.getDate(),
+                    session.getStartTime(),
+                    session.getEndTime(),
+                    resolvedLocation,
+                    activeStatus);
+        }).collect(Collectors.toList());
     }
 }

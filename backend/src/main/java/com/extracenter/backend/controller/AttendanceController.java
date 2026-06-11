@@ -5,8 +5,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.extracenter.backend.dto.AttendanceRequest;
 import com.extracenter.backend.dto.AttendanceSheetResponse;
+import com.extracenter.backend.dto.StudentAttendanceRecordDTO;
 import com.extracenter.backend.entity.Attendance;
 import com.extracenter.backend.service.AttendanceService;
 
@@ -57,5 +60,17 @@ public class AttendanceController {
     @GetMapping("/sheet")
     public ResponseEntity<AttendanceSheetResponse> getAttendanceSheet(@RequestParam Long classSessionId) {
         return ResponseEntity.ok(attendanceService.getAttendanceSheet(classSessionId));
+    }
+
+    @GetMapping("/course/{courseId}/student/{studentId}")
+    @PreAuthorize("hasAnyAuthority('STUDENT', 'TEACHER', 'MANAGER')")
+    public ResponseEntity<List<StudentAttendanceRecordDTO>> getStudentAttendanceLogs(
+            @PathVariable Long courseId,
+            @PathVariable Long studentId) {
+
+        System.out.println("Fetching attendance logs for student ID: " + studentId);
+
+        List<StudentAttendanceRecordDTO> logHistory = attendanceService.getStudentAttendanceLog(courseId, studentId);
+        return ResponseEntity.ok(logHistory);
     }
 }

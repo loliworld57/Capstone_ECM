@@ -2,7 +2,7 @@ import { BookOpen, Users, UserCog, Book, NotebookPen, ClipboardCheck, WalletCard
 
 interface Props {
     activeTab: string;
-    setActiveTab: (tab: "General Info" | "Students" | "Materials" | "Attendance" | "Enrollment" | "Assignments" | "Gradebook" | "Finance") => void;
+    setActiveTab: (tab: "General Info" | "Students" | "Materials" | "Attendance" | "Enrollment" | "Assignments" | "Gradebook" | "Quiz" | "Finance") => void;
     isManager: boolean;
     courseId: number;
 }
@@ -69,6 +69,14 @@ export default function TabsInCourse({ activeTab, setActiveTab, isManager, cours
             >
                 <ClipboardCheck size={18} />
                 Attendance
+            </button>
+
+            <button
+                onClick={() => setActiveTab("Quiz")}
+                className={tabStyle("Quiz")}
+            >
+                <ClipboardCheck size={18} />
+                Quiz
             </button>
 
             {/* ENROLLMENT (Manager only) */}

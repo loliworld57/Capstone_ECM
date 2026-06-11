@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.extracenter.backend.dto.AssignmentSubmissionResponse;
 import com.extracenter.backend.dto.ScoreRequest;
+import com.extracenter.backend.dto.StudentAssignmentDTO;
 import com.extracenter.backend.dto.StudentAssignmentResponse;
 import com.extracenter.backend.entity.Assignment;
 import com.extracenter.backend.entity.AssignmentSubmission;
@@ -159,5 +161,15 @@ public class AssignmentController {
                 assignmentService.getAssignmentsForStudent(
                         courseId,
                         studentId));
+    }
+
+    @GetMapping("/course/{courseId}/student/{studentId}/with-status")
+    @PreAuthorize("hasAuthority('STUDENT')")
+    public ResponseEntity<List<StudentAssignmentDTO>> getAssignmentsForStudentwithStatus(
+            @PathVariable Long courseId,
+            @PathVariable Long studentId) {
+
+        List<StudentAssignmentDTO> list = assignmentService.getAssignmentsWithStudentStatus(courseId, studentId);
+        return ResponseEntity.ok(list);
     }
 }

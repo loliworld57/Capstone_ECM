@@ -38,4 +38,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     @Transactional
     @Query("DELETE FROM Attendance a WHERE a.classSession.id IN (SELECT cs.id FROM ClassSession cs WHERE cs.course.id = :courseId) OR a.classSlot.id IN (SELECT slot.id FROM ClassSlot slot WHERE slot.course.id = :courseId) OR a.enrollment.id IN (SELECT e.id FROM Enrollment e WHERE e.course.id = :courseId)")
     void deleteByCourseId(@Param("courseId") Long courseId);
+
+    Optional<Attendance> findByClassSessionIdAndEnrollmentStudentId(Long classSessionId, Long studentId);
 }
