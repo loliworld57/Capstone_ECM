@@ -129,7 +129,7 @@ public class TuitionAccountService {
         if (tuitionFeeVnd == null || discountPercentage == null || discountPercentage <= 0) {
             return 0L;
         }
-        return Math.round(tuitionFeeVnd * discountPercentage);
+        return Long.valueOf(Math.round(tuitionFeeVnd.doubleValue() * discountPercentage));
     }
 
     private TuitionAccount buildBaseAccount(Enrollment enrollment, PaymentPlanType paymentPlanType, LocalDate startDate, LocalDate endDate) {
