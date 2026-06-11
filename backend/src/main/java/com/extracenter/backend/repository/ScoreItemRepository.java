@@ -13,5 +13,7 @@ public interface ScoreItemRepository extends JpaRepository<ScoreItem, Long> {
 
     List<ScoreItem> findByAssignmentId(Long assignmentId);
 
+    List<ScoreItem> findByQuizId(Long quizId);
+
     Optional<ScoreItem> findByIdAndScoreCategoryId(Long id, Long scoreCategoryId);
 }

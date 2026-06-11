@@ -62,4 +62,7 @@ public class Assignment {
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<AssignmentSubmission> submissions;
+
+    @Column(name = "score_item_id", nullable = true)
+    private Long scoreItemId;
 }

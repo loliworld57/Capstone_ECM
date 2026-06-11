@@ -23,6 +23,8 @@ export default function AssignmentDetailModal({ courseId, assignment, readOnly =
 
     const isOverdue = new Date(assignment.dueDate).getTime() < new Date().getTime();
 
+
+
     // If in Edit mode, render Form instead of View
     if (isEditing) {
         return (

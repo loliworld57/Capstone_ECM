@@ -37,10 +37,11 @@ public class Quiz {
     private Boolean isGraded; // Does this count towards the final grade?
     private LocalDateTime dueDate;
 
-    // One Quiz has many Questions.
-    // CascadeType.ALL means if we delete the quiz, it deletes the questions too!
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<QuizQuestion> questions;
+
+    @Column(name = "score_item_id", nullable = true)
+    private Long scoreItemId;
 
 }

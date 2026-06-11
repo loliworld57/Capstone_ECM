@@ -5,17 +5,25 @@ import com.extracenter.backend.dto.QuizResultResponse;
 import com.extracenter.backend.dto.QuizSubmissionRequest;
 import com.extracenter.backend.dto.StudentQuestionDTO;
 import com.extracenter.backend.dto.StudentQuizDTO;
+import com.extracenter.backend.dto.StudentScoreRequest;
+import com.extracenter.backend.dto.TeacherQuizReportDTO;
 import com.extracenter.backend.dto.QuizGenerationRequest;
 import com.extracenter.backend.repository.MaterialRepository;
 import com.extracenter.backend.repository.QuizRepository;
 import com.extracenter.backend.repository.QuizSubmissionRepository;
+import com.extracenter.backend.repository.ScoreCategoryRepository;
+import com.extracenter.backend.repository.ScoreItemRepository;
 import com.extracenter.backend.entity.Material;
 import com.extracenter.backend.dto.CreateQuizRequest;
 import com.extracenter.backend.dto.QuizDashboardDTO;
 import com.extracenter.backend.service.QuizService;
+import com.extracenter.backend.service.StudentScoreService;
 import com.extracenter.backend.entity.Quiz;
 import com.extracenter.backend.entity.QuizQuestion;
 import com.extracenter.backend.entity.QuizSubmission;
+import com.extracenter.backend.entity.ScoreCategory;
+import com.extracenter.backend.entity.ScoreItem;
+import com.extracenter.backend.entity.StudentScore;
 import com.extracenter.backend.service.DocumentExtractionService;
 import com.extracenter.backend.service.GeminiService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +37,7 @@ import com.extracenter.backend.entity.User;
 import com.extracenter.backend.repository.UserRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,6 +55,12 @@ public class QuizController {
     private QuizService quizService;
 
     @Autowired
+    private StudentScoreService studentScoreService;
+
+    @Autowired
+    private ScoreCategoryRepository scoreCategoryRepository;
+
+    @Autowired
     private QuizSubmissionRepository quizSubmissionRepository;
 
     @Autowired
@@ -56,6 +71,9 @@ public class QuizController {
 
     @Autowired
     private QuizRepository quizRepository;
+
+    @Autowired
+    private ScoreItemRepository scoreItemRepository;
 
     @PostMapping("/generate")
     @PreAuthorize("hasAnyAuthority('TEACHER', 'MANAGER')")
@@ -141,7 +159,7 @@ public class QuizController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('TEACHER', 'MANAGER')")
     public ResponseEntity<?> updateQuiz(@PathVariable Long id, @RequestBody CreateQuizRequest request) {
-        System.out.println("🔄 Processing quiz update request for ID: " + id);
+        System.out.println("Processing quiz update request for ID: " + id);
         try {
             // 1. Fetch the existing quiz record from the database
             Quiz existingQuiz = quizRepository.findById(id)
@@ -152,10 +170,8 @@ public class QuizController {
             existingQuiz.setMaxAttempts(request.getMaxAttempts());
             existingQuiz.setIsGraded(request.getIsGraded());
             existingQuiz.setDueDate(request.getDueDate());
+            existingQuiz.setScoreItemId(request.getScoreItemId());
 
-            // 3. Clear the existing questions list to clear old records out of the DB
-            // (Because orphanRemoval = true is set in Quiz.java, this cleans up the DB
-            // automatically)
             existingQuiz.getQuestions().clear();
 
             // 4. Loop through the updated questions payload from React and map them back to
@@ -177,8 +193,54 @@ public class QuizController {
             // 5. Save the parent entity. Thanks to CascadeType.ALL, this pushes all changes
             // downstream!
             Quiz updatedQuiz = quizRepository.save(existingQuiz);
-            System.out.println("Quiz ID " + id + " successfully updated!");
+            List<com.extracenter.backend.entity.ScoreItem> oldItems = scoreItemRepository
+                    .findByQuizId(updatedQuiz.getId());
+            for (com.extracenter.backend.entity.ScoreItem oldItem : oldItems) {
+                if (request.getScoreItemId() == null || !oldItem.getId().equals(request.getScoreItemId())) {
+                    oldItem.setQuiz(null);
+                    scoreItemRepository.save(oldItem);
 
+                    studentScoreService.clearScoresByScoreItemId(oldItem.getId());
+                }
+            }
+
+            if (request.getScoreItemId() != null) {
+                scoreItemRepository.findById(request.getScoreItemId()).ifPresent(item -> {
+                    item.setQuiz(updatedQuiz);
+                    scoreItemRepository.saveAndFlush(item);
+                });
+
+                if (Boolean.TRUE.equals(updatedQuiz.getIsGraded())) {
+                    System.out.println("🔄 Retroactively syncing past quiz submissions...");
+
+                    List<QuizSubmission> allSubmissions = quizSubmissionRepository
+                            .findStudentSubmissionsByQuizId(updatedQuiz.getId());
+
+                    // Group by student to find their best historical attempt
+                    Map<Long, List<QuizSubmission>> submissionsByStudent = allSubmissions.stream()
+                            .collect(Collectors.groupingBy(QuizSubmission::getStudentId));
+
+                    int totalQuestions = updatedQuiz.getQuestions().size();
+
+                    for (Map.Entry<Long, List<QuizSubmission>> entry : submissionsByStudent.entrySet()) {
+                        int maxScore = entry.getValue().stream()
+                                .mapToInt(QuizSubmission::getScore).max().orElse(0);
+
+                        // Calculate Gradebook percentage (0-100)
+                        int calculatedPercentage = totalQuestions > 0
+                                ? (int) Math.round(((double) maxScore / totalQuestions) * 100.0)
+                                : 0;
+
+                        StudentScoreRequest gradebookRequest = new StudentScoreRequest(
+                                entry.getKey(), request.getScoreItemId(), calculatedPercentage);
+
+                        // Pushes the past score into the gradebook!
+                        studentScoreService.updateScore(gradebookRequest);
+                    }
+                }
+            }
+
+            System.out.println("Quiz ID " + id + " successfully updated and linked to Gradebook!");
             return ResponseEntity.ok(updatedQuiz);
 
         } catch (Exception e) {
@@ -270,6 +332,26 @@ public class QuizController {
                     java.time.LocalDateTime.now());
 
             quizSubmissionRepository.save(submission);
+
+            if (quiz.getScoreItemId() != null && Boolean.TRUE.equals(quiz.getIsGraded())) {
+                // 1. Normalize the quiz score onto the gradebook's standard 0-100 scale
+                int calculatedGradePercentage = (int) Math.round(((double) score / totalQuestions) * 100.0);
+
+                // 2. Query if they have an existing score in this category slot
+                Optional<StudentScore> currentRecordOpt = studentScoreService.getScore(activeStudentId,
+                        quiz.getScoreItemId());
+
+                if (currentRecordOpt.isEmpty() || calculatedGradePercentage > currentRecordOpt.get().getScore()) {
+                    // Post the new highest grade value cleanly
+                    StudentScoreRequest gradebookRequest = new StudentScoreRequest(
+                            activeStudentId,
+                            quiz.getScoreItemId(),
+                            calculatedGradePercentage);
+                    studentScoreService.updateScore(gradebookRequest);
+                    System.out.println("Gradebook updated automatically for student via Quiz engine. Score: "
+                            + calculatedGradePercentage);
+                }
+            }
             return ResponseEntity.ok(new QuizResultResponse(score, totalQuestions));
 
         } catch (Exception e) {
@@ -320,5 +402,97 @@ public class QuizController {
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(dashboardList);
+    }
+
+    @GetMapping("/{quizId}/teacher-report")
+    @PreAuthorize("hasAnyAuthority('TEACHER', 'MANAGER')")
+    public ResponseEntity<?> getQuizReportForTeacher(@PathVariable Long quizId) {
+        System.out.println("Teacher generating performance report for Quiz ID: " + quizId);
+
+        // 1. Fetch target quiz context wrapper
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz record context not found"));
+
+        int totalQuestions = quiz.getQuestions().isEmpty() ? 0 : quiz.getQuestions().size();
+
+        // 2. Fetch all raw submission tokens
+        List<QuizSubmission> allSubmissions = quizSubmissionRepository.findStudentSubmissionsByQuizId(quizId);
+
+        if (allSubmissions.isEmpty()) {
+            // Return clear empty metrics container so frontend doesn't crash on NaN values
+            return ResponseEntity
+                    .ok(new TeacherQuizReportDTO(0.0, 0, 0, 0, totalQuestions, new java.util.ArrayList<>()));
+        }
+
+        // 3. Group submissions by Student ID to filter down to their highest score
+        Map<Long, List<QuizSubmission>> submissionsByStudent = allSubmissions.stream()
+                .collect(Collectors.groupingBy(QuizSubmission::getStudentId));
+
+        List<TeacherQuizReportDTO.StudentResultRow> rosterRows = new java.util.ArrayList<>();
+
+        int classHighest = Integer.MIN_VALUE;
+        int classLowest = Integer.MAX_VALUE;
+        double classScoreSum = 0;
+
+        for (Map.Entry<Long, List<QuizSubmission>> entry : submissionsByStudent.entrySet()) {
+            Long studentId = entry.getKey();
+            List<QuizSubmission> studentAttempts = entry.getValue();
+
+            // Calculate student's individual highest score
+            int studentMax = studentAttempts.stream()
+                    .mapToInt(QuizSubmission::getScore)
+                    .max()
+                    .orElse(0);
+
+            // Track running summary totals for the global metrics blocks
+            classScoreSum += studentMax;
+            if (studentMax > classHighest)
+                classHighest = studentMax;
+            if (studentMax < classLowest)
+                classLowest = studentMax;
+
+            // Get the timestamp of their latest work
+            java.time.LocalDateTime lastSubmitted = studentAttempts.stream()
+                    .map(QuizSubmission::getSubmittedAt)
+                    .max(java.time.LocalDateTime::compareTo)
+                    .orElse(java.time.LocalDateTime.now());
+
+            // Pull user contact metadata fields safely
+            String studentName = "Unknown Student";
+            String email = "N/A";
+            Optional<User> studentOpt = userRepository.findById(studentId);
+            if (studentOpt.isPresent()) {
+                User s = studentOpt.get();
+                studentName = s.getLastName() + " " + s.getFirstName();
+                email = s.getEmail();
+            }
+
+            rosterRows.add(new TeacherQuizReportDTO.StudentResultRow(
+                    studentId, studentName, email, studentMax, studentAttempts.size(), lastSubmitted));
+        }
+
+        double averageScore = Math.round((classScoreSum / submissionsByStudent.size()) * 10.0) / 10.0;
+
+        TeacherQuizReportDTO completeReport = new TeacherQuizReportDTO(
+                averageScore,
+                submissionsByStudent.size(), // Total unique active students who participated
+                classHighest,
+                classLowest,
+                totalQuestions,
+                rosterRows);
+
+        return ResponseEntity.ok(completeReport);
+    }
+
+    @GetMapping("/course/{courseId}/gradebook-items")
+    public ResponseEntity<?> getAvailableGradebookColumns(@PathVariable Long courseId) {
+        // Find categories for the course, stream out their items, and return them for a
+        // flat selection menu dropdown!
+        List<ScoreCategory> categories = scoreCategoryRepository.findByCourseId(courseId);
+        List<ScoreItem> openItems = categories.stream()
+                .flatMap(cat -> cat.getScoreItems().stream())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(openItems);
     }
 }
