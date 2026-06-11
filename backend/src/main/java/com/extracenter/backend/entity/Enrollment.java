@@ -1,6 +1,7 @@
 package com.extracenter.backend.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -54,6 +55,9 @@ public class Enrollment {
 
     // Automatically set the enrollment date to the day the record is created
     private LocalDate enrollmentDate = LocalDate.now();
+
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
 
     // --- GRADES / SCORES ---
     private Float progressScore; // E.g., Mid-term or continuous assessment score

@@ -20,6 +20,7 @@ import CourseAttendance from "./components/CourseAttendance";
 import NotFound from "@/app/not-found";
 import CourseMaterials from "./components/CourseMaterial";
 import CourseAssignments from "./components/CourseAssignment";
+import CourseFinance from "./components/CourseFinance";
 import { formatDateValue } from "@/utils/dateFormat";
 import { getCourseStatusClasses, getCourseStatusLabel } from "@/utils/courseStatus";
 import CourseQuizzes from "./components/CourseQuizzes";
@@ -31,7 +32,7 @@ export default function CourseDetailPage() {
 
     const [course, setCourse] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<
-        "General Info" | "Attendance" | "Materials" | "Assignments" | "Quizzes"
+        "General Info" | "Attendance" | "Materials" | "Assignments" | "Quizzes"| "Finance"
     >("General Info");
 
     const [loading, setLoading] = useState(true);
@@ -257,6 +258,10 @@ export default function CourseDetailPage() {
                 <div>
                     <CourseAttendance courseId={courseId} />
                 </div>
+            )}
+
+            {activeTab === "Finance" && (
+                <CourseFinance courseId={courseId} />
             )}
 
         </div>

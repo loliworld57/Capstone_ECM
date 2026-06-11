@@ -41,6 +41,8 @@ export interface Course {
         lastName: string;
     };
     invitationStatus: string; // PENDING, ACCEPTED
+    tuitionFeeVnd?: number;
+    archivedAt?: string | null;
 }
 
 export interface CourseUpsertData {
@@ -175,5 +177,15 @@ export const getStudentPendingAssignments = async (studentId: number) => {
 // 3. Lấy danh sách lịch học sắp tới (Upcoming Classes)
 export const getStudentUpcomingClasses = async (studentId: number) => {
     const response = await api.get(`/class-sessions/student/${studentId}/upcoming`);
+    return response.data;
+};
+
+export const getArchivedCoursesByCenter = async (centerId: number) => {
+    const response = await api.get<Course[]>(`/courses/archived?centerId=${centerId}`);
+    return response.data;
+};
+
+export const restoreCourse = async (courseId: number) => {
+    const response = await api.put<Course>(`/courses/${courseId}/restore`);
     return response.data;
 };

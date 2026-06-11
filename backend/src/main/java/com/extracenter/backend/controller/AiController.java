@@ -27,7 +27,7 @@ public class AiController {
 
     // 1. Endpoint to just GENERATE the summary (doesn't save yet)
     @PostMapping("/generate-summary")
-    @PreAuthorize("hasAnyAuthority('TEACHER', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('TEACHER', 'ROLE_TEACHER')")
     public ResponseEntity<?> generateSummaryPreview(@RequestBody AiSummaryRequest request) {
         try {
             // 1. Find the material in the database
@@ -60,7 +60,7 @@ public class AiController {
 
     // 2. Endpoint to officially SAVE the summary to the database
     @PutMapping("/save-summary/{materialId}")
-    @PreAuthorize("hasAnyAuthority('TEACHER', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('TEACHER', 'ROLE_TEACHER')")
     public ResponseEntity<?> saveSummaryToMaterial(
             @PathVariable Long materialId,
             @RequestBody Map<String, String> payload) {

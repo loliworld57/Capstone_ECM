@@ -1,6 +1,7 @@
 package com.extracenter.backend.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -60,6 +61,9 @@ public class Course {
     @Column(length = 20)
     private String invitationStatus = "ACCEPTED";
 
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
+
     // --- RELATIONSHIPS ---
 
     // 1. Which center does this course belong to?
@@ -82,6 +86,10 @@ public class Course {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pending_teacher_id")
     private User pendingTeacher;
+
+    // Tuition fee base (VND). Students cannot pay online; this is used for tracking.
+    @Column(nullable = true)
+    private Long tuitionFeeVnd;
 
     // 4. List of enrollments (Replaces the old direct Set<User> students)
     // CascadeType.ALL & orphanRemoval: Deleting a Course safely deletes all

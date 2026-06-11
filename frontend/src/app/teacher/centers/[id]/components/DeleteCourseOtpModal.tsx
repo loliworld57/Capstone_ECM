@@ -130,7 +130,7 @@ export default function DeleteCourseOtpModal({
     try {
       setDeleting(true);
       await confirmDeleteCourseWithOtp(courseId, managerId, code);
-      toast.success("Course deleted successfully!");
+      toast.success("Course archived successfully!");
       onDeleted();
       onClose();
     } catch (error: any) {
@@ -150,14 +150,14 @@ export default function DeleteCourseOtpModal({
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4">
       <div className="w-full max-w-md rounded-xl border border-[var(--color-main)] bg-[var(--color-soft-white)] shadow-xl">
         <div className="border-b border-[var(--color-main)]/20 px-5 py-4">
-          <h4 className="text-lg font-bold text-[var(--color-text)]">Delete Course</h4>
+          <h4 className="text-lg font-bold text-[var(--color-text)]">Archive Course</h4>
         </div>  
 
         <div className="space-y-4 px-5 py-4">
           <p className="text-sm text-[var(--color-text)]">
-            You are deleting <span className="font-semibold">{courseName || "this course"}</span>.
+            You are archiving <span className="font-semibold">{courseName || "this course"}</span>.
             The course must already be ended and must not have any active classes.
-            If deletion is confirmed, all related enrollments, materials, assignments, attendance records, sessions, and class slots will also be deleted.
+            Enrollment and finance history will remain available and the course can be restored later.
           </p>
 
           <button
@@ -207,7 +207,7 @@ export default function DeleteCourseOtpModal({
             disabled={!otpSent || deleting || otp.some((d) => !d)}
             className="rounded-lg border border-[var(--color-alert)] bg-[var(--color-alert)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--color-soft-white)] hover:text-[var(--color-alert)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {deleting ? "Deleting..." : "Confirm Delete"}
+            {deleting ? "Archiving..." : "Confirm Archive"}
           </button>
         </div>
       </div>
