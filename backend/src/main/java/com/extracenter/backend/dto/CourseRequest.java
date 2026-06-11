@@ -35,7 +35,12 @@ public class CourseRequest {
     @NotNull(message = "Teacher ID is required")
     private Long teacherId;
 
+    // Tuition fee base (VND) used for tuition tracking (no online payments)
+    @NotNull(message = "Tuition fee is required")
+    private Long tuitionFeeVnd;
+
     // 2. Schedule Configuration (Used to generate ClassSessions)
+
     @Valid
     private List<SlotRequest> slots;
 

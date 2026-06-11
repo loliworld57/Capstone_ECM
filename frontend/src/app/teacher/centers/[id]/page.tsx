@@ -17,6 +17,7 @@ import GradeListTab from "./components/GradeListTab";
 import ClassroomTab from "./components/ClassroomTab";
 import ClassSlotTab from "./components/ClassSlotTab";
 import StudentTab from "./components/StudentTab";
+import CenterFinanceTab from "./components/CenterFinanceTab";
 
 type StudentCenterCard = User & {
     courses: { id: number; name: string }[];
@@ -37,7 +38,7 @@ export default function CenterDetailPage() {
 
     const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
     const [isManager, setIsManager] = useState(false);
-    const [activeTab, setActiveTab] = useState<"courses" | "students" | "teachers" | "subjects" | "grades" | "classrooms" | "class-slots">("courses");
+    const [activeTab, setActiveTab] = useState<"courses" | "students" | "teachers" | "subjects" | "grades" | "classrooms" | "class-slots" | "finance">("courses");
     const [loading, setLoading] = useState(true);
 
     const [courses, setCourses] = useState<Course[]>([]);
@@ -198,6 +199,10 @@ export default function CenterDetailPage() {
                         isManager={isManager}
                         onUpdate={fetchData}
                     />
+                )}
+
+                {activeTab === "finance" && isManager && (
+                    <CenterFinanceTab centerId={centerId} />
                 )}
             </div>
 

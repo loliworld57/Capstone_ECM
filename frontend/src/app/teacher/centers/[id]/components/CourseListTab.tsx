@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Plus, Trash2, Mail, BookOpen, Settings, Info, Search } from "lucide-react";
-import { Course } from "@/services/courseService";
+import { Plus, Trash2, Mail, BookOpen, Settings, Info, Search, ArchiveRestore } from "lucide-react";
+import { Course, getArchivedCoursesByCenter, restoreCourse } from "@/services/courseService";
 import InviteTeacherModal from "./InviteTeacherModal";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import DeleteCourseOtpModal from "./DeleteCourseOtpModal";
 import { CourseStatus, getCourseStatusClasses, getCourseStatusLabel, isCourseEnded } from "@/utils/courseStatus";
 interface Props {
@@ -20,6 +21,26 @@ export default function CourseListTab({ courses, centerId, isManager, onUpdate }
     const [selectedSubject, setSelectedSubject] = useState("ALL");
     const [selectedGrade, setSelectedGrade] = useState("ALL");
     const [statusFilter, setStatusFilter] = useState<CourseStatus>("IN_PROGRESS");
+    const [showArchived, setShowArchived] = useState(false);
+    const [archivedCourses, setArchivedCourses] = useState<Course[]>([]);
+
+    useEffect(() => {
+        if (!isManager) return;
+        getArchivedCoursesByCenter(centerId)
+            .then(setArchivedCourses)
+            .catch((error) => console.error("Unable to load archived courses", error));
+    }, [centerId, isManager, courses]);
+
+    const handleRestore = async (courseId: number) => {
+        try {
+            await restoreCourse(courseId);
+            toast.success("Course restored.");
+            setArchivedCourses((current) => current.filter((course) => course.id !== courseId));
+            onUpdate();
+        } catch (error: any) {
+            toast.error(error?.response?.data?.error || "Unable to restore course.");
+        }
+    };
 
     const statusOptions: CourseStatus[] = ["UPCOMING", "IN_PROGRESS", "ENDED"];
 
@@ -88,15 +109,52 @@ export default function CourseListTab({ courses, centerId, isManager, onUpdate }
                 </h3>
 
                 {isManager && (
-                    <Link
-                        href={`/teacher/courses/create?centerId=${centerId}`}
-                        className="flex items-center gap-2 bg-[var(--color-main)] border-2 border-[var(--color-main)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition"
-                    >
-                        <Plus size={16} />
-                        Create Course
-                    </Link>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setShowArchived((value) => !value)}
+                            className="flex items-center gap-2 border-2 border-[var(--color-main)] text-[var(--color-main)] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--color-main)] hover:text-white transition"
+                        >
+                            <ArchiveRestore size={16} />
+                            Archived ({archivedCourses.length})
+                        </button>
+                        <Link
+                            href={`/teacher/courses/create?centerId=${centerId}`}
+                            className="flex items-center gap-2 bg-[var(--color-main)] border-2 border-[var(--color-main)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition"
+                        >
+                            <Plus size={16} />
+                            Create Course
+                        </Link>
+                    </div>
                 )}
             </div>
+
+            {showArchived && isManager && (
+                <div className="rounded-xl border border-[var(--color-main)]/20 bg-white p-4">
+                    <h4 className="mb-3 font-bold text-[var(--color-text)]">Archived Courses</h4>
+                    {archivedCourses.length === 0 ? (
+                        <p className="text-sm text-gray-500">No archived courses.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {archivedCourses.map((course) => (
+                                <div key={course.id} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                                    <div>
+                                        <Link href={`/teacher/courses/${course.id}`} className="font-semibold text-[var(--color-main)] hover:underline">
+                                            {course.name}
+                                        </Link>
+                                        <p className="text-xs text-gray-500">Finance history remains available.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRestore(course.id)}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-main)] px-3 py-2 text-sm font-medium text-[var(--color-main)] transition hover:bg-[var(--color-main)] hover:text-white"
+                                    >
+                                        <ArchiveRestore size={15} /> Restore
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* CARD LIST */}
             <div className="grid grid-cols-1 gap-3 rounded-2xl border border-[var(--color-main)]/15 bg-white p-4 md:grid-cols-4">
@@ -204,7 +262,7 @@ export default function CourseListTab({ courses, centerId, isManager, onUpdate }
                                                 setDeletingCourseId(course.id);
                                             }}
                                             disabled={!isCourseEnded(course.status)}
-                                            title={isCourseEnded(course.status) ? "Delete course" : "Only ended courses can be deleted"}
+                                            title={isCourseEnded(course.status) ? "Archive course" : "Only ended courses can be archived"}
                                             className="p-2 border-2 border-[var(--color-alert)] bg-[var(--color-alert)] text-white rounded hover:bg-[var(--color-soft-white)] hover:text-[var(--color-alert)] transition disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300 disabled:hover:text-gray-500"
                                         >
                                             <Trash2 size={18} />

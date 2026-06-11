@@ -15,111 +15,124 @@ import jakarta.servlet.DispatcherType;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+        @Autowired
+        private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        http
-            // disable CSRF for REST API
-            .csrf(csrf -> csrf.disable())
+                http
+                                // disable CSRF for REST API
+                                .csrf(csrf -> csrf.disable())
 
-            // enable CORS (default config or you can customize later)
-            .cors(cors -> cors.configure(http))
+                                // enable CORS (default config or you can customize later)
+                                .cors(cors -> cors.configure(http))
 
-            .authorizeHttpRequests(auth -> auth
+                                .authorizeHttpRequests(auth -> auth
 
-                // allow error + forward requests
-                .dispatcherTypeMatchers(
-                        DispatcherType.ERROR,
-                        DispatcherType.FORWARD
-                ).permitAll()
+                                                // allow error + forward requests
+                                                .dispatcherTypeMatchers(
+                                                                DispatcherType.ERROR,
+                                                                DispatcherType.FORWARD)
+                                                .permitAll()
 
-                // allow preflight
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                // allow preflight
+                                                .requestMatchers("/", "/api", "/api/").permitAll()
+                                                // PUBLIC APIs
+                                                .requestMatchers(
+                                                                "/api/users/login",
+                                                                "/api/users/register-teacher",
+                                                                "/api/users/verify-otp",
+                                                                "/api/users/resend-otp",
+                                                                "/api/health",
+                                                                "/api/status",
+                                                                "/error")
+                                                .permitAll()
 
-                // PUBLIC APIs
-                .requestMatchers(
-                        "/api/users/login",
-                        "/api/users/register-teacher",
-                        "/api/users/verify-otp",
-                        "/api/users/resend-otp",
-                        "/api/health",
-                        "/api/status",
-                        "/api/",
-                        "/error"
-                ).permitAll()
+                                                // PUBLIC SWAGGER/API DOCUMENTATION
+                                                .requestMatchers(
+                                                                "/swagger-ui.html",
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs",
+                                                                "/v3/api-docs/**",
+                                                                "/swagger-resources",
+                                                                "/swagger-resources/**")
+                                                .permitAll()
 
-                // PUBLIC SWAGGER/API DOCUMENTATION
-                .requestMatchers(
-                        "/swagger-ui.html",
-                        "/swagger-ui/**",
-                        "/v3/api-docs",
-                        "/v3/api-docs/**",
-                        "/swagger-resources",
-                        "/swagger-resources/**"
-                ).permitAll()
+                                                // ADMIN ONLY
+                                                .requestMatchers("/api/users/admin/**")
+                                                .hasRole("ADMIN")
 
-                // ADMIN ONLY
-                .requestMatchers("/api/users/admin/**")
-                .hasRole("ADMIN")
+                                                // TEACHER / ADMIN
+                                                .requestMatchers(
+                                                                "/api/users/teacher/**",
+                                                                "/api/users/create-student",
+                                                                "/api/users/search")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-                // TEACHER / MANAGER / ADMIN
-                .requestMatchers(
-                        "/api/users/teacher/**",
-                        "/api/users/create-student",
-                        "/api/users/search"
-                ).hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                // TEACHER / ADMIN (courses, schedule, centers)
+                                                .requestMatchers(
+                                                                "/api/schedule/teacher/**",
+                                                                "/api/courses/teacher/**",
+                                                                "/api/courses/invitations/**",
+                                                                "/api/centers/teacher/**",
+                                                                "/api/centers/teaching/**",
+                                                                "/api/courses/finance/**",
+                                                                "/api/teacher/courses/finance/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-                // TEACHER / MANAGER / ADMIN (courses, schedule, centers)
-                .requestMatchers(
-                        "/api/schedule/teacher/**",
-                        "/api/courses/teacher/**",
-                        "/api/courses/invitations/**",
-                        "/api/centers/teacher/**",
-                        "/api/centers/teaching/**"
-                ).hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                // FINANCE ACCESS
+                                                .requestMatchers("/api/teacher/finance/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-                // CENTERS ACCESS
-                .requestMatchers("/api/centers/**")
-                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .requestMatchers("/api/centers/finance/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-                // STUDENT ACCESS
-                .requestMatchers(
-                        "/api/schedule/student/**",
-                        "/api/courses/student/**",
-                        "/api/assignments/student/**"
-                ).hasAnyRole("STUDENT", "ADMIN")
+                                                .requestMatchers("/api/tuition/student/**")
+                                                .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
 
-                // COURSE WRITE OPERATIONS
-                .requestMatchers(HttpMethod.POST, "/api/courses/**")
-                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .requestMatchers("/api/tuition/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-                .requestMatchers(HttpMethod.PUT, "/api/courses/**")
-                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
 
-                .requestMatchers(HttpMethod.DELETE, "/api/courses/**")
-                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
 
-                // MATERIALS
-                .requestMatchers("/api/materials/**")
-                .hasAnyRole("TEACHER", "MANAGER", "ADMIN", "STUDENT")
+                                                // CENTERS ACCESS
+                                                .requestMatchers("/api/centers/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-                // ASSIGNMENTS
-                .requestMatchers("/api/assignments/**")
-                .hasAnyRole("TEACHER", "MANAGER", "ADMIN", "STUDENT")
+                                                // STUDENT ACCESS
+                                                .requestMatchers(
+                                                                "/api/schedule/student/**",
+                                                                "/api/courses/student/**",
+                                                                "/api/assignments/student/**")
+                                                .hasAnyRole("STUDENT", "ADMIN")
 
-                // everything else must be authenticated
-                .anyRequest().authenticated()
-            )
+                                                // COURSE WRITE OPERATIONS
+                                                .requestMatchers(HttpMethod.POST, "/api/courses/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-            // JWT filter
-            .addFilterBefore(
-                    jwtAuthenticationFilter,
-                    UsernamePasswordAuthenticationFilter.class
-            );
+                                                .requestMatchers(HttpMethod.PUT, "/api/courses/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-        return http.build();
-    }
+                                                .requestMatchers(HttpMethod.DELETE, "/api/courses/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
+
+                                                // MATERIALS
+                                                .requestMatchers("/api/materials/**")
+                                                .hasAnyRole("TEACHER", "ADMIN", "STUDENT")
+
+                                                // ASSIGNMENTS
+                                                .requestMatchers("/api/assignments/**")
+                                                .hasAnyRole("TEACHER", "ADMIN", "STUDENT")
+
+                                                // everything else must be authenticated
+                                                .anyRequest().authenticated())
+
+                                // JWT filter
+                                .addFilterBefore(
+                                                jwtAuthenticationFilter,
+                                                UsernamePasswordAuthenticationFilter.class);
+
+                return http.build();
+        }
 }

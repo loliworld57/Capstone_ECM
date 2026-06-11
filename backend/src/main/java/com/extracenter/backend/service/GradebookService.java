@@ -72,7 +72,7 @@ public class GradebookService {
         }
 
         // Get all enrolled students
-        List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
+        List<Enrollment> enrollments = enrollmentRepository.findByCourseIdAndArchivedAtIsNull(courseId);
 
         // Get all student scores for this course
         List<Long> allScoreItemIds = scoreItems.stream()

@@ -63,8 +63,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT COUNT(c) FROM User u JOIN u.connectedCenters c WHERE u.id = :userId")
     long countCentersByUserId(@Param("userId") Long userId);
 
-    // NEWLY ADDED: Count total users by their role (e.g., "STUDENT", "TEACHER",
-    // "MANAGER")
+    // Count total users by their role (e.g., "STUDENT", "TEACHER", "ADMIN")
     // Highly useful for the Admin Dashboard statistics!
     @Query("SELECT COUNT(u) FROM User u WHERE u.role.name = :roleName")
     long countByRoleName(@Param("roleName") String roleName);
