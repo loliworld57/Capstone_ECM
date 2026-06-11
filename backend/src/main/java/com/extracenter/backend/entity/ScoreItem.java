@@ -41,8 +41,9 @@ public class ScoreItem {
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "score_category_id", nullable = false)
-    // FIX: Prevents Jackson from choking on the ByteBuddy proxy when serializing this relationship
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    // FIX: Prevents Jackson from choking on the ByteBuddy proxy when serializing
+    // this relationship
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private ScoreCategory scoreCategory;
 
     // RELATIONSHIP: Optional link to an Assignment
@@ -50,9 +51,15 @@ public class ScoreItem {
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id")
-    // FIX: Prevents Jackson from choking on the ByteBuddy proxy when serializing this relationship
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     private Assignment assignment;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quiz_id") // <-- ADD THIS RELATIONSHIP FIELD
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    private Quiz quiz;
 
     // RELATIONSHIP: Student scores for this item
     // Deleting a ScoreItem deletes all related StudentScores

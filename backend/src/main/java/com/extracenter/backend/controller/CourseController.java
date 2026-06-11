@@ -3,6 +3,7 @@ package com.extracenter.backend.controller;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,10 @@ import com.extracenter.backend.dto.CourseRequest;
 import com.extracenter.backend.dto.CourseSessionResponse;
 import com.extracenter.backend.dto.CourseSessionSlotOptionResponse;
 import com.extracenter.backend.entity.Course;
+import com.extracenter.backend.entity.ScoreCategory;
+import com.extracenter.backend.entity.ScoreItem;
 import com.extracenter.backend.entity.User;
+import com.extracenter.backend.repository.ScoreCategoryRepository;
 import com.extracenter.backend.service.CourseService;
 
 import jakarta.validation.Valid;
@@ -292,4 +296,5 @@ public class CourseController {
     public ResponseEntity<List<Course>> getCoursesForStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(courseService.getCoursesByStudentId(studentId));
     }
+
 }

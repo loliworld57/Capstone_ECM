@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 import api from '@/utils/axiosConfig';
 import ConfirmModal from "@/components/ConfirmModal";
 import CreateQuizModal from "./CreateQuizModal";
+import TeacherQuizResultsView from "./TeacherQuizResultView";
 
 interface Props {
     courseId: number;
@@ -42,6 +43,8 @@ export default function CourseQuizzes({ courseId, readOnly = false }: Props) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     const [editingQuizId, setEditingQuizId] = useState<number | null>(null);
+
+    const [selectedQuizForReport, setSelectedQuizForReport] = useState<{ id: number; title: string } | null>(null);
 
     // Fetch Quizzes and Materials
     const fetchData = async () => {
@@ -101,6 +104,17 @@ export default function CourseQuizzes({ courseId, readOnly = false }: Props) {
     const pendingDeleteQuiz = Array.isArray(quizzes)
         ? quizzes.find((q) => q.id === pendingDeleteId)
         : null;
+
+
+    if (selectedQuizForReport) {
+        return (
+            <TeacherQuizResultsView
+                quizId={selectedQuizForReport.id}
+                quizTitle={selectedQuizForReport.title}
+                onBack={() => setSelectedQuizForReport(null)}
+            />
+        );
+    }
 
     return (
         <div className="bg-[var(--color-soft-white)] rounded-xl border border-[var(--color-main)] shadow-sm mt-6 overflow-hidden">
@@ -221,6 +235,7 @@ export default function CourseQuizzes({ courseId, readOnly = false }: Props) {
                                                 ) : (
                                                     <>
                                                         <button
+                                                            onClick={() => setSelectedQuizForReport({ id: quiz.id, title: quiz.title })}
                                                             className="flex items-center gap-1 text-green-600 hover:text-green-800 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition font-semibold"
                                                             title="View Results"
                                                         >

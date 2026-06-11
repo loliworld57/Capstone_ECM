@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UploadCloud, FileText, X, Loader2, Save, Calendar, Type, AlignLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/utils/axiosConfig';
+import { useGradebookItems } from './GradebookItem';
 
 interface AssignmentFormProps {
     courseId: number;
     classSessionId?: number;
-    initialData?: any; // If data is passed -> Edit mode
+    initialData?: any;
     onSuccess: () => void;
     onCancel: () => void;
 }
@@ -24,12 +25,17 @@ export default function AssignmentForm({ courseId, classSessionId, initialData, 
 
     const isEditMode = !!initialData;
 
+
+    const { gradebookItems } = useGradebookItems(courseId);
+    const [scoreItemId, setScoreItemId] = useState<number | "">("");
+
     // Load old data if in Edit mode
     useEffect(() => {
         if (initialData) {
             setTitle(initialData.title || "");
             setDescription(initialData.description || "");
             setExistingFileName(initialData.fileName || null);
+            setScoreItemId(initialData.scoreItemId || "");
 
             // Format ISO string to datetime-local format (YYYY-MM-DDThh:mm)
             if (initialData.dueDate) {
@@ -75,6 +81,10 @@ export default function AssignmentForm({ courseId, classSessionId, initialData, 
             formData.append("dueDate", isoDueDate);
             formData.append("courseId", courseId.toString());
 
+            if (scoreItemId) {
+                formData.append("scoreItemId", scoreItemId.toString()); // <-- PASS TO MATCH THE NEW CONTROLLER PARAMETER
+            }
+
             if (classSessionId) formData.append("classSessionId", classSessionId.toString());
             if (file) formData.append("file", file);
 
@@ -83,6 +93,7 @@ export default function AssignmentForm({ courseId, classSessionId, initialData, 
                 await api.put(`/assignments/${initialData.id}`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+                console.log("Assignment updated successfully!", formData.get("title"), formData.get("dueDate"), formData.get("file"), formData.get("scoreItemId"));
                 toast.success("Assignment updated successfully!");
             } else {
                 await api.post('/assignments', formData, {
@@ -134,6 +145,23 @@ export default function AssignmentForm({ courseId, classSessionId, initialData, 
                     required type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
                     className="w-full p-2.5 border-2 border-[var(--color-main)]/50 rounded-lg focus:border-[var(--color-main)] outline-none transition bg-white"
                 />
+            </div>
+
+            {/* LINK TO GRADEBOOK COLUMN */}
+            <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Gradebook Component Column</label>
+                <select
+                    value={scoreItemId}
+                    onChange={(e) => setScoreItemId(e.target.value ? Number(e.target.value) : "")}
+                    className="w-full border p-2 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-[var(--color-main)]"
+                >
+                    <option value="">-- No Gradebook Association --</option>
+                    {gradebookItems.map((item) => (
+                        <option key={item.id} value={item.id}>
+                            {item.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             {/* ATTACH FILE (OPTIONAL) */}

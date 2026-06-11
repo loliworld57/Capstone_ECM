@@ -3,8 +3,8 @@ import api from '@/utils/axiosConfig';
 import { Loader2 } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
 import toast from 'react-hot-toast';
+import { useGradebookItems } from './GradebookItem';
 
-// Adjust these props based on your actual data structures
 interface CreateQuizModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -14,7 +14,7 @@ interface CreateQuizModalProps {
 }
 
 export default function CreateQuizModal({ isOpen, onClose, courseId, existingMaterials, quizIdToEdit }: CreateQuizModalProps) {
-    // 1. Material Source State
+
     const [sourceType, setSourceType] = useState<'existing' | 'upload'>('existing');
     const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
     const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -32,6 +32,9 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
     const [isGenerating, setIsGenerating] = useState(false);
 
+    const { gradebookItems } = useGradebookItems(courseId);
+    const [scoreItemId, setScoreItemId] = useState<number | "">("");
+
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -42,12 +45,67 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
     const closeModalConfig = () => setModalConfig(null);
 
+    // Bypasses generation if editing an existing quiz
+    useEffect(() => {
+        const loadQuizForEditing = async () => {
+            if (!quizIdToEdit) {
+                setIsEditMode(false);
+                setGeneratedQuestions(null);
+                setTitle('');
+                setDueDate('');
+                setMaxAttempts(1);
+                setIsGraded(true);
+                setScoreItemId("");
+                return;
+            }
+
+            setIsEditMode(true);
+            setIsGenerating(true);
+
+            try {
+                const response = await api.get(`/quizzes/${quizIdToEdit}`);
+                const quizData = response.data;
+
+                setTitle(quizData.title);
+                setQuestionCount(quizData.questions?.length || 10);
+                setMaxAttempts(quizData.maxAttempts);
+                setIsGraded(quizData.isGraded);
+                setScoreItemId(quizData.scoreItemId || "");
+
+                if (quizData.dueDate) {
+                    setDueDate(quizData.dueDate.substring(0, 16));
+                }
+
+                const mappedQuestions = (quizData.questions || []).map((q: any) => ({
+                    id: q.id,
+                    question: q.questionText,
+                    options: q.options,
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation
+                }));
+
+                // Crucial: Setting this skips the generation view and sends the user directly to the preview editor
+                setGeneratedQuestions(mappedQuestions);
+
+            } catch (error: any) {
+                console.error("Failed to load quiz details:", error);
+                toast.error("Could not load quiz information.");
+                onClose();
+            } finally {
+                setIsGenerating(false);
+            }
+        };
+
+        if (isOpen) {
+            loadQuizForEditing();
+        }
+    }, [quizIdToEdit, isOpen]);
+
     const handleGenerateClick = async () => {
         setIsGenerating(true);
         try {
             let payload: any = { questionCount };
 
-            // Handle Option A: Existing Material
             if (sourceType === 'existing') {
                 if (!selectedMaterialId) {
                     setModalConfig({
@@ -62,7 +120,6 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                 }
                 payload.materialId = Number(selectedMaterialId);
             }
-            // Handle Option B: Upload New File
             else if (sourceType === 'upload') {
                 if (!uploadFile) {
                     setModalConfig({
@@ -87,15 +144,11 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                 return;
             }
 
-            const response = await api.post('/quizzes/generate', payload, {
-                timeout: 60000
-            });
-
+            const response = await api.post('/quizzes/generate', payload, { timeout: 60000 });
             setGeneratedQuestions(response.data);
 
         } catch (error: any) {
             console.error("Failed to generate quiz:", error);
-
             setModalConfig({
                 isOpen: true,
                 title: "Generation Error",
@@ -125,22 +178,20 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
             const payload = {
                 title: title,
                 courseId: courseId,
-                materialId: sourceType === 'existing' ? Number(selectedMaterialId) : null,
+                materialId: sourceType === 'existing' && !isEditMode ? Number(selectedMaterialId) : null,
                 maxAttempts: maxAttempts,
                 isGraded: isGraded,
+                scoreItemId: scoreItemId || null, // Included in payload on submission
                 dueDate: dueDate.length === 16 ? `${dueDate}:00` : dueDate,
                 questions: generatedQuestions
             };
 
             if (isEditMode) {
-                // Route to PUT update channel
                 await api.put(`/quizzes/${quizIdToEdit}`, payload);
             } else {
-                // Route to original POST creation channel
                 await api.post('/quizzes/create', payload);
             }
 
-            // Success Popup configuration
             setModalConfig({
                 isOpen: true,
                 title: "Success!",
@@ -150,7 +201,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                 confirmText: "Back to Course",
                 onConfirm: () => {
                     closeModalConfig();
-                    onClose(); // Cleanly close out the creation modal view
+                    onClose();
                 }
             });
 
@@ -168,79 +219,16 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
         }
     };
 
-    useEffect(() => {
-        const loadQuizForEditing = async () => {
-            if (!quizIdToEdit) {
-                setIsEditMode(false);
-                setGeneratedQuestions(null);
-                setTitle('');
-                setDueDate('');
-                return;
-            }
-
-            setIsEditMode(true);
-            setIsGenerating(true); // Re-use loader state for initial data fetch
-
-            try {
-                const response = await api.get(`/quizzes/${quizIdToEdit}`);
-                const quizData = response.data;
-
-                // Populate states with existing DB records
-                setTitle(quizData.title);
-                setQuestionCount(quizData.questions.length);
-                setMaxAttempts(quizData.maxAttempts);
-                setIsGraded(quizData.isGraded);
-
-                // Format the LocalDateTime string (YYYY-MM-DDTHH:MM) for HTML input compatibility
-                if (quizData.dueDate) {
-                    setDueDate(quizData.dueDate.substring(0, 16));
-                }
-
-                // Map database question keys to match our AI question schema keys
-                const mappedQuestions = quizData.questions.map((q: any) => ({
-                    id: q.id, // Keep the DB primary key for updates
-                    question: q.questionText,
-                    options: q.options,
-                    correctAnswer: q.correctAnswer,
-                    explanation: q.explanation
-                }));
-
-                setGeneratedQuestions(mappedQuestions);
-
-            } catch (error: any) {
-                console.error("Failed to load quiz details:", error);
-                toast.error("Could not load quiz information.");
-                onClose();
-            } finally {
-                setIsGenerating(false);
-            }
-        };
-
-        if (isOpen) {
-            loadQuizForEditing();
-        }
-    }, [quizIdToEdit, isOpen]);
-
-    // Helper function to clean strings for robust matching
     const isCorrectAnswer = (optionText: string, correctAnswer: string) => {
         if (!optionText || !correctAnswer) return false;
-
-        // 1. Convert everything to lowercase and strip all whitespace
         const clean = (str: string) => str.toLowerCase().replace(/\s+/g, '');
-
         const cleanOpt = clean(optionText);
         const cleanCorrect = clean(correctAnswer);
 
-        // 2. Direct clean match check
         if (cleanOpt === cleanCorrect) return true;
-
-        // 3. Partial match check: Handles case where Gemini leaves off the prefix 
-        // or includes the prefix (like "A.", "B.", "A ") inside the correct answer string
         if (cleanOpt.endsWith(cleanCorrect) || cleanCorrect.endsWith(cleanOpt)) return true;
 
-        // 4. Strip common structural prefixes (e.g., "a.", "b.", "c.", "d.") manually to compare core content
         const stripPrefix = (str: string) => str.replace(/^[a-d][\.\s\-:\/)]+/i, '');
-
         return clean(stripPrefix(optionText)) === clean(stripPrefix(correctAnswer));
     };
 
@@ -260,11 +248,16 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                         onConfirm={modalConfig.onConfirm}
                     />
                 )}
-                {!generatedQuestions ? (
-                    /* --- SHOW THE SETTINGS FORM YOU ALREADY BUILT --- */
+
+                {/* SHOW GENERATION POPUP ONLY IF NOT IN PREVIEW/EDIT MODE */}
+                {isGenerating && !generatedQuestions ? (
+                    <div className="p-12 text-center text-gray-500">
+                        <Loader2 size={32} className="animate-spin text-blue-600 mx-auto mb-3" />
+                        <p className="font-semibold text-gray-700">Loading quiz structural layouts...</p>
+                    </div>
+                ) : !generatedQuestions ? (
                     <>
                         <h2 className="text-2xl font-bold mb-4">✨ Create AI Quiz</h2>
-                        {/* --- MATERIAL SOURCE TABS --- */}
                         <div className="flex gap-4 mb-6 border-b pb-2">
                             <button
                                 className={`font-semibold ${sourceType === 'existing' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
@@ -280,7 +273,6 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                             </button>
                         </div>
 
-                        {/* --- MATERIAL SELECTION --- */}
                         <div className="mb-6">
                             {sourceType === 'existing' ? (
                                 <select
@@ -307,7 +299,6 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                             )}
                         </div>
 
-                        {/* --- QUIZ SETTINGS --- */}
                         <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded border">
                             <div>
                                 <label className="block text-sm font-bold mb-1">Number of Questions: {questionCount}</label>
@@ -332,19 +323,8 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     <option value={0}>Unlimited</option>
                                 </select>
                             </div>
-                            <div className="col-span-2 flex items-center gap-2 mt-2">
-                                <input
-                                    type="checkbox"
-                                    id="isGraded"
-                                    checked={isGraded}
-                                    onChange={(e) => setIsGraded(e.target.checked)}
-                                    className="w-4 h-4"
-                                />
-                                <label htmlFor="isGraded" className="font-semibold text-sm">Count towards final gradebook</label>
-                            </div>
                         </div>
 
-                        {/* --- ACTIONS --- */}
                         <div className="flex justify-end gap-3 mt-8">
                             <button onClick={onClose} className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100">
                                 Cancel
@@ -354,45 +334,91 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                 disabled={isGenerating || (sourceType === 'existing' && !selectedMaterialId)}
                                 className="px-6 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                             >
-                                {isGenerating ? "Analyzing..." : "Generate Preview"}
+                                Generate Preview
                             </button>
                         </div>
                     </>
                 ) : (
                     <div className="flex flex-col max-h-[75vh]">
-                        <h2 className="text-2xl font-bold mb-4 flex-shrink-0 flex items-center gap-2 text-gray-800">
-                            Review & Publish Quiz
+                        <h2 className="text-2xl font-bold mb-4 flex-shrink-0 text-gray-800">
+                            {isEditMode ? "Edit Quiz Details" : "Review & Publish Quiz"}
                         </h2>
 
-                        {/* Final Settings Form (Title & Due Date) */}
-                        <div className="flex gap-4 mb-4 bg-blue-50 p-4 rounded-xl border border-blue-100 flex-shrink-0 text-gray-800">
-                            <div className="flex-1">
-                                <label className="block text-sm font-bold mb-1">Quiz Title <span className="text-red-500">*</span></label>
-                                <input
-                                    type="text"
-                                    className="w-full border p-2 rounded-lg bg-white"
-                                    placeholder="e.g., Chapter 4: Photosynthesis Quiz"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                />
+                        {/* CONFIGURATION EDITOR VIEW PANEL */}
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex-shrink-0 text-gray-800 space-y-4 mb-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold mb-1">Quiz Title <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        className="w-full border p-2 rounded-lg bg-white"
+                                        placeholder="e.g., Chapter 4 Evaluation Exam"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1">Due Date <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full border p-2 rounded-lg bg-white"
+                                        value={dueDate}
+                                        onChange={(e) => setDueDate(e.target.value)}
+                                    />
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <label className="block text-sm font-bold mb-1">Due Date <span className="text-red-500">*</span></label>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-blue-200/60 pt-3">
+                                <div>
+                                    <label className="block text-sm font-bold mb-1">Attempts Allowed</label>
+                                    <select
+                                        className="w-full border p-2 rounded-lg bg-white text-sm"
+                                        value={maxAttempts}
+                                        onChange={(e) => setMaxAttempts(Number(e.target.value))}
+                                    >
+                                        <option value={1}>1 (Strict Exam)</option>
+                                        <option value={2}>2</option>
+                                        <option value={3}>3</option>
+                                        <option value={0}>Unlimited Attempts</option>
+                                    </select>
+                                </div>
+
+                                {/* POSITIONED DROPDOWN HERE IN THE PREVIEW EDITOR SCREEN */}
+                                <div>
+                                    <label className="block text-sm font-bold mb-1">Link to Gradebook Column</label>
+                                    <select
+                                        value={scoreItemId}
+                                        onChange={(e) => setScoreItemId(e.target.value ? Number(e.target.value) : "")}
+                                        className="w-full border p-2 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">-- Do Not Link (Ungraded Practice) --</option>
+                                        {gradebookItems.map((item) => (
+                                            <option key={item.id} value={item.id}>
+                                                {item.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 pt-1">
                                 <input
-                                    type="datetime-local"
-                                    className="w-full border p-2 rounded-lg bg-white"
-                                    value={dueDate}
-                                    onChange={(e) => setDueDate(e.target.value)}
+                                    type="checkbox"
+                                    id="isGraded"
+                                    checked={isGraded}
+                                    onChange={(e) => setIsGraded(e.target.checked)}
+                                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                                 />
+                                <label htmlFor="isGraded" className="font-semibold text-sm select-none">
+                                    Count submissions towards overall class average calculations
+                                </label>
                             </div>
                         </div>
 
-                        {/* --- SCROLLABLE CONTAINER FOR QUESTIONS --- */}
+                        {/* --- SCROLLABLE QUESTIONS INJECTOR LIST --- */}
                         <div className="flex-1 overflow-y-auto pr-2 space-y-6 mb-4 text-gray-800 scrollbar-thin">
                             {generatedQuestions.map((q, index) => (
                                 <div key={index} className="p-5 border border-gray-200 rounded-xl bg-gray-50/50 shadow-sm relative">
-
-                                    {/* Question Input */}
                                     <div className="mb-4">
                                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
                                             Question {index + 1}
@@ -409,12 +435,9 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                         />
                                     </div>
 
-                                    {/* Options Grid */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                         {q.options.map((opt: string, i: number) => {
-
                                             const isCorrect = isCorrectAnswer(opt, q.correctAnswer);
-
                                             return (
                                                 <div
                                                     key={i}
@@ -423,17 +446,11 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                                         : "bg-white border-gray-200 text-gray-700 focus-within:border-blue-400"
                                                         }`}
                                                 >
-                                                    {/* Visual Indicator Bubble - NOW FIXED FOR CLICK SELECTION */}
                                                     <button
                                                         type="button"
                                                         onClick={() => {
                                                             const updated = [...generatedQuestions];
-
-                                                            // FIX: Strip any leading "A. ", "B. ", etc. from the string 
-                                                            // before saving it as the correct answer. This ensures our 
-                                                            // matching helper can instantly identify it!
                                                             const cleanOptionValue = opt.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
-
                                                             updated[index].correctAnswer = cleanOptionValue;
                                                             setGeneratedQuestions(updated);
                                                         }}
@@ -441,23 +458,18 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                                             ? "bg-green-600 text-white shadow-sm scale-105"
                                                             : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                                                             }`}
-                                                        title="Mark as correct answer"
                                                     >
                                                         {String.fromCharCode(65 + i)}
                                                     </button>
-
-                                                    {/* Option Text Input */}
                                                     <input
                                                         type="text"
-                                                        className={`w-full bg-transparent p-1 text-sm outline-none font-medium ${isCorrect ? "font-semibold text-green-950" : ""
-                                                            }`}
+                                                        className={`w-full bg-transparent p-1 text-sm outline-none font-medium ${isCorrect ? "font-semibold text-green-950" : ""}`}
                                                         value={opt}
                                                         onChange={(e) => {
                                                             const updated = [...generatedQuestions];
                                                             const oldOptionValue = updated[index].options[i];
                                                             updated[index].options[i] = e.target.value;
 
-                                                            // Sync correct answer if the text of the currently correct option is edited
                                                             if (isCorrectAnswer(oldOptionValue, q.correctAnswer)) {
                                                                 const cleanNewValue = e.target.value.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
                                                                 updated[index].correctAnswer = cleanNewValue;
@@ -470,11 +482,8 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                         })}
                                     </div>
 
-                                    {/* Explanation Input */}
                                     <div className="bg-white border border-gray-100 p-3 rounded-xl">
-                                        <label className="block text-xs font-bold text-green-700 mb-1">
-                                            💡 AI Explanation
-                                        </label>
+                                        <label className="block text-xs font-bold text-green-700 mb-1">💡 AI Explanation</label>
                                         <textarea
                                             className="w-full text-xs text-gray-600 bg-transparent border-0 outline-none resize-none focus:ring-1 focus:ring-gray-200 rounded p-1"
                                             rows={2}
@@ -490,22 +499,32 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                             ))}
                         </div>
 
-                        {/* --- STICKY FOOTER ACTIONS --- */}
+                        {/* STICKY FOOTER ACTIONS */}
                         <div className="flex justify-end gap-3 border-t pt-4 bg-white flex-shrink-0">
-                            <button
-                                onClick={() => setGeneratedQuestions(null)}
-                                disabled={isPublishing}
-                                className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium disabled:opacity-50"
-                            >
-                                Discard & Try Again
-                            </button>
+                            {!isEditMode ? (
+                                <button
+                                    onClick={() => setGeneratedQuestions(null)}
+                                    disabled={isPublishing}
+                                    className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium"
+                                >
+                                    Discard & Try Again
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={onClose}
+                                    disabled={isPublishing}
+                                    className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition"
+                                >
+                                    Cancel
+                                </button>
+                            )}
                             <button
                                 onClick={handlePublishClick}
                                 disabled={isPublishing}
-                                className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-md transition disabled:opacity-50 flex items-center gap-2"
+                                className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-md transition flex items-center gap-2"
                             >
                                 {isPublishing ? <Loader2 className="animate-spin" size={18} /> : null}
-                                {isPublishing ? "Saving..." : "Publish Quiz"}
+                                {isPublishing ? "Saving..." : isEditMode ? "Save Changes" : "Publish Quiz"}
                             </button>
                         </div>
 
