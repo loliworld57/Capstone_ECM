@@ -69,15 +69,24 @@ export default function CourseFinanceTab({ courseId, isManager }: Props) {
         loadTuition();
     }, [courseId]);
 
-    const updateDraft = (enrollmentId: number, patch: Partial<{ amountVnd: string; paidAt: string; installmentId?: string; note: string }>) => {
+    const updateDraft = (
+        enrollmentId: number,
+        patch: Partial<{
+            amountVnd: string;
+            paidAt: string;
+            installmentId?: string;
+            note: string;
+        }>
+    ) => {
         setPaymentDrafts((current) => ({
             ...current,
             [enrollmentId]: {
-                amountVnd: "",
-                paidAt: today,
-                installmentId: "",
-                note: "",
-                ...(current[enrollmentId] || {}),
+                ...(current[enrollmentId] ?? {
+                    amountVnd: "",
+                    paidAt: today,
+                    installmentId: "",
+                    note: "",
+                }),
                 ...patch,
             },
         }));
