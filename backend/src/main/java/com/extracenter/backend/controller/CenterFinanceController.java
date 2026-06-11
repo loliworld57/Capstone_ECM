@@ -115,5 +115,17 @@ public class CenterFinanceController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    // GET: /api/centers/finance/dashboard?centerId=...&date=yyyy-MM-dd
+    @GetMapping("/dashboard")
+    public ResponseEntity<?> dashboard(
+            @RequestParam Long centerId,
+            @RequestParam LocalDate date) {
+        try {
+            return ResponseEntity.ok(centerFinanceService.dashboard(date, centerId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
 

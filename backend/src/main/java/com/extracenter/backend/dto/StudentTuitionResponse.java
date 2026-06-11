@@ -3,6 +3,10 @@ package com.extracenter.backend.dto;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.extracenter.backend.entity.InstallmentStatus;
+import com.extracenter.backend.entity.PaymentPlanType;
+import com.extracenter.backend.entity.TuitionStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,8 +18,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class StudentTuitionResponse {
 
+    private Long enrollmentId;
+    private Long tuitionAccountId;
     private Long courseId;
     private String courseName;
+
+    private PaymentPlanType paymentPlanType;
 
     // Tuition fee baseline
     private Long tuitionFeeVnd;
@@ -29,11 +37,27 @@ public class StudentTuitionResponse {
     private Long totalPaidVnd;
     private Long remainingVnd;
 
-    private com.extracenter.backend.entity.TuitionStatus tuitionStatus; // PAID / PARTIAL / UNPAID
+    private TuitionStatus tuitionStatus; // PAID / PARTIAL / UNPAID / OVERDUE
 
-
-
+    private List<InstallmentItem> installments;
     private List<PaymentHistoryItem> paymentHistory;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class InstallmentItem {
+        private Long id;
+        private Integer installmentNumber;
+        private LocalDate dueDate;
+        private Long amountDueVnd;
+        private Long amountPaidVnd;
+        private Long remainingVnd;
+        private InstallmentStatus status;
+        private Long enrollmentId;
+        private String studentName;
+        private String courseName;
+    }
 
     @Data
     @Builder

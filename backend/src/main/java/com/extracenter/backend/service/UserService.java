@@ -519,7 +519,7 @@ public class UserService {
                     .orElseThrow(() -> new RuntimeException("Teacher not found!"));
         }
 
-        if (!isTeacherOrManager(actor)) {
+        if (!isTeacher(actor)) {
             throw new RuntimeException("Only teachers can manage students.");
         }
 
@@ -555,13 +555,13 @@ public class UserService {
         return user.getRole() != null && "ADMIN".equalsIgnoreCase(user.getRole().getName());
     }
 
-    private boolean isTeacherOrManager(User user) {
+    private boolean isTeacher(User user) {
         if (user.getRole() == null || user.getRole().getName() == null) {
             return false;
         }
 
         String roleName = user.getRole().getName();
-        return "TEACHER".equalsIgnoreCase(roleName) || "MANAGER".equalsIgnoreCase(roleName);
+        return "TEACHER".equalsIgnoreCase(roleName);
     }
 
     private User getActiveOwnedStudent(Long teacherId, Long studentId) {

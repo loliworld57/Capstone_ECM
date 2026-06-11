@@ -12,13 +12,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.extracenter.backend.dto.FinanceRecordRequest;
 import com.extracenter.backend.dto.FinanceReportResponse;
+import com.extracenter.backend.dto.StudentTuitionResponse.InstallmentItem;
+import com.extracenter.backend.dto.TuitionDashboardResponse;
 import com.extracenter.backend.entity.CenterFinanceRecord;
 import com.extracenter.backend.entity.FinanceType;
-import com.extracenter.backend.entity.TuitionPayment;
+import com.extracenter.backend.entity.InstallmentStatus;
+import com.extracenter.backend.entity.TuitionInstallment;
 import com.extracenter.backend.entity.User;
 import com.extracenter.backend.repository.CenterFinanceRecordRepository;
 import com.extracenter.backend.repository.CenterRepository;
 import com.extracenter.backend.repository.EnrollmentRepository;
+import com.extracenter.backend.repository.TuitionInstallmentRepository;
 import com.extracenter.backend.repository.TuitionPaymentRepository;
 import com.extracenter.backend.repository.UserRepository;
 
@@ -36,6 +40,9 @@ public class CenterFinanceService {
 
     @Autowired
     private EnrollmentRepository enrollmentRepository;
+
+    @Autowired
+    private TuitionInstallmentRepository tuitionInstallmentRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -130,6 +137,7 @@ public class CenterFinanceService {
     // =========================
 
     public FinanceReportResponse monthlyReport(LocalDate anyDateInMonth, Long centerId) {
+        assertCenterAccess(centerId);
         LocalDate start = anyDateInMonth.withDayOfMonth(1);
         LocalDate end = anyDateInMonth.withDayOfMonth(anyDateInMonth.lengthOfMonth());
 
@@ -137,10 +145,31 @@ public class CenterFinanceService {
     }
 
     public FinanceReportResponse yearlyReport(int year, Long centerId) {
+        assertCenterAccess(centerId);
         LocalDate start = LocalDate.of(year, 1, 1);
         LocalDate end = LocalDate.of(year, 12, 31);
 
         return buildReport(centerId, start, end);
+    }
+
+    public TuitionDashboardResponse dashboard(LocalDate anyDateInMonth, Long centerId) {
+        assertCenterAccess(centerId);
+        LocalDate start = anyDateInMonth.withDayOfMonth(1);
+        LocalDate end = anyDateInMonth.withDayOfMonth(anyDateInMonth.lengthOfMonth());
+        FinanceReportResponse report = buildReport(centerId, start, end);
+        Long outstandingDebt = tuitionInstallmentRepository.sumOutstandingByCenterIdAndStatuses(
+                centerId,
+                List.of(InstallmentStatus.PENDING, InstallmentStatus.PARTIAL, InstallmentStatus.OVERDUE));
+        List<TuitionInstallment> overdue = tuitionInstallmentRepository.findOverdueByCenterId(centerId, LocalDate.now());
+
+        return TuitionDashboardResponse.builder()
+                .monthlyRevenueVnd(report.getTotalIncomeVnd())
+                .monthlyExpenseVnd(report.getTotalExpenseVnd())
+                .estimatedProfitVnd(report.getProfitVnd())
+                .outstandingDebtVnd(outstandingDebt != null ? outstandingDebt : 0L)
+                .overduePaymentCount(overdue.size())
+                .overduePayments(overdue.stream().map(this::mapOverdueInstallment).toList())
+                .build();
     }
 
     private FinanceReportResponse buildReport(Long centerId, LocalDate start, LocalDate end) {
@@ -208,6 +237,39 @@ public class CenterFinanceService {
             throw new RuntimeException("Center not found for current manager");
         }
         return centers.get(0).getId();
+    }
+
+    private void assertCenterAccess(Long centerId) {
+        User currentUser = getCurrentUser();
+        String roleName = currentUser.getRole() != null ? currentUser.getRole().getName() : "";
+        if ("ADMIN".equalsIgnoreCase(roleName)) {
+            return;
+        }
+        boolean ownsCenter = centerRepository.findByManagerIdAndArchivedAtIsNull(currentUser.getId())
+                .stream()
+                .anyMatch(center -> center.getId().equals(centerId));
+        if (!ownsCenter) {
+            throw new RuntimeException("You do not have permission to view this center finance.");
+        }
+    }
+
+    private InstallmentItem mapOverdueInstallment(TuitionInstallment installment) {
+        var enrollment = installment.getTuitionAccount().getEnrollment();
+        var student = enrollment.getStudent();
+        long amountDue = installment.getAmountDueVnd() != null ? installment.getAmountDueVnd() : 0L;
+        long amountPaid = installment.getAmountPaidVnd() != null ? installment.getAmountPaidVnd() : 0L;
+        return InstallmentItem.builder()
+                .id(installment.getId())
+                .enrollmentId(enrollment.getId())
+                .studentName(student.getLastName() + " " + student.getFirstName())
+                .courseName(enrollment.getCourse().getName())
+                .installmentNumber(installment.getInstallmentNumber())
+                .dueDate(installment.getDueDate())
+                .amountDueVnd(amountDue)
+                .amountPaidVnd(amountPaid)
+                .remainingVnd(Math.max(0L, amountDue - amountPaid))
+                .status(installment.getStatus())
+                .build();
     }
 
 

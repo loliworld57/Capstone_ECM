@@ -28,6 +28,9 @@ public class EnrollmentService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private TuitionAccountService tuitionAccountService;
+
     // Add a student to a specific course
     // @Transactional is required because we are modifying both Enrollment AND User
     // tables
@@ -74,6 +77,15 @@ public class EnrollmentService {
             userService.connectStudentToCenter(student.getId(), course.getCenter().getId());
         }
 
-        return enrollmentRepository.save(enrollment);
+        Enrollment saved = enrollmentRepository.save(enrollment);
+
+        if (request.getTuitionAccount() != null) {
+            request.getTuitionAccount().setEnrollmentId(saved.getId());
+            tuitionAccountService.createOrUpdateAccount(request.getTuitionAccount());
+        } else {
+            tuitionAccountService.createDefaultAccount(saved);
+        }
+
+        return saved;
     }
 }

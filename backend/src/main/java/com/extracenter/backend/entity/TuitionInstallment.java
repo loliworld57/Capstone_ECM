@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,43 +22,38 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "TuitionPayment")
+@Table(name = "TuitionInstallment")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
-public class TuitionPayment {
+public class TuitionInstallment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // The tuition being tracked
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enrollment_id", nullable = false)
+    @JoinColumn(name = "tuition_account_id", nullable = false)
     @JsonIgnore
-    private Enrollment enrollment;
+    private TuitionAccount tuitionAccount;
 
     @Column(nullable = false)
-    private Long amountVnd;
+    private Integer installmentNumber;
 
-    @Column(name = "paid_at", nullable = false)
-    private LocalDate paidAt;
+    @Column(nullable = false)
+    private LocalDate dueDate;
 
-    @Column(columnDefinition = "TEXT")
-    private String note;
+    @Column(nullable = false)
+    private Long amountDueVnd = 0L;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "installment_id")
-    @JsonIgnore
-    private TuitionInstallment installment;
+    @Column(nullable = false)
+    private Long amountPaidVnd = 0L;
 
-    // Who recorded this offline payment (center manager)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recorded_by_user_id", nullable = false)
-    private User recordedBy;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private InstallmentStatus status = InstallmentStatus.PENDING;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }
-

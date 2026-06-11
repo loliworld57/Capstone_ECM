@@ -63,57 +63,67 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/users/admin/**")
                                                 .hasRole("ADMIN")
 
-                                                // TEACHER / MANAGER / ADMIN
+                                                // TEACHER / ADMIN
                                                 .requestMatchers(
                                                                 "/api/users/teacher/**",
                                                                 "/api/users/create-student",
                                                                 "/api/users/search")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
-                                                // TEACHER / MANAGER / ADMIN (courses, schedule, centers)
+                                                // TEACHER / ADMIN (courses, schedule, centers)
                                                 .requestMatchers(
                                                                 "/api/schedule/teacher/**",
                                                                 "/api/courses/teacher/**",
                                                                 "/api/courses/invitations/**",
                                                                 "/api/centers/teacher/**",
                                                                 "/api/centers/teaching/**",
-                                                                "/api/tuition/**",
-                                                                "/api/centers/finance/**",
                                                                 "/api/courses/finance/**",
                                                                 "/api/teacher/courses/finance/**")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .hasAnyRole("TEACHER", "ADMIN")
+
+                                                // FINANCE ACCESS
+                                                .requestMatchers("/api/teacher/finance/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
+
+                                                .requestMatchers("/api/centers/finance/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
+
+                                                .requestMatchers("/api/tuition/student/**")
+                                                .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+
+                                                .requestMatchers("/api/tuition/**")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
 
 
                                                 // CENTERS ACCESS
                                                 .requestMatchers("/api/centers/**")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
                                                 // STUDENT ACCESS
                                                 .requestMatchers(
                                                                 "/api/schedule/student/**",
                                                                 "/api/courses/student/**",
-                                                                "/api/assignments/student/**",
-                                                                "/api/tuition/student/**")
+                                                                "/api/assignments/student/**")
                                                 .hasAnyRole("STUDENT", "ADMIN")
 
                                                 // COURSE WRITE OPERATIONS
                                                 .requestMatchers(HttpMethod.POST, "/api/courses/**")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
                                                 .requestMatchers(HttpMethod.PUT, "/api/courses/**")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
                                                 .requestMatchers(HttpMethod.DELETE, "/api/courses/**")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN")
+                                                .hasAnyRole("TEACHER", "ADMIN")
 
                                                 // MATERIALS
                                                 .requestMatchers("/api/materials/**")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN", "STUDENT")
+                                                .hasAnyRole("TEACHER", "ADMIN", "STUDENT")
 
                                                 // ASSIGNMENTS
                                                 .requestMatchers("/api/assignments/**")
-                                                .hasAnyRole("TEACHER", "MANAGER", "ADMIN", "STUDENT")
+                                                .hasAnyRole("TEACHER", "ADMIN", "STUDENT")
 
                                                 // everything else must be authenticated
                                                 .anyRequest().authenticated())

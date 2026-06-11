@@ -10,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.extracenter.backend.dto.TuitionPaymentRequest;
 import com.extracenter.backend.entity.Enrollment;
+import com.extracenter.backend.entity.TuitionInstallment;
 import com.extracenter.backend.entity.TuitionPayment;
 import com.extracenter.backend.entity.User;
 import com.extracenter.backend.repository.EnrollmentRepository;
+import com.extracenter.backend.repository.TuitionInstallmentRepository;
 import com.extracenter.backend.repository.TuitionPaymentRepository;
 import com.extracenter.backend.repository.UserRepository;
 
@@ -28,7 +30,11 @@ public class TuitionPaymentService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private TuitionInstallmentRepository tuitionInstallmentRepository;
 
+    @Autowired
+    private TuitionAccountService tuitionAccountService;
 
     private User getCurrentUser() {
         var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -61,10 +67,13 @@ public class TuitionPaymentService {
         payment.setPaidAt(request.getPaidAt());
         payment.setNote(request.getNote());
         payment.setRecordedBy(currentUser);
+        payment.setInstallment(resolveInstallment(request.getInstallmentId(), enrollment.getId()));
 
         payment.setCreatedAt(LocalDateTime.now());
 
-        return tuitionPaymentRepository.save(payment);
+        TuitionPayment saved = tuitionPaymentRepository.save(payment);
+        tuitionAccountService.recalculateEnrollment(enrollment.getId());
+        return saved;
     }
 
     @Transactional
@@ -92,25 +101,32 @@ public class TuitionPaymentService {
         existing.setPaidAt(request.getPaidAt() != null ? request.getPaidAt() : existing.getPaidAt());
         existing.setNote(request.getNote());
         existing.setRecordedBy(currentUser);
+        existing.setInstallment(resolveInstallment(request.getInstallmentId(), enrollment.getId()));
 
 
-        return tuitionPaymentRepository.save(existing);
+        TuitionPayment saved = tuitionPaymentRepository.save(existing);
+        tuitionAccountService.recalculateEnrollment(enrollment.getId());
+        return saved;
     }
 
     @Transactional
     public void deletePayment(Long paymentId) {
-        Long actorUserId = getCurrentUser().getId();
+        Long currentUserId = getCurrentUser().getId();
+
 
         TuitionPayment existing = tuitionPaymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("TuitionPayment not found: " + paymentId));
 
         // Minimal ownership rule for now: actor must be the recorder
         // (Authorization can be tightened later using SecurityContext)
-        if (existing.getRecordedBy() == null || !existing.getRecordedBy().getId().equals(actorUserId)) {
+        if (existing.getRecordedBy() == null || !existing.getRecordedBy().getId().equals(currentUserId)) {
+
             throw new RuntimeException("You do not have permission to delete this payment.");
         }
 
+        Long enrollmentId = existing.getEnrollment().getId();
         tuitionPaymentRepository.delete(existing);
+        tuitionAccountService.recalculateEnrollment(enrollmentId);
     }
 
     @Transactional(readOnly = true)
@@ -125,6 +141,19 @@ public class TuitionPaymentService {
         if (paidAt == null) {
             throw new RuntimeException("paidAt is required");
         }
+    }
+
+    private TuitionInstallment resolveInstallment(Long installmentId, Long enrollmentId) {
+        if (installmentId == null) {
+            return null;
+        }
+        TuitionInstallment installment = tuitionInstallmentRepository.findById(installmentId)
+                .orElseThrow(() -> new RuntimeException("Tuition installment not found: " + installmentId));
+        Long installmentEnrollmentId = installment.getTuitionAccount().getEnrollment().getId();
+        if (!installmentEnrollmentId.equals(enrollmentId)) {
+            throw new RuntimeException("Installment does not belong to this enrollment.");
+        }
+        return installment;
     }
 }
 

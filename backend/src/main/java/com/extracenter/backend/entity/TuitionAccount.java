@@ -8,55 +8,64 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "TuitionPayment")
+@Table(name = "TuitionAccount")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
-public class TuitionPayment {
+public class TuitionAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // The tuition being tracked
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "enrollment_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "enrollment_id", nullable = false, unique = true)
     @JsonIgnore
     private Enrollment enrollment;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Long amountVnd;
+    private PaymentPlanType paymentPlanType = PaymentPlanType.FULL_COURSE;
 
-    @Column(name = "paid_at", nullable = false)
-    private LocalDate paidAt;
+    @Column(nullable = false)
+    private Long originalAmountVnd = 0L;
 
-    @Column(columnDefinition = "TEXT")
-    private String note;
+    @Column(nullable = false)
+    private Long scholarshipDiscountVnd = 0L;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "installment_id")
-    @JsonIgnore
-    private TuitionInstallment installment;
+    @Column(nullable = false)
+    private Long finalAmountVnd = 0L;
 
-    // Who recorded this offline payment (center manager)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recorded_by_user_id", nullable = false)
-    private User recordedBy;
+    private Integer totalSessions;
+
+    private Integer purchasedSessions;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TuitionStatus status = TuitionStatus.UNPAID;
+
+    private LocalDate startDate;
+
+    private LocalDate endDate;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-}
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}

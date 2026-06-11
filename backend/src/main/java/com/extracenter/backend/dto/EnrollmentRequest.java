@@ -16,4 +16,6 @@ public class EnrollmentRequest {
     private Long courseId;
 
     private String note;
+
+    private TuitionAccountRequest tuitionAccount;
 }

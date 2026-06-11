@@ -24,5 +24,7 @@ public class TuitionPaymentRequest {
     private LocalDate paidAt;
 
     private String note;
+
+    private Long installmentId;
 }
 
