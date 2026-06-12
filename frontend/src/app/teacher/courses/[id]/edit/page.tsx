@@ -43,6 +43,7 @@ export default function EditCoursePage() {
             endDate: data.endDate,
             centerId: Number(data.centerId || course.center.id),
             teacherId: course.teacher.id,
+            tuitionFeeVnd: data.tuitionFeeVnd,
             slots: [],
         };
     };
@@ -73,6 +74,7 @@ export default function EditCoursePage() {
                     startDate: data.startDate,
                     endDate: data.endDate,
                     centerId: data.center?.id,
+                    tuitionFeeVnd: data.tuitionFeeVnd,
                 });
 
             } catch {

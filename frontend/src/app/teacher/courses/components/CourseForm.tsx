@@ -15,6 +15,7 @@ export interface CourseFormData {
     startDate: string;
     endDate: string;
     centerId?: number;
+    tuitionFeeVnd?: number;
 }
 
 interface Props {
@@ -44,7 +45,8 @@ export default function CourseForm({
         description: "",
         startDate: "",
         endDate: "",
-        centerId: undefined
+        centerId: undefined,
+        tuitionFeeVnd: 0,
     };
 
     const [formData, setFormData] = useState<CourseFormData>(defaultData);
@@ -366,7 +368,28 @@ export default function CourseForm({
                         </div>
                     ))}
                 </div>
+                {/* TUITION FEE */}
+                <div>
+                    <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+                        Tuition Fee (VND)
+                        <span className="text-[var(--color-negative)]">*</span>
+                    </label>
 
+                    <input
+                        required
+                        type="number"
+                        min="0"
+                        value={formData.tuitionFeeVnd ?? ""}
+                        onChange={e =>
+                            updateFormData({
+                                ...formData,
+                                tuitionFeeVnd: Number(e.target.value),
+                            })
+                        }
+                        className="w-full p-3 border-2 border-[var(--color-main)] rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] outline-none bg-white"
+                        placeholder="3000000"
+                    />
+                </div>
                 {/* DESCRIPTION */}
                 <div>
                     <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
