@@ -1,4 +1,4 @@
-# Extra Center Management (ECM)
+# Education Center Management (ECM)
 
 A professional full-stack education management platform designed to centralize academic and administrative operations for private tutoring centers, learning academies, and educational institutions.
 
