@@ -83,7 +83,7 @@ export default function Header() {
                     </p>
                 </div>
             </div>
-            <div className="bg-[var(--color-main)]">
+            <div className="bg-linear-to-r from-indigo-500 from-5% via-[var(--color-main)] via-50% to-indigo-500 to-95%">
                 <div className="container flex flex-wrap items-center justify-between gap-3 py-2">
                     <Link href="/" className="flex items-center">
                         <Logo className="text-white" />

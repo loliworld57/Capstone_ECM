@@ -34,9 +34,8 @@ export default function BannerSlider() {
           alt={`Banner ${idx + 1}`}
           fill
           priority={idx === 0}
-          className={`object-contain transition-opacity duration-700 ease-in-out ${
-            idx === current ? "opacity-100" : "opacity-0"
-          }`}
+          className={`object-contain transition-opacity duration-700 ease-in-out ${idx === current ? "opacity-100" : "opacity-0"
+            }`}
         />
       ))}
 
@@ -48,9 +47,8 @@ export default function BannerSlider() {
             onClick={() => setCurrent(idx)}
             title={`Go to slide ${idx + 1}`}
             aria-label={`Go to slide ${idx + 1}`}
-            className={`w-3 h-3 rounded-full ${
-              idx === current ? "bg-white" : "bg-white/50"
-            }`}
+            className={`w-3 h-3 rounded-full ${idx === current ? "bg-white" : "bg-white/50"
+              }`}
           />
         ))}
       </div>

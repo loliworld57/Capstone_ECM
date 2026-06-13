@@ -8,47 +8,39 @@ type FeatureCardProps = {
   description: string | React.ReactNode;
 };
 
-export default function FeatureCard({
-  title,
-  image,
-  description,
-}: FeatureCardProps) {
+export default function FeatureCard({ title, image, description }: FeatureCardProps) {
   return (
-    <div className="bg-white overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 flex flex-col group">
+    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col group border border-gray-100 aspect-[4/3] w-full">
       
-      {/* Title */}
-      <div className="bg-[var(--color-secondary)] p-2 m-2">
-        <h3 className="text-[var(--color-text)] font-bold text-lg text-center uppercase">
+      {/* Title Header */}
+      <div className="bg-[var(--color-secondary)] py-2 px-4 m-3 rounded-lg z-10 shrink-0">
+        <h3 className="text-[var(--color-text)] font-extrabold text-sm text-center uppercase tracking-wider">
           {title}
         </h3>
       </div>
 
-      {/* Image / Description Container */}
-      <div className="relative aspect-[4/3]">
+      {/* Image & Interactive Slide Content Outer Box */}
+      <div className="relative flex-1 w-full bg-gray-50/50 overflow-hidden min-h-0">
         
-        {/* Image */}
-        <div className="absolute inset-0 flex items-center justify-center bg-white transition-opacity duration-300 group-hover:opacity-0">
-          <Image
-            src={image}
-            alt={title}
-            fill
-            className="object-contain p-4"
-          />
+        {/* Image Layout Frame (Blurs out slightly on overlay activation) */}
+        <div className="absolute inset-0 p-4 transition-all duration-500 group-hover:scale-95 group-hover:blur-xs">
+          <div className="relative w-full h-full">
+            <Image
+              src={image}
+              alt={title}
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-contain"
+              priority
+            />
+          </div>
         </div>
 
-        {/* Description (replace image on hover) */}
-        <div className="
-          absolute inset-0 
-          bg-[var(--color-soft-white)] 
-          text-[var(--color-text)]
-          p-4
-          opacity-0
-          group-hover:opacity-100
-          transition-opacity duration-300
-          overflow-y-auto
-          text-sm
-        ">
-          {description}
+        {/* Dynamic Overlay Container (Slides up from the bottom edge) */}
+        <div className="absolute inset-0 translate-y-full group-hover:translate-y-0 bg-[var(--color-soft-white)]/95 text-[var(--color-text)] p-5 transition-transform duration-300 ease-out overflow-y-auto no-scrollbar flex flex-col justify-center">
+          <div className="text-sm text-left">
+            {description}
+          </div>
         </div>
 
       </div>
