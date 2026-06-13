@@ -1,10 +1,23 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  GraduationCap,
+  CalendarDays,
+  Cpu,
+  UserPlus,
+  Settings,
+  Layers,
+  Sparkles,
+  ArrowRight
+} from "lucide-react";
+
 import Link from "next/link";
 import BannerSlider from "@/components/BannerSlide";
 import FeatureCard from "@/components/FeatureCard";
-import cardImg from "@/imgs/home/card-1.jpg";
 import GuideCard from "@/components/GuideCard";
 import { motion, AnimatePresence } from "framer-motion";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -14,148 +27,198 @@ export default function Home() {
     {
       step: 1,
       title: "Create an Account",
+      icon: <UserPlus className="w-5 h-5" />,
       description: (
-        <ul className="space-y-3 list-disc pl-5">
-          <li>Register a new account in seconds</li>
-          <li>Securely log in to your dashboard</li>
-          <li>Access all management tools</li>
-          <li>Start setting up your tutoring center</li>
+        <ul className="space-y-2 text-gray-600 text-sm list-none pl-0">
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Register a new workspace in seconds
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Securely authenticate your dashboard
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Access global management toolkits
+          </li>
         </ul>
       ),
     },
     {
       step: 2,
       title: "Configure Your Center",
+      icon: <Settings className="w-5 h-5" />,
       description: (
-        <ul className="space-y-3 list-disc pl-5">
-          <li>Add center information</li>
-          <li>Configure subjects and courses</li>
-          <li>Set schedules and operating hours</li>
-          <li>Customize preferences</li>
+        <ul className="space-y-2 text-gray-600 text-sm list-none pl-0">
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Customize operations parameters
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Provision subject weight items
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Establish systemic timetable limits
+          </li>
         </ul>
       ),
     },
     {
       step: 3,
       title: "Start Managing",
+      icon: <Layers className="w-5 h-5" />,
       description: (
-        <ul className="space-y-3 list-disc pl-5">
-          <li>Add students and teachers</li>
-          <li>Create classes and schedules</li>
-          <li>Manage tuition payments</li>
-          <li>Track center activities</li>
+        <ul className="space-y-2 text-gray-600 text-sm list-none pl-0">
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Onboard master workspace rosters
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Coordinate real-time payment loops
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-[var(--color-main)] font-bold">✓</span> Automate lesson logs with AI
+          </li>
         </ul>
       ),
     },
   ];
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      nextGuide();
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const [currentGuide, setCurrentGuide] = useState(0);
-
-  const nextGuide = () => {
-    setCurrentGuide((prev) => (prev === guides.length - 1 ? 0 : prev + 1));
-  };
-
-  const prevGuide = () => {
-    setCurrentGuide((prev) => (prev === 0 ? guides.length - 1 : prev - 1));
-  };
-
   return (
-    // Fixed typo here: added space and explicitly used overflow-x-hidden
-    <div className="">
-      {/* 1. Hero Section */}
+    <div className="bg-[var(--color-soft-white)] text-gray-900 min-h-screen selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+      
+      {/* 1. Hero Section Area */}
       <ScrollReveal>
-        <div className="container mx-auto flex flex-col gap-8 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:gap-12 lg:py-12">
-          <div className="flex w-full flex-col justify-center text-center lg:w-2/5 lg:text-left">
-            <div>
-              <h1 className="text-4xl md:text-5xl lg:text-4xl font-extrabold leading-tight">
-                Easily Manage Your{" "}
-                <span className="block bg-gradient-to-r from-[var(--color-main)] to-[var(--color-secondary)] bg-clip-text text-transparent">
+        <div className="container mx-auto px-4 pt-12 pb-20 sm:px-6 lg:pt-20 lg:pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            
+            {/* Descriptive Content Box */}
+            <div className="lg:col-span-5 text-center lg:text-left space-y-6">
+              <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 py-1 rounded-full text-xs font-semibold tracking-wide shadow-xs">
+                <Sparkles size={14} className="text-indigo-500" /> Next-Generation Center Infrastructure
+              </div>
+              
+              {/* Structured Headline Split */}
+              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-black tracking-tight leading-tight text-gray-900 flex flex-col">
+                <span className="block">Easily Manage Your</span>
+                <span className="bg-gradient-to-r from-indigo-600 via-[var(--color-main)] to-indigo-500 bg-clip-text text-transparent pb-1">
                   Tutor Center
                 </span>
               </h1>
-            </div>
-            <p className="mt-6 text-lg text-gray-600 max-w-xl">
-              Try a new way to manage your own tutor center with all your needs in one
-              place. Track students, teachers, schedules and finances in one simple
-              dashboard.
-            </p>
+              
+              <p className="text-base sm:text-lg text-gray-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                A streamlined workspace built to empower educators. Track student progression, handle complex timetable operations, and automate financial layers with complete oversight.
+              </p>
 
-            <div className="mt-6 flex justify-center lg:justify-start">
-              <Link href="/register" className="self-start main-btn font-bold">
-                I'm ready to get started
-              </Link>
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <Link 
+                  href="/register" 
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-linear-to-r from-indigo-500 to-[var(--color-main)] hover:opacity-95 text-white font-bold px-6 py-3.5 rounded-xl shadow-md shadow-indigo-500/10 active:scale-98 transition transform duration-150"
+                >
+                  Get Started Free <ArrowRight size={16} />
+                </Link>
+                <a 
+                  href="#video-insight" 
+                  className="w-full sm:w-auto inline-flex items-center justify-center text-sm font-semibold text-gray-500 hover:text-gray-900 px-5 py-3 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  Learn More
+                </a>
+              </div>
+            </div>
+
+            {/* Slider Visual Presentation Box */}
+            <div className="lg:col-span-7 w-full aspect-video lg:h-96 overflow-hidden rounded-2xl shadow-xl border border-gray-200/60 bg-white relative group">
+              <BannerSlider />
             </div>
           </div>
+        </div>
+      </ScrollReveal>
 
-          <div className="h-64 w-full overflow-hidden rounded-lg shadow-lg sm:h-80 md:h-96 lg:w-3/5">
-            <BannerSlider />
+      {/* Video Block Section */}
+      <ScrollReveal>
+        <div id="video-insight" className="w-full bg-gray-50 border-y border-gray-200/50 py-20 px-4">
+          <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
+            <div className="text-center space-y-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">Pedagogical Philosophy</span>
+              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                What Makes a Teacher Great?
+              </h2>
+            </div>
+            
+            <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-black group relative">
+              <iframe
+                className="w-full h-full opacity-95 group-hover:opacity-100 transition-opacity duration-300"
+                src="https://www.youtube.com/embed/vrU6YJle6Q4"
+                title="Why do we need education"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
           </div>
         </div>
       </ScrollReveal>
 
       {/* 2. Features Section */}
       <ScrollReveal>
-        <div className="mx-auto bg-linear-to-r from-indigo-500 from-5% via-[var(--color-main)] via-50% to-indigo-500 to-95% py-12 text-center">
-          <h2 className="header-2 text-[var(--color-soft-white)] mb-8">
-            Our Main Features
-          </h2>
-          <div className="container mx-auto grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-8 px-4 sm:px-6">
+        <div className="bg-linear-to-b from-indigo-600 via-[var(--color-main)] to-indigo-700 py-24 shadow-inner">
+          
+          <div className="max-w-3xl mx-auto mb-16 px-4 flex flex-col items-center gap-3 text-center">
+            <span className="text-xs font-bold uppercase tracking-widest bg-white/10 text-indigo-100 border border-white/10 px-3 py-1 rounded-full backdrop-blur-xs">
+              System Architecture
+            </span>
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">
+              Our Main Features
+            </h2>
+            <p className="text-indigo-100/90 text-sm md:text-base max-w-xl leading-relaxed">
+              Everything you need to scale operations, manage classrooms, and automate center finances in one unified workspace.
+            </p>
+          </div>
+
+          <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4 sm:px-6 max-w-5xl">
             <FeatureCard
-              title="Student"
-              image={cardImg}
+              title="Student Management"
+              icon={<Users className="w-8 h-8 text-[var(--color-main)]" />}
               description={
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Create and manage student profiles</li>
-                  <li>Track enrollment and classes</li>
-                  <li>Monitor academic progress</li>
-                  <li>Store student records securely</li>
+                <ul className="space-y-2.5 text-gray-600 text-sm">
+                  <li>• Onboard students and manage their enrollment profiles</li>
+                  <li>• Monitor structural attendance patterns per section</li>
+                  <li>• Compute weighted gradebook item aggregations</li>
+                  <li>• Launch real-time test validation matrices</li>
                 </ul>
               }
             />
 
             <FeatureCard
-              title="Teacher"
-              image={cardImg}
+              title="Teacher Workspace"
+              icon={<GraduationCap className="w-8 h-8 text-[var(--color-main)]" />}
               description={
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Add and manage teacher profiles</li>
-                  <li>Assign teachers to classes</li>
-                  <li>Manage teaching schedules</li>
-                  <li>Track workload and performance</li>
+                <ul className="space-y-2.5 text-gray-600 text-sm">
+                  <li>• Allocate lesson tracks and track student homework</li>
+                  <li>• Track log assignments using custom criteria settings</li>
+                  <li>• Populate content vaults with external digital assets</li>
+                  <li>• Evaluate text outputs directly from the browser</li>
                 </ul>
               }
             />
 
             <FeatureCard
               title="Class & Schedule"
-              image={cardImg}
+              icon={<CalendarDays className="w-8 h-8 text-[var(--color-main)]" />}
               description={
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Create and organize classes</li>
-                  <li>Assign students and teachers</li>
-                  <li>Manage weekly schedules</li>
-                  <li>Avoid timetable conflicts</li>
+                <ul className="space-y-2.5 text-gray-600 text-sm">
+                  <li>• Map structural layouts for dynamic classroom models</li>
+                  <li>• Establish recurring exceptions for calendar holidays</li>
+                  <li>• Validate user conflict limits automatically</li>
+                  <li>• Synchronize timetable parameters cleanly</li>
                 </ul>
               }
             />
 
             <FeatureCard
-              title="Finance & AI"
-              image={cardImg}
+              title="Finance & AI Core"
+              icon={<Cpu className="w-8 h-8 text-[var(--color-main)]" />}
               description={
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Manage Finance</li>
-                  <li>AI Quiz Generation</li>
-                  <li>Summarize Documentation</li>
-                  <li>Tuition Management</li>
+                <ul className="space-y-2.5 text-gray-600 text-sm">
+                  <li>• Supervise modular installment subscription workflows</li>
+                  <li>• Compute dynamic monthly center payout distributions</li>
+                  <li>• Produce quiz templates instantaneously via AI engines</li>
+                  <li>• Summarize reading materials for rapid student access</li>
                 </ul>
               }
             />
@@ -165,49 +228,37 @@ export default function Home() {
 
       {/* 3. How It Works Section */}
       <ScrollReveal>
-        <div className="container mx-auto px-4 py-16 sm:px-6">
-          <h2 className="header-2 text-center mb-12">How It Works</h2>
-
-          <div className="relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentGuide}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-              >
-                <GuideCard
-                  step={guides[currentGuide].step}
-                  title={guides[currentGuide].title}
-                  image={cardImg}
-                  description={guides[currentGuide].description}
-                />
-              </motion.div>
-            </AnimatePresence>
-
-            <button
-              onClick={prevGuide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-3 hover:scale-110 transition"
-            >
-              <ChevronLeft />
-            </button>
-
-            <button
-              onClick={nextGuide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-3 hover:scale-110 transition"
-            >
-              <ChevronRight />
-            </button>
+        <div className="container mx-auto px-4 py-24 sm:px-6 max-w-6xl">
+          <div className="text-center space-y-3 mb-16">
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 font-bold">Deployment Guide</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">How It Works</h2>
+            <p className="text-gray-500 text-sm max-w-md mx-auto">Initialize your educational workspace layer in three simple steps.</p>
           </div>
 
-          <div className="mt-6 flex justify-center gap-3">
-            {guides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentGuide(index)}
-                className={`h-3 w-3 rounded-full transition-all ${currentGuide === index ? "bg-[var(--color-main)] w-8" : "bg-gray-300"}`}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {guides.map((item, index) => (
+              <div 
+                key={index} 
+                className="bg-white border border-gray-200/80 rounded-2xl p-6 relative flex flex-col gap-4 hover:border-gray-300 hover:shadow-lg transition-all duration-200"
+              >
+                {/* Visual Step Floating Badge */}
+                <div className="absolute -top-4 -left-3 bg-linear-to-br from-indigo-500 to-[var(--color-main)] text-white font-black text-xs h-8 w-8 rounded-lg flex items-center justify-center shadow-md">
+                  0{item.step}
+                </div>
+                
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
+                    {item.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                    {item.title}
+                  </h3>
+                </div>
+
+                <div className="mt-2 text-gray-600 leading-relaxed">
+                  {item.description}
+                </div>
+              </div>
             ))}
           </div>
         </div>

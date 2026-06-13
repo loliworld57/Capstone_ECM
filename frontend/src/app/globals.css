@@ -191,8 +191,17 @@ html {
 }
 
 .main-btn:hover {
-    background-color: var(--color-main);
-    color: var(--color-soft-white);
+    /* Pure Tailwind v4 linear-gradient mapping */
+    background-image: linear-gradient(
+        to right,
+        #6366f1 5%,               /* from-indigo-500 from-5% */
+        var(--color-main) 50%,     /* via-[var(--color-main)] via-50% */
+        #6366f1 95%               /* to-indigo-500 to-95% */
+    );
+    
+    /* Keeps text crisp and legible over your main purple-blue feature gradient */
+    color: var(--color-soft-white); 
+    border-color:var(--color-soft-main)f1;
 }
 
 .header-1 {

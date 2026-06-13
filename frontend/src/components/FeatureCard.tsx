@@ -1,48 +1,40 @@
 "use client";
 
-import Image, { StaticImageData } from "next/image";
+import React from "react";
 
 type FeatureCardProps = {
   title: string;
-  image: StaticImageData | string;
+  icon: React.ReactNode;
   description: string | React.ReactNode;
 };
 
-export default function FeatureCard({ title, image, description }: FeatureCardProps) {
+export default function FeatureCard({ title, icon, description }: FeatureCardProps) {
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col group border border-gray-100 aspect-[4/3] w-full">
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-5 shadow-xs hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
       
-      {/* Title Header */}
-      <div className="bg-[var(--color-secondary)] py-2 px-4 m-3 rounded-lg z-10 shrink-0">
-        <h3 className="text-[var(--color-text)] font-extrabold text-sm text-center uppercase tracking-wider">
+      {/* Top row containing Icon and Title Badge together */}
+      <div className="flex items-center gap-4">
+        {/* Dynamic Icon Container */}
+        <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white group-hover:scale-105 transition-all duration-300 shrink-0">
+          {React.isValidElement(icon)
+            ? React.cloneElement(icon as React.ReactElement<any>, {
+                className: "w-6 h-6 stroke-[2]",
+              })
+            : icon}
+        </div>
+
+        {/* Structured Header Title */}
+        <h3 className="text-lg font-bold text-gray-950 tracking-tight transition-colors duration-200">
           {title}
         </h3>
       </div>
 
-      {/* Image & Interactive Slide Content Outer Box */}
-      <div className="relative flex-1 w-full bg-gray-50/50 overflow-hidden min-h-0">
-        
-        {/* Image Layout Frame (Blurs out slightly on overlay activation) */}
-        <div className="absolute inset-0 p-4 transition-all duration-500 group-hover:scale-95 group-hover:blur-xs">
-          <div className="relative w-full h-full">
-            <Image
-              src={image}
-              alt={title}
-              fill
-              sizes="(max-width: 768px) 100vw, 33vw"
-              className="object-contain"
-              priority
-            />
-          </div>
-        </div>
+      {/* Decorative separating line */}
+      <div className="h-[1px] w-full bg-linear-to-r from-gray-100 to-transparent" />
 
-        {/* Dynamic Overlay Container (Slides up from the bottom edge) */}
-        <div className="absolute inset-0 translate-y-full group-hover:translate-y-0 bg-[var(--color-soft-white)]/95 text-[var(--color-text)] p-5 transition-transform duration-300 ease-out overflow-y-auto no-scrollbar flex flex-col justify-center">
-          <div className="text-sm text-left">
-            {description}
-          </div>
-        </div>
-
+      {/* Main Content Area */}
+      <div className="text-sm text-gray-600 leading-relaxed flex-1">
+        {description}
       </div>
     </div>
   );

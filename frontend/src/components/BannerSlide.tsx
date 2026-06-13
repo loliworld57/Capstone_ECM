@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import banner1 from "@/imgs/home/banner-1.jpg";
 import banner2 from "@/imgs/home/banner-2.jpg";
+import banner3 from "@/imgs/home/banner-3.png";
+import banner4 from "@/imgs/home/banner-4.png";
 
 export default function BannerSlider() {
-  const banners = [banner1, banner2];
+  const banners = [banner1, banner2, banner3, banner4];
   const [current, setCurrent] = useState(0);
+
 
   const prevSlide = () => {
     setCurrent((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
