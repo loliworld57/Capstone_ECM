@@ -81,7 +81,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="bg-[var(--color-soft-white)] text-gray-900 min-h-screen selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+    <div className="bg-[var(--color-soft-white)] text-gray-900 min-h-screen selection:bg-indigo-500 selection:text-white">
       
       {/* 1. Hero Section Area */}
       <ScrollReveal>
@@ -132,7 +132,7 @@ export default function Home() {
 
       {/* Video Block Section */}
       <ScrollReveal>
-        <div id="video-insight" className="w-full bg-gray-50 border-y border-gray-200/50 py-20 px-4">
+        <div id="video-insight" className="w-full bg-white border-y border-gray-200/50 py-20 px-4">
           <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
             <div className="text-center space-y-2">
               <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">Pedagogical Philosophy</span>

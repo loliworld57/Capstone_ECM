@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import Logo from "./Logo";
+import Logo from "./Logo"; // Importing your new integrated glyph Logo component
 import type { User } from "@/services/authService";
 import { Settings, LogOut, LayoutDashboard } from "lucide-react";
 
@@ -74,13 +74,13 @@ export default function Header() {
             ref={headerRef} 
             className="sticky top-0 z-40 w-full border-b border-slate-900/40 bg-slate-950/90 backdrop-blur-md shadow-md"
         >
-            {/* Top Dark Micro Banner */}
-            <div className="bg-slate-900/60 border-b border-slate-800/50 py-1.5 px-4">
-                <div className="container mx-auto flex items-center justify-between text-xs text-slate-400 font-medium">
+            {/* Top Micro Info Strip */}
+            <div className="bg-slate-300 border-b border-slate-800/50 py-1.5 px-4">
+                <div className="container mx-auto flex items-center justify-between text-xs text-[var(--color-text)] font-medium">
                     <span className="hidden sm:inline-block tracking-wide">
-                        Tutoring Center Management System
+                        Education Center Management System
                     </span>
-                    <span className="mx-auto sm:mx-0 tracking-wider font-semibold uppercase text-[10px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-sm">
+                    <span className="mx-auto sm:mx-0 tracking-wider font-semibold uppercase text-[10px] bg-[var(--color-main)] text-white border border-indigo-500/20 px-2 py-0.5 rounded-sm">
                         EIU Student Project
                     </span>
                 </div>
@@ -90,9 +90,14 @@ export default function Header() {
             <div className="px-4 py-3.5">
                 <div className="container mx-auto flex items-center justify-between gap-4">
                     
-                    {/* Brand Anchor Logo */}
+                    {/* Brand Anchor Logo Group - Integrated Glyph Design */}
                     <Link href="/" className="flex items-center group transition-transform duration-200 active:scale-95 shrink-0">
-                        <Logo className="text-white h-9 w-auto transition-colors duration-300 group-hover:text-indigo-400" />
+                        {/* I have updated the Logo component here. 
+                          By setting color="white", both the symbol and text ECM 
+                          will be crisp white against the dark slate background.
+                          I have kept h-9 to ensure it fits perfectly within the ribbon.
+                        */}
+                        <Logo className="h-9 w-auto" color="white" />
                     </Link>
 
                     {/* Navigation Actions Array */}

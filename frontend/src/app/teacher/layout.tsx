@@ -34,7 +34,7 @@ export default function TeacherLayout({
         setUser(getStoredUser());
     }, []);
 
-    // fetch invitation count whenever user or route changes
+    // Fetch invitation count whenever user or route changes
     useEffect(() => {
         if (!user?.id) return;
 
@@ -56,7 +56,6 @@ export default function TeacherLayout({
             router.replace("/AccessDenied");
             return;
         }
-
     }, [router]);
 
     useEffect(() => {
@@ -65,12 +64,7 @@ export default function TeacherLayout({
         const updateCompactSidebar = (event: MediaQueryList | MediaQueryListEvent) => {
             const matches = event.matches;
             setIsCompactSidebar(matches);
-
-            if (matches) {
-                setCollapsed(true);
-            } else {
-                setCollapsed(false);
-            }
+            setCollapsed(matches);
         };
 
         updateCompactSidebar(mediaQuery);
@@ -83,24 +77,17 @@ export default function TeacherLayout({
 
     useEffect(() => {
         const handlePointerDown = (event: MouseEvent) => {
-            if (collapsed) {
-                return;
-            }
+            if (collapsed) return;
 
             const target = event.target as Node | null;
-            if (!target) {
-                return;
-            }
+            if (!target) return;
 
-            if (sidebarRef.current?.contains(target)) {
-                return;
-            }
+            if (sidebarRef.current?.contains(target)) return;
 
             setCollapsed(true);
         };
 
         document.addEventListener("mousedown", handlePointerDown);
-
         return () => {
             document.removeEventListener("mousedown", handlePointerDown);
         };
@@ -115,75 +102,99 @@ export default function TeacherLayout({
         { name: "Finance", href: "/teacher/finance", icon: WalletCards },
     ];
 
-    const hideAllSidebarContent = isCompactSidebar && collapsed;
-    const hideSidebarLabels = collapsed;
-    const sidebarWidthClass = hideAllSidebarContent ? "w-6" : collapsed ? "w-20" : "w-64";
-    const showDesktopCollapsedRail = collapsed && !isCompactSidebar;
-    const sidebarBackgroundWidthClass = hideAllSidebarContent ? "w-0" : collapsed ? "w-20" : "w-64";
-    const sidebarClassName = hideAllSidebarContent
-        ? `teacher-sidebar-fixed ${sidebarWidthClass} flex flex-col items-center bg-transparent shadow-none transition-all duration-300`
-        : `teacher-sidebar-fixed ${sidebarWidthClass} flex flex-col bg-[var(--color-main)] transition-all duration-300`;
+    const isFullyHidden = isCompactSidebar && collapsed;
 
     return (
-        <div className="relative min-h-0 flex-1 bg-gray-100">
-            <div className={`teacher-sidebar-column ${sidebarBackgroundWidthClass} bg-[var(--color-main)] shadow-lg transition-all duration-300`} />
-
-            {/* SIDEBAR */}
-            <aside ref={sidebarRef} className={sidebarClassName}>
-                <div className="flex h-full flex-col">
-                    {/* Header */}
-                    <div className={`flex items-center ${hideAllSidebarContent ? "justify-center pt-3" : `border-b p-3 ${collapsed ? "justify-center" : "justify-between"}`}`}>
-                        {!collapsed && (
-                            <div>
-                                <h1 className="text-2xl font-bold text-[var(--color-soft-white)]">
-                                    Dashboard
-                                </h1>
-                                <p className="mt-1 text-sm text-[var(--color-soft-white)]">
-                                    Teacher: {user?.firstName}
-                                </p>
-                            </div>
-                        )}
-
-                        <button
-                            onClick={() => setCollapsed(!collapsed)}
-                            className={`${hideAllSidebarContent ? "rounded-r-md bg-[var(--color-main)] px-1 py-2 text-[var(--color-soft-white)] shadow-md" : "text-white"} transition hover:text-gray-300`}
-                            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                        >
-                            {collapsed ? <ChevronRight size={22} /> : <ChevronLeft size={22} />}
-                        </button>
-                    </div>
-
-                    {/* Navigation */}
-                    {!hideAllSidebarContent && (
-                        <nav className="mt-4 flex-1 space-y-2 pb-4">
-                            {menuItems.map((item) => {
-                                const isActive = pathname === item.href;
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={`relative flex items-center ${showDesktopCollapsedRail ? "justify-center gap-0" : "gap-3"
-                                            } px-4 py-3 font-bold transition-all ${isActive
-                                                ? "bg-blue-50 text-[var(--color-main)]"
-                                                : "text-[var(--color-soft-white)] hover:bg-gray-50 hover:text-blue-500"
-                                            }`}
-                                    >
-                                        <item.icon size={22} />
-                                        <span className={hideSidebarLabels ? "hidden" : ""}>{item.name}</span>
-                                        {item.notify && (
-                                            <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500" />
-                                        )}
-                                    </Link>
-                                );
-                            })}
-                        </nav>
+        <div className="flex h-[calc(100vh-var(--app-header-height,0px))] w-full overflow-hidden bg-[var(--color-soft-white)] text-slate-900">
+            
+            {/* HIGH-CONTRAST DARK SIDEBAR */}
+            <aside
+                ref={sidebarRef}
+                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-950 bg-slate-950 shadow-2xl transition-all duration-300 xl:sticky ${
+                    isFullyHidden 
+                        ? "-translate-x-full xl:translate-x-0 xl:w-16" 
+                        : collapsed 
+                        ? "w-20" 
+                        : "w-64"
+                }`}
+            >
+                {/* Header Profile Plate */}
+                <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] bg-black/40 ${
+                    collapsed ? "justify-center" : "justify-between"
+                }`}>
+                    {!collapsed && (
+                        <div className="truncate pr-2">
+                            <h2 className="text-sm font-black text-white tracking-wider uppercase">Workspace</h2>
+                            <p className="text-xs font-bold text-indigo-400 truncate mt-0.5">
+                                {user?.firstName ? `Faculty: ${user.firstName}` : "Academic Faculty"}
+                            </p>
+                        </div>
                     )}
+
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="p-1.5 rounded-lg border border-slate-800 text-slate-200 bg-slate-900 hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all active:scale-95 shadow-lg"
+                        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    >
+                        {collapsed ? <ChevronRight size={16} className="stroke-[2.5]" /> : <ChevronLeft size={16} className="stroke-[2.5]" />}
+                    </button>
                 </div>
+
+                {/* High-Contrast Navigation Links array */}
+                <nav className="flex-1 space-y-2 p-3 overflow-y-auto bg-slate-950">
+                    {menuItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`group relative flex items-center rounded-xl p-3 text-sm font-bold transition-all duration-150 outline-none ${
+                                    isActive
+                                        ? "bg-indigo-600 text-white shadow-xl border border-indigo-500"
+                                        : "text-slate-300 hover:bg-slate-900 hover:text-white border border-transparent"
+                                } ${collapsed ? "justify-center" : "gap-3.5"}`}
+                            >
+                                {/* Active Left Contrast Anchor Tab */}
+                                {isActive && (
+                                    <span className="absolute left-0 top-2 bottom-2 w-1.5 rounded-r-md bg-white animate-fade-in" />
+                                )}
+
+                                <item.icon 
+                                    size={18} 
+                                    className={`shrink-0 transition-transform duration-150 group-hover:scale-110 ${
+                                        isActive ? "text-white stroke-[2.5]" : "text-slate-400 group-hover:text-white stroke-[2]"
+                                    }`} 
+                                />
+
+                                <span className={`tracking-wide transition-opacity duration-200 ${collapsed ? "hidden" : "block"}`}>
+                                    {item.name}
+                                </span>
+
+                                {/* Notification Alert Badge */}
+                                {item.notify && (
+                                    <span className={`absolute rounded-full bg-rose-500 ring-4 ${
+                                        collapsed 
+                                            ? "top-2 right-4 h-3 w-3 ring-slate-950" 
+                                            : "right-3 h-2.5 w-2.5 ring-slate-950 group-hover:ring-slate-900"
+                                    } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""}`} />
+                                )}
+                            </Link>
+                        );
+                    })}
+                </nav>
             </aside>
 
-            {/* MAIN CONTENT */}
-            <main className="min-h-0 min-w-0 flex-1 overflow-y-auto transition-all duration-300">
-                <div className="container py-6 sm:py-8">
+            {/* Mobile Navigation Backdrop Mesh */}
+            {!isFullyHidden && (
+                <div 
+                    className="fixed inset-0 z-20 bg-slate-950/60 backdrop-blur-sm xl:hidden"
+                    onClick={() => setCollapsed(true)}
+                />
+            )}
+
+            {/* MAIN CONTENT VIEWPORT */}
+            <main className="flex-1 min-w-0 overflow-y-auto">
+                <div className="container mx-auto px-4 py-6 sm:px-8 bg-[var(--color-soft-white)] sm:py-8 max-w-7xl">
                     <div className="min-h-full">
                         {children}
                     </div>
