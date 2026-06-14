@@ -447,7 +447,7 @@ function SubmissionsModal({ assignmentId, courseId, onClose, onRefresh }: { assi
                     </button>
                 </div>
 
-                <div className="p-6 max-h-96 overflow-y-auto">
+                <div className="p-6 max-h-96">
                     {loading ? (
                         <div className="text-center py-10">
                             <Loader2 size={32} className="animate-spin text-[var(--color-main)] mx-auto mb-2" />

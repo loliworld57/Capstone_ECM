@@ -213,7 +213,7 @@ export default function InviteTeacherModal({
               className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--color-main)]"
             />
 
-            <div className="max-h-56 overflow-y-auto border rounded-lg divide-y">
+            <div className="max-h-56 border rounded-lg divide-y">
               {visibleTeachers.length === 0 ? (
                 <div className="px-3 py-3 text-sm text-gray-500">No center teachers found.</div>
               ) : (

@@ -330,12 +330,10 @@ html {
     font-size: 11px;
     line-height: 13px;
     padding: 2px 4px;
-    overflow: hidden;
 }
 
 .teacher-schedule-event-line {
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
 }
 

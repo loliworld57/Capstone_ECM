@@ -202,430 +202,415 @@ export default function CenterManagementPage() {
             }`;
     };
 
-    return (
-        <div className="space-y-6">
-
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-[var(--color-text)] flex items-center gap-2">
-                    <Building2 className="text-[var(--color-main)]" />
+return (
+    <div className="space-y-8 animate-fade-in pb-12">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200/60">
+            <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <Building2 size={24} className="stroke-[2.5]" />
+                    </div>
                     Manage Centers
                 </h1>
-
-                {activeTab === "managed" && (
-                    <button
-                        onClick={openCreateForm}
-                        className="bg-[var(--color-main)] border-2 border-[var(--color-main)] text-white px-4 py-2 rounded-lg hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] flex items-center gap-2 transition"
-                    >
-                        <Plus size={20} /> New Center
-                    </button>
-                )}
+                <p className="text-sm font-medium text-slate-500 mt-1 pl-1">
+                    Oversee your operated institutions, faculty nodes, and active classroom modules.
+                </p>
             </div>
 
-            {/* Invitations */}
-            {invitations.length > 0 && (
-                <div className="bg-[var(--color-alert)]/10 border border-orange-200 rounded-xl p-4 mb-6">
-                    <h3 className="text-[var(--color-alert)] font-bold mb-3">
-                        <Bell className="inline" size={18} /> You have {invitations.length} new teaching invitations!
-                    </h3>
-
-                    <div className="space-y-3">
-                        {invitations.map(inv => (
-                            <div key={inv.id} className="bg-[var(--color-soft-white)] p-3 rounded-lg border border-[var(--color-alert)] flex justify-between items-center shadow-sm">
-                                <div>
-                                    <p className="font-bold text-[var(--color-text)]">
-                                        {inv.name} (Grade {inv.grade ? inv.grade.name : "-"})
-                                    </p>
-                                    <p className="text-sm text-[var(--color-text)]">
-                                        At: {inv.center?.name}
-                                    </p>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => handleRespond(inv.id, "ACCEPTED")}
-                                        className="bg-[var(--color-main)] text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-[var(--color-positive)] transition"
-                                    >
-                                        Accept
-                                    </button>
-
-                                    <button
-                                        onClick={() => handleRespond(inv.id, "REJECTED")}
-                                        className="bg-[var(--color-soft-white)] border-2 border-[var(--color-alert)] text-[var(--color-alert)] px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-[var(--color-negative)] hover:text-white transition"
-                                    >
-                                        Reject
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            {activeTab === "managed" && (
+                <button
+                    onClick={openCreateForm}
+                    className="w-full sm:w-auto self-start bg-indigo-600 border border-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-white hover:text-indigo-600 flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-md shadow-indigo-600/10"
+                >
+                    <Plus size={18} className="stroke-[3]" /> New Center
+                </button>
             )}
+        </div>
 
-            {centerInvitations.length > 0 && (
-                <div className="bg-[var(--color-main)]/10 border border-[var(--color-main)]/30 rounded-xl p-4 mb-6">
-                    <h3 className="text-[var(--color-main)] font-bold mb-3">
-                        <Bell className="inline" size={18} /> You were invited to {centerInvitations.length} center(s)
+        {/* Teaching Invitations Panel */}
+        {invitations.length > 0 && (
+            <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 shadow-sm shadow-amber-500/5 animate-slide-up">
+                <div className="flex items-center gap-2.5 mb-4">
+                    <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-sm animate-pulse">
+                        <Bell size={16} className="stroke-[2.5]" />
+                    </div>
+                    <h3 className="text-amber-800 font-extrabold text-base tracking-wide">
+                        You have {invitations.length} new teaching invitations!
                     </h3>
+                </div>
 
-                    <div className="space-y-2">
-                        {centerInvitations.map((center) => (
-                            <div
-                                key={center.id}
-                                className="bg-[var(--color-soft-white)] p-3 rounded-lg border border-[var(--color-main)]/30 flex justify-between items-center"
-                            >
-                                <div>
-                                    <p className="font-bold text-[var(--color-text)]">{center.name}</p>
-                                    <p className="text-sm text-[var(--color-text)]">Manager: {center.manager?.lastName} {center.manager?.firstName}</p>
-                                </div>
+                <div className="space-y-3">
+                    {invitations.map(inv => (
+                        <div key={inv.id} className="bg-white p-4 rounded-xl border border-amber-200/70 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shadow-sm hover:border-amber-300 transition-all">
+                            <div className="space-y-1">
+                                <p className="font-bold text-slate-900 text-base">
+                                    {inv.name} <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded ml-1.5 uppercase">Grade {inv.grade ? inv.grade.name : "-"}</span>
+                                </p>
+                                <p className="text-sm font-medium text-slate-500 flex items-center gap-1.5">
+                                    <Building2 size={14} className="text-slate-400" />
+                                    At: <span className="text-slate-700 font-semibold">{inv.center?.name}</span>
+                                </p>
+                            </div>
 
-                                <Link
-                                    href={`/teacher/centers/${center.id}`}
-                                    className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-main)] bg-[var(--color-main)] text-white hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition"
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <button
+                                    onClick={() => handleRespond(inv.id, "ACCEPTED")}
+                                    className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition shadow-sm"
                                 >
-                                    View Center
-                                </Link>
+                                    Accept
+                                </button>
+                                <button
+                                    onClick={() => handleRespond(inv.id, "REJECTED")}
+                                    className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition"
+                                >
+                                    Reject
+                                </button>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
-            )}
+            </div>
+        )}
 
-            {/* Create Form */}
-            {showForm && (
-                <div className="bg-[var(--color-soft-white)] p-6 rounded-xl border border-blue-100">
-                    <div className="mb-4 flex items-center justify-between gap-4">
-                        <h3 className="font-bold text-[var(--color-text)]">
-                            {editingCenter ? `Edit ${editingCenter.name}` : "Enter new center information"}
-                        </h3>
+        {/* Center Invitations Panel */}
+        {centerInvitations.length > 0 && (
+            <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-5 shadow-sm shadow-indigo-500/5 animate-slide-up">
+                <div className="flex items-center gap-2.5 mb-4">
+                    <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-sm">
+                        <Bell size={16} className="stroke-[2.5]" />
+                    </div>
+                    <h3 className="text-indigo-900 font-extrabold text-base tracking-wide">
+                        You were invited to {centerInvitations.length} center(s)
+                    </h3>
+                </div>
 
+                <div className="space-y-3">
+                    {centerInvitations.map((center) => (
+                        <div key={center.id} className="bg-white p-4 rounded-xl border border-indigo-100 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shadow-sm hover:border-indigo-200 transition-all">
+                            <div className="space-y-1">
+                                <p className="font-bold text-slate-900 text-base">{center.name}</p>
+                                <p className="text-sm font-medium text-slate-500">
+                                    Manager: <span className="text-slate-700 font-semibold">{center.manager?.lastName} {center.manager?.firstName}</span>
+                                </p>
+                            </div>
+
+                            <Link
+                                href={`/teacher/centers/${center.id}`}
+                                className="w-full sm:w-auto text-center px-4 py-2 rounded-lg border border-indigo-600 bg-indigo-600 text-white text-sm font-bold hover:bg-white hover:text-indigo-600 transition shadow-sm"
+                            >
+                                View Center
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* Create / Edit Form Area */}
+        {showForm && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xl shadow-slate-100/40 animate-slide-up">
+                <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h3 className="font-extrabold text-slate-900 text-lg">
+                        {editingCenter ? `Modify Layout: ${editingCenter.name}` : "Establish New Academic Center"}
+                    </h3>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setShowForm(false);
+                            setEditingCenter(null);
+                            setFormData({ name: "", description: "", phoneNumber: "" });
+                        }}
+                        className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                    >
+                        Cancel
+                    </button>
+                </div>
+
+                <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700">Center Name <span className="text-rose-500">*</span></label>
+                        <input
+                            required
+                            type="text"
+                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
+                            placeholder="Example: Math Learning Center"
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700">Phone Connection Number</label>
+                        <input
+                            type="text"
+                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
+                            placeholder="e.g., +1 (555) 000-0000"
+                            value={formData.phoneNumber}
+                            onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="col-span-1 md:col-span-2 space-y-1.5">
+                        <label className="text-sm font-bold text-slate-700">Detailed Description / Address Location</label>
+                        <textarea
+                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
+                            rows={3}
+                            placeholder="Provide details regarding hours, curriculum specifics, or structural addresses..."
+                            value={formData.description}
+                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="col-span-1 md:col-span-2 text-right pt-2 border-t border-slate-100">
                         <button
-                            type="button"
-                            onClick={() => {
-                                setShowForm(false);
-                                setEditingCenter(null);
-                                setFormData({ name: "", description: "", phoneNumber: "" });
-                            }}
-                            className="rounded-lg border border-[var(--color-main)] px-3 py-1.5 text-sm font-medium text-[var(--color-main)] transition hover:bg-[var(--color-main)] hover:text-white"
+                            type="submit"
+                            className="bg-indigo-600 border border-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-white hover:text-indigo-600 transition shadow-md shadow-indigo-600/10 active:scale-95 disabled:opacity-50 inline-flex items-center gap-2"
                         >
-                            Cancel
+                            <SaveIcon size={16} className="stroke-[2.5]" /> {editingCenter ? "Update Center Configuration" : "Deploy Academic Center"}
                         </button>
                     </div>
-
-                    <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="font-medium text-[var(--color-text)]">Center Name <span className="text-[var(--color-negative)]">*</span></label>
-                            <input
-                                required
-                                type="text"
-                                className="w-full mt-1 p-2 border border-[var(--color-main)] rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] outline-none"
-                                placeholder="Example: Math Learning Center"
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-sm font-medium text-[var(--color-text)]">Phone Number</label>
-                            <input
-                                type="text"
-                                className="w-full mt-1 p-2 border border-[var(--color-main)] rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] outline-none"
-                                placeholder="0909..."
-                                value={formData.phoneNumber}
-                                onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="col-span-2">
-                            <label className="text-sm font-medium text-[var(--color-text)]">Description / Address</label>
-                            <textarea
-                                className="w-full mt-1 p-2 border border-[var(--color-main)] rounded-lg focus:ring-2 focus:ring-[var(--color-secondary)] outline-none"
-                                rows={2}
-                                placeholder="Short description..."
-                                value={formData.description}
-                                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="col-span-2 text-right">
-                            <button
-                                type="submit"
-                                className="bg-[var(--color-main)] border-2 border-[var(--color-main)] text-white px-4 py-2 rounded-lg font-bold hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition disabled:opacity-50"
-                            >
-                                <SaveIcon className="inline" /> {editingCenter ? "Update Center" : "Create Center"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            {/* Tabs */}
-            <div className="rounded-2xl border border-[var(--color-main)]/15 bg-[var(--color-soft-white)] p-4 shadow-sm">
-                <div className="flex flex-wrap gap-3">
-                    <button
-                        onClick={() => setActiveTab("managed")}
-                        className={tabButtonClass("managed")}
-                    >
-                        <Building2 size={18} /> Managed by Me ({managedCenters.length})
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab("teaching")}
-                        className={tabButtonClass("teaching")}
-                    >
-                        <Briefcase size={18} /> Teaching At ({teachingCenters.length})
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab("archived")}
-                        className={tabButtonClass("archived")}
-                    >
-                        <Archive size={18} /> Archived ({archivedCenters.length})
-                    </button>
-                </div>
+                </form>
             </div>
+        )}
 
-            <ConfirmModal
-                isOpen={!!archiveTarget}
-                title="Archive Center"
-                message={archiveTarget
-                    ? `Are you sure you want to archive ${archiveTarget.name}? The archive date and time will be saved, and the center will move to the archived tab.`
-                    : ""
-                }
-                confirmText="Archive"
-                cancelText="Cancel"
-                onConfirm={confirmArchive}
-                onClose={() => setArchiveTarget(null)}
-            />
+        {/* Layout Navigation Filter Tabs */}
+        <div className="border-b border-slate-200/80 pb-1">
+            <div className="flex flex-wrap gap-2">
+                <button
+                    onClick={() => setActiveTab("managed")}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        activeTab === "managed"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                    }`}
+                >
+                    <Building2 size={16} /> Managed by Me ({managedCenters.length})
+                </button>
 
-            <ConfirmModal
-                isOpen={!!restoreTarget}
-                title="Restore Center"
-                message={restoreTarget
-                    ? `Restore ${restoreTarget.name}? The center will move back to the managed tab and become editable again.`
-                    : ""
-                }
-                confirmText="Restore"
-                cancelText="Cancel"
-                onConfirm={confirmRestore}
-                onClose={() => setRestoreTarget(null)}
-            />
+                <button
+                    onClick={() => setActiveTab("teaching")}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        activeTab === "teaching"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                    }`}
+                >
+                    <Briefcase size={16} /> Teaching At ({teachingCenters.length})
+                </button>
 
-            {/* Content Grid */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-                {loading ? (
-                    Array.from({ length: 2 }).map((_, index) => (
-                        <div
-                            key={index}
-                            className="group overflow-hidden rounded-2xl border border-[var(--color-main)]/15 bg-white shadow-sm animate-pulse"
-                        >
-                            {/* Top gradient area */}
-                            <div className="bg-gray-300 px-5 py-4 h-32 relative overflow-hidden">
-                                <div className="absolute inset-0 shimmer"></div>
+                <button
+                    onClick={() => setActiveTab("archived")}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        activeTab === "archived"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                    }`}
+                >
+                    <Archive size={16} /> Archived Vault ({archivedCenters.length})
+                </button>
+            </div>
+        </div>
 
-                                <div className="relative z-10">
-                                    <div className="h-6 w-24 rounded bg-white/40 mb-4"></div>
+        {/* Modal Window Elements */}
+        <ConfirmModal
+            isOpen={!!archiveTarget}
+            title="Archive Center"
+            message={archiveTarget ? `Are you sure you want to archive ${archiveTarget.name}? Dynamic processing timelines will snapshot, moving this module out of standard views.` : ""}
+            confirmText="Archive"
+            cancelText="Cancel"
+            onConfirm={confirmArchive}
+            onClose={() => setArchiveTarget(null)}
+        />
 
-                                    <div className="h-8 w-2/3 rounded bg-white/50"></div>
-                                </div>
-                            </div>
+        <ConfirmModal
+            isOpen={!!restoreTarget}
+            title="Restore Center"
+            message={restoreTarget ? `Restore operational logs for ${restoreTarget.name}? This object will drop right back into your active operations grid.` : ""}
+            confirmText="Restore"
+            cancelText="Cancel"
+            onConfirm={confirmRestore}
+            onClose={() => setRestoreTarget(null)}
+        />
 
-                            {/* Content */}
-                            <div className="p-5 space-y-4">
-                                {/* Info cards */}
+        {/* Central Component Information Cards Display Grid */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {loading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                    /* ADJUSTED: Synchronized skeleton wrapper to match data cards precisely */
+                    <div key={index} className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm animate-pulse flex flex-col min-h-[300px]">
+                        <div className="bg-slate-200 h-24 p-5 flex flex-col justify-end">
+                            <div className="h-5 bg-slate-300 w-2/3 rounded-md"></div>
+                        </div>
+                        <div className="p-5 flex-1 flex flex-col justify-between">
+                            <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="rounded-xl bg-gray-100 p-4">
-                                        <div className="h-3 w-16 rounded bg-gray-300 mb-2"></div>
-                                        <div className="h-4 w-24 rounded bg-gray-200"></div>
+                                    <div className="h-12 bg-slate-100 rounded-xl"></div>
+                                    <div className="h-12 bg-slate-100 rounded-xl"></div>
+                                </div>
+                                <div className="h-16 bg-slate-100 rounded-xl"></div>
+                            </div>
+                            <div className="h-10 bg-slate-200 rounded-xl w-1/3"></div>
+                        </div>
+                    </div>
+                ))
+            ) : paginatedCenters.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-16 text-center text-slate-500 shadow-sm md:col-span-2 xl:col-span-3 flex flex-col items-center justify-center space-y-3 min-h-[300px]">
+                    <Building2 size={36} className="text-slate-300" />
+                    <p className="font-semibold text-slate-700 text-lg">No instances found</p>
+                    <p className="text-sm text-slate-400 max-w-sm">
+                        {activeTab === "managed"
+                            ? "You haven't registered any learning centers yet. Get started by clicking 'New Center'."
+                            : activeTab === "teaching"
+                                ? "There are currently no assignments under your profile panel."
+                                : "The archival vault layer is empty."}
+                    </p>
+                </div>
+            ) : (
+                paginatedCenters.map(center => (
+                    /* ADJUSTED: Enforced explicit flex direction layouts and uniform minimum heights */
+                    <div
+                        key={center.id}
+                        className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-200 min-h-[300px]"
+                    >
+                        {/* Upper Gradient Banner Plate */}
+                        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 px-5 py-5 text-white relative shrink-0">
+                            <div className="flex items-start justify-between gap-3 relative z-10">
+                                <div className="min-w-0 flex-1 space-y-2">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="rounded-md bg-white/10 backdrop-blur-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-200 border border-white/5">
+                                            {activeTab === "managed" ? "Owner" : activeTab === "teaching" ? "Faculty" : "Archived"}
+                                        </span>
+                                        {center.phoneNumber && (
+                                            <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-xs font-semibold text-indigo-200">
+                                                {center.phoneNumber}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    <div className="rounded-xl bg-gray-100 p-4">
-                                        <div className="h-3 w-14 rounded bg-gray-300 mb-2"></div>
-                                        <div className="h-4 w-20 rounded bg-gray-200"></div>
-                                    </div>
+                                    <h3 className="text-xl font-bold leading-snug tracking-tight text-white truncate group-hover:text-indigo-200 transition-colors">
+                                        {center.name}
+                                    </h3>
                                 </div>
 
-                                {/* Description */}
-                                <div className="rounded-xl bg-gray-100 p-4 space-y-2">
-                                    <div className="h-3 w-full rounded bg-gray-300"></div>
-                                    <div className="h-3 w-5/6 rounded bg-gray-300"></div>
-                                    <div className="h-3 w-2/3 rounded bg-gray-300"></div>
-                                </div>
-
-                                {/* Buttons */}
-                                <div className="flex gap-2 pt-2">
-                                    <div className="h-10 w-24 rounded-lg bg-gray-300"></div>
-                                    <div className="h-10 w-28 rounded-lg bg-gray-200"></div>
-                                </div>
+                                {activeTab !== "archived" && (
+                                    <Link
+                                        href={`/teacher/centers/${center.id}`}
+                                        className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-2.5 text-slate-300 transition hover:bg-indigo-600 hover:text-white hover:border-indigo-500 shadow-lg"
+                                    >
+                                        <ExternalLink size={18} className="stroke-[2.5]" />
+                                    </Link>
+                                )}
                             </div>
                         </div>
-                    ))
-                ) : paginatedCenters.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-[var(--color-main)]/30 bg-white p-12 text-center text-[var(--color-text)] shadow-sm lg:col-span-2 2xl:col-span-3">
-                        {activeTab === "managed"
-                            ? "No managed centers available yet."
-                            : activeTab === "teaching"
-                                ? "No teaching centers available yet."
-                                : "No archived centers available yet."}
-                    </div>
-                ) : (
-                    paginatedCenters.map(center => (
-                        <div
-                            key={center.id}
-                            className="group flex min-h-[280px] flex-col overflow-hidden rounded-2xl border border-[var(--color-main)]/20 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-                        >
-                            <div className="bg-gradient-to-r from-[var(--color-main)] via-[var(--color-main)] to-[var(--color-secondary)] px-5 py-4 text-white">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0 flex-1">
-                                        <div className="mb-3 flex flex-wrap items-center gap-2">
-                                            <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white/90">
-                                                {activeTab === "managed"
-                                                    ? "Managed"
-                                                    : activeTab === "teaching"
-                                                        ? "Teaching"
-                                                        : "Archived"}
-                                            </span>
 
-                                            {center.phoneNumber && (
-                                                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-                                                    {center.phoneNumber}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <h3 className="text-2xl font-semibold leading-snug break-words">
-                                            {center.name}
-                                        </h3>
-                                    </div>
-
-                                    {activeTab !== "archived" && (
-                                        <Link
-                                            href={`/teacher/centers/${center.id}`}
-                                            className="shrink-0 rounded-xl border border-white/25 bg-white/10 p-2 text-white transition hover:bg-white hover:text-[var(--color-main)]"
-                                        >
-                                            <ExternalLink size={24} />
-                                        </Link>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-1 flex-col gap-4 p-5">
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                    <div className="rounded-xl bg-[var(--color-soft-white)] px-4 py-3">
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text)]/55">
-                                            Manager
-                                        </p>
-                                        <p className="mt-1 font-semibold text-[var(--color-text)]">
+                        {/* Mid-Card Metric Layout Content wrapper */}
+                        <div className="flex flex-1 flex-col justify-between p-5 bg-white min-h-0">
+                            <div className="space-y-4 flex-1">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-2.5">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Manager</p>
+                                        <p className="mt-0.5 font-bold text-slate-800 text-sm truncate">
                                             {center.manager?.lastName} {center.manager?.firstName}
                                         </p>
                                     </div>
 
-                                    <div className="rounded-xl bg-[var(--color-soft-white)] px-4 py-3">
-                                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text)]/55">
-                                            Status
-                                        </p>
-                                        <p className="mt-1 font-semibold text-[var(--color-text)]">
-                                            {activeTab === "archived" ? "Archived Center" : "Active Center"}
+                                    <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-2.5">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Operations</p>
+                                        <p className={`mt-0.5 font-bold text-sm flex items-center gap-1.5 ${activeTab === 'archived' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'archived' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                                            {activeTab === "archived" ? "Archived" : "Active"}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div
-                                    className={`rounded-xl border border-[var(--color-main)]/10 bg-[var(--color-soft-white)] px-4 py-3 text-sm text-[var(--color-text)] leading-relaxed break-words ${expandedCard === center.id
-                                        ? "max-h-32 overflow-y-auto"
-                                        : "line-clamp-3"
-                                        }`}
+                                    className={`rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-2.5 text-xs font-medium text-slate-600 leading-relaxed break-words ${
+                                        expandedCard === center.id ? "max-h-[72px] overflow-y-auto" : "line-clamp-2"
+                                    }`}
                                 >
-                                    {center.description || "No description provided."}
-                                </div>
-
-                                {center.description && center.description.length > 120 && (
-                                    <button
-                                        onClick={() =>
-                                            setExpandedCard(
-                                                expandedCard === center.id ? null : center.id
-                                            )
-                                        }
-                                        className="w-fit text-xs font-semibold text-[var(--color-main)] transition hover:underline"
-                                    >
-                                        {expandedCard === center.id ? "Show less" : "Show more"}
-                                    </button>
-                                )}
-
-                                <div className="mt-auto flex items-center justify-between gap-3 border-t border-[var(--color-main)]/10 pt-4">
-                                    {activeTab === "managed" ? (
-                                        <div className="flex gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => openEditForm(center)}
-                                                className="inline-flex items-center gap-2 rounded-lg border-2 border-[var(--color-secondary)] bg-[var(--color-secondary)] px-3 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-[var(--color-secondary)]"
-                                            >
-                                                <Edit2Icon size={18} /> Edit
-                                            </button>
-                                            <button
-                                                onClick={() => setArchiveTarget(center)}
-                                                className="inline-flex items-center gap-2 rounded-lg border-2 border-[var(--color-alert)] bg-[var(--color-alert)] px-3 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-[var(--color-alert)]"
-                                            >
-                                                <Archive size={18} /> Archive
-                                            </button>
-                                        </div>
-                                    ) : activeTab === "teaching" ? (
-                                        <span className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600">
-                                            Assigned by center manager
-                                        </span>
-                                    ) : (
-                                        <div className="flex w-full items-center justify-between gap-3">
-                                            <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">
-                                                Archived: {formatArchivedAt(center.archivedAt)}
-                                            </span>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => setRestoreTarget(center)}
-                                                className="inline-flex items-center gap-2 rounded-lg border-2 border-[var(--color-main)] px-3 py-2 text-sm font-medium text-[var(--color-main)] transition hover:bg-[var(--color-main)] hover:text-white"
-                                            >
-                                                <RotateCcw size={16} /> Restore
-                                            </button>
-                                        </div>
-                                    )}
+                                    {center.description || "No supplemental details provided for this institution structural entity."}
                                 </div>
                             </div>
+
+                            {/* Card Base Action Row Layout */}
+                            <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3 mt-4 shrink-0">
+                                {activeTab === "managed" ? (
+                                    <div className="flex items-center gap-2 w-full">
+                                        <button
+                                            type="button"
+                                            onClick={() => openEditForm(center)}
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 shadow-sm"
+                                        >
+                                            <Edit2Icon size={14} /> Edit
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setArchiveTarget(center)}
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-transparent bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-100"
+                                        >
+                                            <Archive size={14} /> Archive
+                                        </button>
+                                    </div>
+                                ) : activeTab === "teaching" ? (
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100/80 px-3 py-1 rounded-md block w-full text-center">
+                                        External Center Assignment Layer
+                                    </span>
+                                ) : (
+                                    <div className="flex w-full items-center justify-between gap-3">
+                                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md max-w-[170px] truncate">
+                                            Vaulted: {formatArchivedAt(center.archivedAt)}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setRestoreTarget(center)}
+                                            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 px-3 py-1.5 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50"
+                                        >
+                                            <RotateCcw size={14} /> Restore
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    ))
-                )}
-            </div>
-
-            {!loading && visibleCenters.length > 0 && (
-                <div className="flex items-center justify-between rounded-2xl border border-[var(--color-main)]/15 bg-[var(--color-soft-white)] px-4 py-3 shadow-sm">
-                    <p className="text-sm text-[var(--color-text)]">
-                        Showing {(safeCurrentPage - 1) * CENTERS_PER_PAGE + 1}-{Math.min(safeCurrentPage * CENTERS_PER_PAGE, visibleCenters.length)} of {visibleCenters.length} centers
-                    </p>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                            disabled={safeCurrentPage === 1}
-                            className="flex items-center gap-1 rounded-lg border border-[var(--color-main)] px-3 py-2 text-sm font-medium text-[var(--color-main)] transition hover:bg-[var(--color-main)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <ChevronLeft size={16} /> Prev
-                        </button>
-
-                        <span className="min-w-20 text-center text-sm font-medium text-[var(--color-text)]">
-                            Page {safeCurrentPage} / {totalPages}
-                        </span>
-
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                            disabled={safeCurrentPage === totalPages}
-                            className="flex items-center gap-1 rounded-lg border border-[var(--color-main)] px-3 py-2 text-sm font-medium text-[var(--color-main)] transition hover:bg-[var(--color-main)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Next <ChevronRight size={16} />
-                        </button>
                     </div>
-                </div>
+                ))
             )}
         </div>
-    );
+
+        {/* Footer-Level Data Pagination Controller Plates */}
+        {!loading && visibleCenters.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <p className="text-sm font-medium text-slate-500">
+                    Showing <span className="text-slate-900 font-bold">{(safeCurrentPage - 1) * CENTERS_PER_PAGE + 1}</span> to <span className="text-slate-900 font-bold">{Math.min(safeCurrentPage * CENTERS_PER_PAGE, visibleCenters.length)}</span> of <span className="text-slate-900 font-bold">{visibleCenters.length}</span> active centers
+                </p>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                        disabled={safeCurrentPage === 1}
+                        className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+                    >
+                        <ChevronLeft size={16} className="stroke-[2.5]" /> Prev
+                    </button>
+
+                    <span className="text-sm font-bold text-slate-800 min-w-[90px] text-center">
+                        {safeCurrentPage} / {totalPages}
+                    </span>
+
+                    <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                        disabled={safeCurrentPage === totalPages}
+                        className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+                    >
+                        Next <ChevronRight size={16} className="stroke-[2.5]" />
+                    </button>
+                </div>
+            </div>
+        )}
+    </div>
+);
 }

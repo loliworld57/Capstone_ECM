@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { User } from "@/services/authService";
 import api from "@/utils/axiosConfig";
 import { Course, getTeacherCourses } from "@/services/courseService";
@@ -32,13 +32,15 @@ type CenterInfo = {
     };
 };
 
+type TabType = "courses" | "students" | "teachers" | "subjects" | "grades" | "classrooms" | "class-slots" | "finance";
+
 export default function CenterDetailPage() {
     const params = useParams();
     const centerId = Number(params.id);
 
     const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
     const [isManager, setIsManager] = useState(false);
-    const [activeTab, setActiveTab] = useState<"courses" | "students" | "teachers" | "subjects" | "grades" | "classrooms" | "class-slots" | "finance">("courses");
+    const [activeTab, setActiveTab] = useState<TabType>("courses");
     const [loading, setLoading] = useState(true);
 
     const [courses, setCourses] = useState<Course[]>([]);
@@ -55,12 +57,19 @@ export default function CenterDetailPage() {
         try {
             setLoading(true);
 
-            const resCenter = await api.get<CenterInfo>(`/centers/${centerId}`);
-            setCenterInfo(resCenter.data);
+            // Fetch structural core resources in parallel safely
+            const [resCenter, resStudents] = await Promise.all([
+                api.get<CenterInfo>(`/centers/${centerId}`),
+                api.get<any[]>(`/centers/${centerId}/students`)
+            ]);
 
+            setCenterInfo(resCenter.data);
             const managerCheck = resCenter.data.manager.id === user.id;
             setIsManager(managerCheck);
 
+            const students = resStudents.data ?? [];
+
+            // Get target courses based on user permissions
             const fetchedCourses: Course[] = managerCheck
                 ? (await api.get(`/courses?centerId=${centerId}`)).data
                 : (await getTeacherCourses(user.id)).filter(
@@ -69,10 +78,7 @@ export default function CenterDetailPage() {
 
             setCourses(fetchedCourses);
 
-            const resStudents = await api.get(`/centers/${centerId}/students`);
-            const students = resStudents.data ?? [];
-
-            // Build student -> courses map for this center by querying each course's members.
+            // OPTIMIZATION: Process student metadata mapping concurrently
             const courseMembers = await Promise.all(
                 fetchedCourses.map(async (course: Course) => {
                     try {
@@ -80,18 +86,19 @@ export default function CenterDetailPage() {
                         return {
                             courseId: course.id,
                             courseName: course.name,
-                            students: res.data as Array<{ id: number }>,
+                            students: (res.data ?? []) as Array<{ id: number }>,
                         };
-                    } catch {
+                    } catch (err) {
                         return {
                             courseId: course.id,
                             courseName: course.name,
-                            students: [] as Array<{ id: number }>,
+                            students: [],
                         };
                     }
                 })
             );
 
+            // Build optimized relational lookup index
             const studentCoursesMap = new Map<number, { id: number; name: string }[]>();
             for (const cm of courseMembers) {
                 for (const st of cm.students) {
@@ -101,12 +108,12 @@ export default function CenterDetailPage() {
                 }
             }
 
-            const cardStudents = (students as User[])
-    .map((s): StudentCenterCard => ({
-        ...s,
-        courses: studentCoursesMap.get(s.id) ?? [],
-    }))
-    .filter((student: StudentCenterCard) => managerCheck || student.courses.length > 0);
+            const cardStudents = students
+                .map((s: any): StudentCenterCard => ({
+                    ...s,
+                    courses: studentCoursesMap.get(s.id) ?? [],
+                }))
+                .filter((student: StudentCenterCard) => managerCheck || student.courses.length > 0);
 
             setCenterStudents(cardStudents);
 
@@ -116,7 +123,7 @@ export default function CenterDetailPage() {
             }
 
         } catch (error) {
-            console.error(error);
+            console.error("Error compounding administrative data payload:", error);
         } finally {
             setLoading(false);
         }
@@ -126,28 +133,35 @@ export default function CenterDetailPage() {
         fetchData();
     }, [fetchData]);
 
-    if (loading)
+    if (loading) {
         return (
-            <div className="p-10 text-center text-[var(--color-text)]">
-                Loading center data...
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-3 p-10 animate-fade-in">
+                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                <p className="text-sm font-semibold text-slate-500 tracking-medium">
+                    Assembling administrative registry data...
+                </p>
             </div>
         );
+    }
 
-    return (
-        <div className="space-y-6">
-            <Link
-                href="/teacher/centers"
-                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-main)] transition hover:text-[var(--color-alert)] hover:underline"
-            >
-                <ArrowLeft size={14} />
-                Back to centers
-            </Link>
+return (
+        <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in pb-12">
+            {/* Navigation Back Button */}
+            <div className="pt-2">
+                <Link
+                    href="/teacher/centers"
+                    className="inline-flex items-center gap-2 text-sm font-bold text-[var(--color-text)] opacity-80 transition-colors hover:text-[var(--color-main)] hover:opacity-100 group"
+                >
+                    <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1 stroke-[2.5]" />
+                    Back to Center Management Grid
+                </Link>
+            </div>
 
-            {/* HEADER */}
+            {/* Core Center Details Presentation Card */}
             <CenterHeader center={centerInfo} isManager={isManager} />
 
-            {/* TABS */}
-            <div className="bg-[var(--color-soft-white)] p-4 rounded-xl">
+            {/* Navigation Filter Selector Tabs Container */}
+            <div className="bg-gray-50/60 border border-gray-200/60 p-2.5 rounded-2xl shadow-xs">
                 <CenterTabs
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
@@ -155,9 +169,8 @@ export default function CenterDetailPage() {
                 />
             </div>
 
-            {/* CONTENT */}
-            <div className="bg-[var(--color-soft-white)] p-6 rounded-xl border border-[var(--color-main)] min-h-[350px]">
-
+            {/* Context-Driven Active Tab Component Workspace Layer */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xl shadow-gray-100/40 min-h-[400px] transition-all duration-300 focus-within:border-[var(--color-main)]/30">
                 {activeTab === "courses" && (
                     <CourseListTab
                         courses={courses}
@@ -205,7 +218,6 @@ export default function CenterDetailPage() {
                     <CenterFinanceTab centerId={centerId} />
                 )}
             </div>
-
         </div>
     );
 }

@@ -133,7 +133,7 @@ export default function StudentLayout({
             </aside>
 
             {/* MAIN CONTENT */}
-            <main className="min-h-0 min-w-0 flex-1 overflow-y-auto transition-all duration-300">
+            <main className="min-h-0 min-w-0 flex-1 transition-all duration-300">
                 <div className="container py-6 sm:py-8">
                     <div className="min-h-full">
                         {children}

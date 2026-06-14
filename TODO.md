@@ -1,25 +1,11 @@
-# ECM Finance Module Cleanup & Hardening
+# TODO (Teacher Dashboard Enhancements)
 
-## Steps
+- [x] Add Quick Actions Control Panel at top of teacher dashboard.
+- [x] Add Dynamic “Active Class” banner: determine active session, show live countdown, and one-click check-in link.
 
-- [x] 1) Refactor CenterFinance: use authenticated user from SecurityContext
-- [x] 1b) Refactor CourseFinance: use authenticated user from SecurityContext
+- [ ] Add Pending Center Invitations preview with Accept/Decline actions (implement API wiring as available).
+- [ ] Add Analytical Student Performance Insights (risk alerts + top performers) using existing attendance/gradebook services when available.
+- [ ] Validate TypeScript build for frontend.
 
-
-- [x] 1c) Apply Task 1 + Task 2 to CenterFinance: remove actorUserId and preserve createdBy
-
-
-
-- [x] 2) Task 1: Remove actorUserId everywhere (controllers/services/DTO)
-
-- [x] 3) Task 2: Preserve createdBy (stop overwriting createdBy on update)
-
-- [x] 4) Task 3: Optimize revenue calculations (remove tuitionPaymentRepository.findAll() filtering)
-
-- [x] 5) Apply same hardening pattern across remaining finance modules listed in the task
-
-- [ ] 6) Task 5: TuitionStatus enum cleanup (only if currently String-based)
-- [ ] 7) Task 4: Ownership & authorization audit across all finance endpoints
-- [ ] 8) Build verification: `mvn test` and fix compilation/endpoint/serialization issues
 
 

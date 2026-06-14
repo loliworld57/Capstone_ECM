@@ -31,7 +31,7 @@ export default function RootLayout({
     // 1. Added scroll-smooth and ensured html behaves as a base layer
     <html lang="en" className="h-full scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[var(--color-soft-white)] text-[var(--color-text)] overflow-x-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[var(--color-soft-white)] text-[var(--color-text)]`}
       >
         {/* 2. Replaced nested min-h-screen with flex-1 layout engine */}
         <div className="flex min-h-screen flex-col w-full">

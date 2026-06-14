@@ -105,23 +105,20 @@ export default function TeacherLayout({
     const isFullyHidden = isCompactSidebar && collapsed;
 
     return (
-        <div className="flex h-[calc(100vh-var(--app-header-height,0px))] w-full overflow-hidden bg-[var(--color-soft-white)] text-slate-900">
-            
+        <div className="flex min-h-[calc(100vh-var(--app-header-height,0px))] w-full bg-[var(--color-soft-white)] text-slate-900">
             {/* HIGH-CONTRAST DARK SIDEBAR */}
             <aside
                 ref={sidebarRef}
-                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-950 bg-slate-950 shadow-2xl transition-all duration-300 xl:sticky ${
-                    isFullyHidden 
-                        ? "-translate-x-full xl:translate-x-0 xl:w-16" 
-                        : collapsed 
-                        ? "w-20" 
-                        : "w-64"
-                }`}
+                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-950 bg-slate-950 shadow-2xl transition-all duration-300 xl:sticky ${isFullyHidden
+                        ? "-translate-x-full xl:translate-x-0 xl:w-16"
+                        : collapsed
+                            ? "w-20"
+                            : "w-64"
+                    }`}
             >
                 {/* Header Profile Plate */}
-                <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] bg-black/40 ${
-                    collapsed ? "justify-center" : "justify-between"
-                }`}>
+                <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] bg-black/40 ${collapsed ? "justify-center" : "justify-between"
+                    }`}>
                     {!collapsed && (
                         <div className="truncate pr-2">
                             <h2 className="text-sm font-black text-white tracking-wider uppercase">Workspace</h2>
@@ -141,29 +138,27 @@ export default function TeacherLayout({
                 </div>
 
                 {/* High-Contrast Navigation Links array */}
-                <nav className="flex-1 space-y-2 p-3 overflow-y-auto bg-slate-950">
+                <nav className="flex-1 space-y-2 p-3 bg-slate-950">
                     {menuItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`group relative flex items-center rounded-xl p-3 text-sm font-bold transition-all duration-150 outline-none ${
-                                    isActive
+                                className={`group relative flex items-center rounded-xl p-3 text-sm font-bold transition-all duration-150 outline-none ${isActive
                                         ? "bg-indigo-600 text-white shadow-xl border border-indigo-500"
                                         : "text-slate-300 hover:bg-slate-900 hover:text-white border border-transparent"
-                                } ${collapsed ? "justify-center" : "gap-3.5"}`}
+                                    } ${collapsed ? "justify-center" : "gap-3.5"}`}
                             >
                                 {/* Active Left Contrast Anchor Tab */}
                                 {isActive && (
                                     <span className="absolute left-0 top-2 bottom-2 w-1.5 rounded-r-md bg-white animate-fade-in" />
                                 )}
 
-                                <item.icon 
-                                    size={18} 
-                                    className={`shrink-0 transition-transform duration-150 group-hover:scale-110 ${
-                                        isActive ? "text-white stroke-[2.5]" : "text-slate-400 group-hover:text-white stroke-[2]"
-                                    }`} 
+                                <item.icon
+                                    size={18}
+                                    className={`shrink-0 transition-transform duration-150 group-hover:scale-110 ${isActive ? "text-white stroke-[2.5]" : "text-slate-400 group-hover:text-white stroke-[2]"
+                                        }`}
                                 />
 
                                 <span className={`tracking-wide transition-opacity duration-200 ${collapsed ? "hidden" : "block"}`}>
@@ -172,11 +167,10 @@ export default function TeacherLayout({
 
                                 {/* Notification Alert Badge */}
                                 {item.notify && (
-                                    <span className={`absolute rounded-full bg-rose-500 ring-4 ${
-                                        collapsed 
-                                            ? "top-2 right-4 h-3 w-3 ring-slate-950" 
+                                    <span className={`absolute rounded-full bg-rose-500 ring-4 ${collapsed
+                                            ? "top-2 right-4 h-3 w-3 ring-slate-950"
                                             : "right-3 h-2.5 w-2.5 ring-slate-950 group-hover:ring-slate-900"
-                                    } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""}`} />
+                                        } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""}`} />
                                 )}
                             </Link>
                         );
@@ -186,14 +180,14 @@ export default function TeacherLayout({
 
             {/* Mobile Navigation Backdrop Mesh */}
             {!isFullyHidden && (
-                <div 
+                <div
                     className="fixed inset-0 z-20 bg-slate-950/60 backdrop-blur-sm xl:hidden"
                     onClick={() => setCollapsed(true)}
                 />
             )}
 
             {/* MAIN CONTENT VIEWPORT */}
-            <main className="flex-1 min-w-0 overflow-y-auto">
+            <main className="flex-1 min-w-0">
                 <div className="container mx-auto px-4 py-6 sm:px-8 bg-[var(--color-soft-white)] sm:py-8 max-w-7xl">
                     <div className="min-h-full">
                         {children}
