@@ -237,9 +237,9 @@ export default function TeacherDashboard() {
 
     const stats = useMemo(
         () => [
-            { label: "Teaching Courses", value: String(totalCourses), icon: BookOpen, color: "bg-indigo-600" },
-            { label: "Active Students", value: String(totalStudents), icon: Users, color: "bg-indigo-600" },
-            { label: "Classes (14 Days)", value: String(upcomingClasses.length), icon: CalendarDays, color: "bg-indigo-600" },
+            { label: "Teaching Courses", value: String(totalCourses), icon: BookOpen, color: "bg-[var(--color-main)]" },
+            { label: "Active Students", value: String(totalStudents), icon: Users, color: "bg-[var(--color-main)]" },
+            { label: "Classes (14 Days)", value: String(upcomingClasses.length), icon: CalendarDays, color: "bg-[var(--color-main)]" },
         ],
         [totalCourses, totalStudents, upcomingClasses.length]
     );
@@ -249,7 +249,7 @@ export default function TeacherDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black tracking-tight text-[var(--color-text)]">Overview</h1>
-                    <p className="text-xs font-semibold text-slate-500 mt-0.5">Welcome back! Here is your daily teaching brief.</p>
+                    <p className="text-xs font-semibold text-[var(--color-text)] mt-0.5">Welcome back! Here is your daily teaching brief.</p>
                 </div>
             </div>
 
@@ -274,8 +274,8 @@ export default function TeacherDashboard() {
                                 <stat.icon size={20} className="stroke-[2.2]" />
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-                                <p className="text-2xl font-black text-slate-900 mt-0.5">{stat.value}</p>
+                                <p className="text-xs font-bold text-[var(--color-main)] uppercase tracking-wider">{stat.label}</p>
+                                <p className="text-2xl font-black text-[var(--color-text)] mt-0.5">{stat.value}</p>
                             </div>
                         </div>
                     ))}
@@ -288,8 +288,8 @@ export default function TeacherDashboard() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Upcoming Schedule</h2>
-                            <Link href="/teacher/schedule" className="text-xs font-bold text-indigo-600 hover:underline">View Calendar</Link>
+                            <h2 className="text-sm font-black text-[var(--color-text)] uppercase tracking-wider">Upcoming Schedule</h2>
+                            <Link href="/teacher/schedule" className="text-xs font-bold text-[var(--color-main)] hover:underline">View Calendar</Link>
                         </div>
 
                         {loading ? (
@@ -299,20 +299,19 @@ export default function TeacherDashboard() {
                                 ))}
                             </div>
                         ) : upcomingClasses.length === 0 ? (
-                            <p className="text-xs font-medium text-slate-500 py-4 text-center">No upcoming classes scheduled.</p>
+                            <p className="text-xs font-medium text--[var(--color-text)] py-4 text-center">No upcoming classes scheduled.</p>
                         ) : (
                             <div className="space-y-2.5">
                                 {upcomingClasses.map((session, index) => (
                                     <div key={index} className="rounded-xl border border-slate-100 bg-slate-50/40 p-3 flex items-center justify-between text-xs hover:bg-slate-50 transition">
                                         <div className="min-w-0">
-                                            <div className="font-bold text-slate-900 truncate">{session.courseName}</div>
-                                            <div className="text-slate-500 font-semibold mt-1 flex items-center gap-3">
+                                            <div className="font-bold text-[var(--color-text)] truncate">{session.courseName}</div>
+                                            <div className="text-[var(--color-main)] font-semibold mt-1 flex items-center gap-3">
                                                 <span className="flex items-center gap-1"><CalendarDays size={12} />{formatDateValue(session.date)}</span>
                                                 <span className="flex items-center gap-1"><Clock3 size={12} />{session.startTime?.slice(0, 5)}</span>
                                                 <span className="flex items-center gap-1"><MapPin size={12} />{session.roomName || "TBD"}</span>
                                             </div>
                                         </div>
-                                        <span className="px-2 py-0.5 bg-slate-200/60 font-bold text-slate-700 rounded text-[10px]">Confirmed</span>
                                     </div>
                                 ))}
                             </div>
@@ -324,20 +323,20 @@ export default function TeacherDashboard() {
                 <div className="space-y-6">
                     {/* HUB 1: QUICK ROUTING UTILITY PANEL */}
                     <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs">
-                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-3">Quick Actions</h2>
+                        <h2 className="text-sm font-black text-[var(--color-main)] uppercase tracking-wider mb-3">Quick Actions</h2>
                         <div className="grid grid-cols-1 gap-2">
                             <Link href="/teacher/centers" 
-                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 font-bold text-xs hover:bg-slate-50 transition">
+                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
                                 <Building2 size={14} />
                                 Your Centers
                             </Link>
                             <Link href="/teacher/courses" 
-                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 font-bold text-xs hover:bg-slate-50 transition">
+                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
                                 <BookOpen size={14}/>
                                 Your Courses
                             </Link>
                             <Link href="/teacher/students" 
-                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 font-bold text-xs hover:bg-slate-50 transition">
+                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
                                 <Users size={14} />
                                 Your Students
                             </Link>
@@ -346,8 +345,8 @@ export default function TeacherDashboard() {
 
                     {/* HUB 2: CENTER AFFILIATIONS & WORKING INVITATIONS */}
                     <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs">
-                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                            <Building2 size={15} className="text-slate-400" />
+                        <h2 className="text-sm font-black text-[var(--color-main)] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                            <Building2 size={15} className="text-[var(--color-main)]" />
                             Center Requests
                         </h2>
                         <p className="text-[11px] font-semibold text-slate-400 mb-3 uppercase tracking-wider">Pending Affiliations</p>
@@ -355,7 +354,7 @@ export default function TeacherDashboard() {
                         {loading ? (
                             <div className="h-16 bg-slate-100 rounded-lg animate-pulse" />
                         ) : invitations.length === 0 ? (
-                            <p className="text-xs font-medium text-slate-400 py-2">No pending contract offers available.</p>
+                            <p className="text-xs font-medium text-slate-400 py-2">No pending invitation available.</p>
                         ) : (
                             <div className="space-y-2">
                                 {invitations.map((invite) => (

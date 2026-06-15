@@ -205,15 +205,15 @@ export default function CenterManagementPage() {
 return (
     <div className="space-y-8 animate-fade-in pb-12">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200/60">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200/60">
             <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                <h1 className="text-2xl sm:text-3xl font-black text-[var(--color-text)]  tracking-tight flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-50 text-[var(--color-main)] rounded-xl border border-indigo-100/50">
                         <Building2 size={24} className="stroke-[2.5]" />
                     </div>
                     Manage Centers
                 </h1>
-                <p className="text-sm font-medium text-slate-500 mt-1 pl-1">
+                <p className="text-sm font-medium text-slate-500 mt-2 pl-1">
                     Oversee your operated institutions, faculty nodes, and active classroom modules.
                 </p>
             </div>
@@ -221,7 +221,7 @@ return (
             {activeTab === "managed" && (
                 <button
                     onClick={openCreateForm}
-                    className="w-full sm:w-auto self-start bg-indigo-600 border border-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-white hover:text-indigo-600 flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-md shadow-indigo-600/10"
+                    className="w-full sm:w-auto self-start bg-[var(--color-main)]  border border-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 hover:border-indigo-700 flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-md shadow-indigo-600/10"
                 >
                     <Plus size={18} className="stroke-[3]" /> New Center
                 </button>
@@ -230,7 +230,7 @@ return (
 
         {/* Teaching Invitations Panel */}
         {invitations.length > 0 && (
-            <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 shadow-sm shadow-amber-500/5 animate-slide-up">
+            <div className="bg-amber-50/60 border border-amber-200 rounded-2xl p-5 shadow-sm shadow-amber-500/5 animate-slide-up">
                 <div className="flex items-center gap-2.5 mb-4">
                     <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-sm animate-pulse">
                         <Bell size={16} className="stroke-[2.5]" />
@@ -245,7 +245,7 @@ return (
                         <div key={inv.id} className="bg-white p-4 rounded-xl border border-amber-200/70 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shadow-sm hover:border-amber-300 transition-all">
                             <div className="space-y-1">
                                 <p className="font-bold text-slate-900 text-base">
-                                    {inv.name} <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded ml-1.5 uppercase">Grade {inv.grade ? inv.grade.name : "-"}</span>
+                                    {inv.name} <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-900 text-xs font-bold rounded ml-1.5 uppercase tracking-wider">Grade {inv.grade ? inv.grade.name : "-"}</span>
                                 </p>
                                 <p className="text-sm font-medium text-slate-500 flex items-center gap-1.5">
                                     <Building2 size={14} className="text-slate-400" />
@@ -275,7 +275,7 @@ return (
 
         {/* Center Invitations Panel */}
         {centerInvitations.length > 0 && (
-            <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-5 shadow-sm shadow-indigo-500/5 animate-slide-up">
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 shadow-sm shadow-indigo-500/5 animate-slide-up">
                 <div className="flex items-center gap-2.5 mb-4">
                     <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-sm">
                         <Bell size={16} className="stroke-[2.5]" />
@@ -297,7 +297,7 @@ return (
 
                             <Link
                                 href={`/teacher/centers/${center.id}`}
-                                className="w-full sm:w-auto text-center px-4 py-2 rounded-lg border border-indigo-600 bg-indigo-600 text-white text-sm font-bold hover:bg-white hover:text-indigo-600 transition shadow-sm"
+                                className="w-full sm:w-auto text-center px-4 py-2 rounded-lg bg-indigo-600 border border-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 hover:border-indigo-700 transition shadow-sm"
                             >
                                 View Center
                             </Link>
@@ -309,9 +309,9 @@ return (
 
         {/* Create / Edit Form Area */}
         {showForm && (
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xl shadow-slate-100/40 animate-slide-up">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/40 animate-slide-up">
                 <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
-                    <h3 className="font-extrabold text-slate-900 text-lg">
+                    <h3 className="font-extrabold text-[var(--color-text)]  text-lg">
                         {editingCenter ? `Modify Layout: ${editingCenter.name}` : "Establish New Academic Center"}
                     </h3>
 
@@ -330,11 +330,11 @@ return (
 
                 <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700">Center Name <span className="text-rose-500">*</span></label>
+                        <label className="text-sm font-bold text-[var(--color-text)] ">Center Name <span className="text-rose-500">*</span></label>
                         <input
                             required
                             type="text"
-                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
+                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 outline-none transition-all font-medium text-slate-900"
                             placeholder="Example: Math Learning Center"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -342,10 +342,10 @@ return (
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700">Phone Connection Number</label>
+                        <label className="text-sm font-bold text-[var(--color-text)] ">Phone Connection Number</label>
                         <input
                             type="text"
-                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
+                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 outline-none transition-all font-medium text-slate-900"
                             placeholder="e.g., +1 (555) 000-0000"
                             value={formData.phoneNumber}
                             onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
@@ -353,9 +353,9 @@ return (
                     </div>
 
                     <div className="col-span-1 md:col-span-2 space-y-1.5">
-                        <label className="text-sm font-bold text-slate-700">Detailed Description / Address Location</label>
+                        <label className="text-sm font-bold text-[var(--color-text)] ">Detailed Description / Address Location</label>
                         <textarea
-                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
+                            className="w-full p-3 border border-slate-200 bg-slate-50/50 rounded-xl focus:bg-white focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 outline-none transition-all font-medium text-slate-900"
                             rows={3}
                             placeholder="Provide details regarding hours, curriculum specifics, or structural addresses..."
                             value={formData.description}
@@ -363,10 +363,10 @@ return (
                         />
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 text-right pt-2 border-t border-slate-100">
+                    <div className="col-span-1 md:col-span-2 text-right pt-4 border-t border-slate-100">
                         <button
                             type="submit"
-                            className="bg-indigo-600 border border-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-white hover:text-indigo-600 transition shadow-md shadow-indigo-600/10 active:scale-95 disabled:opacity-50 inline-flex items-center gap-2"
+                            className="bg-indigo-600 border border-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 hover:border-indigo-700 transition shadow-md shadow-indigo-600/10 active:scale-95 disabled:opacity-50 inline-flex items-center gap-2"
                         >
                             <SaveIcon size={16} className="stroke-[2.5]" /> {editingCenter ? "Update Center Configuration" : "Deploy Academic Center"}
                         </button>
@@ -376,14 +376,14 @@ return (
         )}
 
         {/* Layout Navigation Filter Tabs */}
-        <div className="border-b border-slate-200/80 pb-1">
+        <div className="border-b border-slate-200 pb-2">
             <div className="flex flex-wrap gap-2">
                 <button
                     onClick={() => setActiveTab("managed")}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                         activeTab === "managed"
-                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                            ? "bg-[var(--color-main)]  text-white shadow-md shadow-indigo-600/10"
+                            : "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                     <Building2 size={16} /> Managed by Me ({managedCenters.length})
@@ -393,8 +393,8 @@ return (
                     onClick={() => setActiveTab("teaching")}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                         activeTab === "teaching"
-                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                            ? "bg-[var(--color-main)]  text-white shadow-md shadow-indigo-600/10"
+                            : "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                     <Briefcase size={16} /> Teaching At ({teachingCenters.length})
@@ -404,8 +404,8 @@ return (
                     onClick={() => setActiveTab("archived")}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                         activeTab === "archived"
-                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                            ? "bg-[var(--color-main)]  text-white shadow-md shadow-indigo-600/10"
+                            : "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                 >
                     <Archive size={16} /> Archived Vault ({archivedCenters.length})
@@ -438,25 +438,24 @@ return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {loading ? (
                 Array.from({ length: 3 }).map((_, index) => (
-                    /* ADJUSTED: Synchronized skeleton wrapper to match data cards precisely */
                     <div key={index} className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm animate-pulse flex flex-col min-h-[300px]">
-                        <div className="bg-slate-200 h-24 p-5 flex flex-col justify-end">
-                            <div className="h-5 bg-slate-300 w-2/3 rounded-md"></div>
+                        <div className="bg-slate-100 h-24 p-5 flex flex-col justify-end">
+                            <div className="h-5 bg-slate-200 w-2/3 rounded-md"></div>
                         </div>
                         <div className="p-5 flex-1 flex flex-col justify-between">
                             <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="h-12 bg-slate-100 rounded-xl"></div>
-                                    <div className="h-12 bg-slate-100 rounded-xl"></div>
+                                    <div className="h-12 bg-slate-50 rounded-xl"></div>
+                                    <div className="h-12 bg-slate-50 rounded-xl"></div>
                                 </div>
-                                <div className="h-16 bg-slate-100 rounded-xl"></div>
+                                <div className="h-16 bg-slate-50 rounded-xl"></div>
                             </div>
-                            <div className="h-10 bg-slate-200 rounded-xl w-1/3"></div>
+                            <div className="h-10 bg-slate-100 rounded-xl w-1/3"></div>
                         </div>
                     </div>
                 ))
             ) : paginatedCenters.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-16 text-center text-slate-500 shadow-sm md:col-span-2 xl:col-span-3 flex flex-col items-center justify-center space-y-3 min-h-[300px]">
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-16 text-center text-slate-500 shadow-sm md:col-span-2 xl:col-span-3 flex flex-col items-center justify-center space-y-3 min-h-[300px]">
                     <Building2 size={36} className="text-slate-300" />
                     <p className="font-semibold text-slate-700 text-lg">No instances found</p>
                     <p className="text-sm text-slate-400 max-w-sm">
@@ -469,27 +468,26 @@ return (
                 </div>
             ) : (
                 paginatedCenters.map(center => (
-                    /* ADJUSTED: Enforced explicit flex direction layouts and uniform minimum heights */
                     <div
                         key={center.id}
                         className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-indigo-200 min-h-[300px]"
                     >
-                        {/* Upper Gradient Banner Plate */}
-                        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 px-5 py-5 text-white relative shrink-0">
+                        {/* Upper Header Card Area (Primary / Slate Darkened Hybrid Frame) */}
+                        <div className="bg-[var(--color-main)] px-5 py-5 text-white relative shrink-0">
                             <div className="flex items-start justify-between gap-3 relative z-10">
                                 <div className="min-w-0 flex-1 space-y-2">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="rounded-md bg-white/10 backdrop-blur-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-200 border border-white/5">
+                                        <span className="rounded-md bg-white/10 backdrop-blur-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white border border-white/5">
                                             {activeTab === "managed" ? "Owner" : activeTab === "teaching" ? "Faculty" : "Archived"}
                                         </span>
                                         {center.phoneNumber && (
-                                            <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-xs font-semibold text-indigo-200">
+                                            <span className="rounded-md border-[var(--color-main)] b-1 bg-white/10 px-2 py-0.5 text-xs font-semibold text-white">
                                                 {center.phoneNumber}
                                             </span>
                                         )}
                                     </div>
 
-                                    <h3 className="text-xl font-bold leading-snug tracking-tight text-white truncate group-hover:text-indigo-200 transition-colors">
+                                    <h3 className="text-xl font-bold leading-snug tracking-tight text-white truncate transition-colors">
                                         {center.name}
                                     </h3>
                                 </div>
@@ -554,12 +552,12 @@ return (
                                         </button>
                                     </div>
                                 ) : activeTab === "teaching" ? (
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100/80 px-3 py-1 rounded-md block w-full text-center">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-3 py-1.5 rounded-md block w-full text-center">
                                         External Center Assignment Layer
                                     </span>
                                 ) : (
                                     <div className="flex w-full items-center justify-between gap-3">
-                                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md max-w-[170px] truncate">
+                                        <span className="text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-100/50 px-2.5 py-1 rounded-md max-w-[170px] truncate">
                                             Vaulted: {formatArchivedAt(center.archivedAt)}
                                         </span>
 

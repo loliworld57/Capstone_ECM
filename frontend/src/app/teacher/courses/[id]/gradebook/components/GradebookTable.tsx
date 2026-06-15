@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     createColumnHelper,
     flexRender,
@@ -20,7 +20,8 @@ import {
 } from "@/services/gradebookService";
 
 import GradebookScoreCell from "./GradebookScoreCell";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Search } from "lucide-react";
+import SimpleBar from "simplebar-react";
 
 interface Props {
     gradebook: GradebookResponse;
@@ -40,8 +41,6 @@ interface Props {
 const columnHelper = createColumnHelper<StudentGradebookRow>();
 
 const CLS_INPUT = "text-xs border border-zinc-200 rounded px-2 py-1 w-full font-normal text-zinc-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all";
-// Keep widths consistent and allow horizontal scroll.
-// Student and Final Grade columns should NOT be separate fixed-position regions.
 const CLS_STICKY_LEFT = "";
 const CLS_STICKY_RIGHT = "";
 const CLS_SCORE_COL = "min-w-[85px] w-[85px]";
@@ -148,9 +147,9 @@ export default function GradebookTable({
                                                         <>
                                                             <input
                                                                 className={`${CLS_INPUT} text-center`}
-                                                                value={currentScoreItemEdits[item.id] ?? item.name}
+                                                                value={currentScoreItemEdits[item.id]?.name ?? item.name}
                                                                 onChange={(e) =>
-                                                                    currentOnScoreItemHeaderChange?.(item.id, e.target.value)
+                                                                    currentOnScoreItemHeaderChange?.(item.id, "name", e.target.value)
                                                                 }
                                                             />
                                                         </>
@@ -217,6 +216,8 @@ export default function GradebookTable({
                         </div>
                     );
                 },
+                // Uses custom case-insensitive inclusion matching against combined student names
+                filterFn: "includesString", 
             }),
             ...dynamicCategories,
             columnHelper.accessor("finalScore", {
@@ -230,7 +231,6 @@ export default function GradebookTable({
                         </div>
                     );
                 },
-                filterFn: "inNumberRange",
             }),
         ];
     }, [orderedCategories, gradebook.scoreItems, editMode]);
@@ -263,177 +263,214 @@ export default function GradebookTable({
         },
     });
 
-    const currentFilterVal = (columnFilters.find((f) => f.id === "finalScore")?.value as [number | undefined, number | undefined]) || [undefined, undefined];
-    const uiMin = currentFilterVal[0] ?? "";
-    const uiMax = currentFilterVal[1] ?? "";
+    // Extract the active query value tied to the 'student' column configuration
+    const searchVal = (columnFilters.find((f) => f.id === "student")?.value as string) || "";
 
-    const execFilterDispatch = (minStr: string, maxStr: string) => {
-        const parsedMin = minStr === "" ? undefined : Number(minStr);
-        const parsedMax = maxStr === "" ? undefined : Number(maxStr);
+    const handleSearchChange = (value: string) => {
         setColumnFilters((prev) => {
-            const external = prev.filter((f) => f.id !== "finalScore");
-            return [...external, { id: "finalScore", value: [parsedMin, parsedMax] }];
+            const external = prev.filter((f) => f.id !== "student");
+            if (!value) return external;
+            return [...external, { id: "student", value }];
         });
     };
 
+    const simpleBarRef = useRef<any>(null);
+
+    useEffect(() => {
+        const scrollElement = simpleBarRef.current?.getScrollElement();
+        if (!scrollElement) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            const canScrollLeft = scrollElement.scrollLeft > 0;
+            const canScrollRight = scrollElement.scrollLeft < (scrollElement.scrollWidth - scrollElement.clientWidth);
+
+            if ((e.deltaY > 0 && canScrollRight) || (e.deltaY < 0 && canScrollLeft)) {
+                e.preventDefault();
+                scrollElement.scrollLeft += e.deltaY;
+            }
+        };
+
+        scrollElement.addEventListener("wheel", handleWheel, { passive: false });
+
+        return () => {
+            scrollElement.removeEventListener("wheel", handleWheel);
+        };
+    }, []);
+
+    const displayRows = table.getRowModel().rows;
+    const emptyRowsCount = Math.max(0, 10 - displayRows.length);
+
     return (
-        <div className="h-full flex flex-col gap-4 antialiased selection:bg-indigo-100">
+        <div className="h-full flex flex-col gap-4 min-h-0 w-full overflow-hidden">
+            {/* Search Section */}
             <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 p-3.5 bg-white border border-zinc-200 rounded-xl shadow-sm text-sm">
                 <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-100">
-                        <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 8.293A1 1 0 013 7.586V4z" />
-                        </svg>
+                        <Search className="w-4 h-4 text-zinc-500" />
                     </div>
                     <div>
-                        <span className="font-semibold text-zinc-700 block text-xs uppercase tracking-wider">Final Score Filter</span>
-                        <span className="text-zinc-400 text-[11px]">Isolate student achievement cohorts</span>
+                        <span className="font-semibold text-zinc-700 block text-xs uppercase tracking-wider">Student Search</span>
+                        <span className="text-zinc-400 text-[11px]">Locate records instantly by typing a name</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-72 relative">
                     <input
-                        type="number"
-                        placeholder="Min %"
-                        className="border border-zinc-200 rounded-lg px-3 py-1.5 w-24 text-center text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs shadow-sm"
-                        value={uiMin}
-                        onChange={(e) => execFilterDispatch(e.target.value, String(uiMax))}
+                        type="text"
+                        placeholder="Search student name..."
+                        className="border border-zinc-200 rounded-lg pl-3 pr-8 py-1.5 w-full text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs shadow-sm"
+                        value={searchVal}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                     />
-                    <span className="text-zinc-300 font-medium">—</span>
-                    <input
-                        type="number"
-                        placeholder="Max %"
-                        className="border border-zinc-200 rounded-lg px-3 py-1.5 w-24 text-center text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs shadow-sm"
-                        value={uiMax}
-                        onChange={(e) => execFilterDispatch(String(uiMin), e.target.value)}
-                    />
-                    {(uiMin !== "" || uiMax !== "") && (
+                    {searchVal && (
                         <button
-                            onClick={() => execFilterDispatch("", "")}
-                            className="ml-2 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100/70 px-3 py-1.5 rounded-lg transition-colors"
+                            onClick={() => handleSearchChange("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded transition-colors"
                         >
-                            Reset
+                            Clear
                         </button>
                     )}
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-auto border border-zinc-200 rounded-xl bg-white shadow-sm ring-1 ring-black/[0.02]">
-                <table className="w-max min-w-full border-separate border-spacing-0 table-fixed bg-white">
-                    <thead className="bg-zinc-50/75 backdrop-blur-sm sticky top-0 z-30">
-                        {table.getHeaderGroups().map((hg) => (
-                            <tr key={hg.id} className="border-zinc-200">
-                                {hg.headers.map((header) => {
-                                    const isStudent = header.column.id === "student";
-                                    const isFinal = header.column.id === "finalScore";
-                                    const isCategory = header.column.id.startsWith("cat-");
-                                    const isItem = header.column.id.startsWith("item-") || header.column.id.startsWith("empty-");
-                                    const canSort = header.column.getCanSort();
-                                    const sortStatus = header.column.getIsSorted();
+            {/* Table Viewport */}
+            <div className="flex-1 min-h-0 border border-zinc-200 rounded-xl bg-white shadow-sm ring-1 ring-black/[0.02] overflow-hidden flex flex-col">
+                <SimpleBar
+                    className="tabs-scroll w-full h-full"
+                    ref={simpleBarRef}
+                    autoHide={false}
+                    forceVisible="x"
+                >
+                    <table className="w-max min-w-full border-separate border-spacing-0 bg-white">
+                        <thead className="bg-zinc-50/75 backdrop-blur-sm sticky top-0 z-30">
+                            {table.getHeaderGroups().map((hg) => (
+                                <tr key={hg.id} className="border-zinc-200">
+                                    {hg.headers.map((header) => {
+                                        const isStudent = header.column.id === "student";
+                                        const isFinal = header.column.id === "finalScore";
+                                        const isCategory = header.column.id.startsWith("cat-");
+                                        const isItem = header.column.id.startsWith("item-") || header.column.id.startsWith("empty-");
+                                        const canSort = header.column.getCanSort();
+                                        const sortStatus = header.column.getIsSorted();
 
-                                    let structuralWidthClass = CLS_SCORE_COL;
-                                    if (isStudent) structuralWidthClass = CLS_STICKY_LEFT;
-                                    if (isFinal) structuralWidthClass = CLS_STICKY_RIGHT;
+                                        let structuralWidthClass = CLS_SCORE_COL;
+                                        if (isStudent) structuralWidthClass = CLS_STICKY_LEFT;
+                                        if (isFinal) structuralWidthClass = CLS_STICKY_RIGHT;
 
-                                    return (
-                                        <th
-                                            key={header.id}
-                                            colSpan={header.colSpan > 1 ? header.colSpan : undefined}
-                                            rowSpan={header.rowSpan > 1 ? header.rowSpan : undefined}
-                                            className={`
+                                        return (
+                                            <th
+                                                key={header.id}
+                                                colSpan={header.colSpan > 1 ? header.colSpan : undefined}
+                                                rowSpan={header.rowSpan > 1 ? header.rowSpan : undefined}
+                                                className={`
                                                 px-2 py-1
                                                 ${structuralWidthClass}
-                                                ${isStudent ? "!bg-[var(--color-main)] !text-[var(--color-white)] border-r-2 border-l-2 border-white" : ""}
-                                                ${isFinal ? "!bg-[var(--color-main)] !text-[var(--color-white)] border-r-2 border-l-2 border-white"  : ""}
-                                                ${isCategory && !isStudent && !isFinal ? "bg-[var(--color-main)] border-slate-300 shadow-sm border-r-2 border-l-2 border-white": ""}
+                                                ${isStudent ? "!bg-[var(--color-main)] !text-[var(--color-white)] border-r-2 border-l-2 border-white z-40" : ""}
+                                                ${isFinal ? "!bg-[var(--color-main)] !text-[var(--color-white)] border-r-2 border-l-2 border-white z-40" : ""}
+                                                ${isCategory && !isStudent && !isFinal ? "bg-[var(--color-main)] border-slate-300 shadow-sm border-r-2 border-l-2 border-white text-white" : ""}
                                                 ${isItem && !isStudent && !isFinal ? "bg-[var(--color-secondary)]/10 border-slate-200 text-[var(--color-text)]" : ""}
                                                 ${!isStudent && !isFinal && !isCategory && !isItem ? "border-zinc-200/80 bg-zinc-50/90" : ""}
                                             `}
-                                        >
-                                            {header.isPlaceholder ? null : (
-                                                <div
-                                                    className={`flex items-center gap-1.5 w-full h-full ${canSort ? "cursor-pointer select-none hover:text-indigo-600" : ""} ${isStudent ? "justify-start" : "justify-center"}`}
-                                                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                                                >
-                                                    <div className="whitespace-normal break-words">
-                                                        {flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
+                                            >
+                                                {header.isPlaceholder ? null : (
+                                                    <div
+                                                        className={`flex items-center gap-1.5 w-full h-full ${canSort ? "cursor-pointer select-none hover:text-indigo-600" : ""} ${isStudent ? "justify-start" : "justify-center"}`}
+                                                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                                                    >
+                                                        <div className="whitespace-normal break-words">
+                                                            {flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                        </div>
+                                                        {canSort && (
+                                                            <span className="text-[var(--color-white)] shrink-0 font-normal transition-transform duration-150">
+                                                                {sortStatus === "asc" ? (
+                                                                    <ArrowUp size={14} />
+                                                                ) : sortStatus === "desc" ? (
+                                                                    <ArrowDown size={14} />
+                                                                ) : (
+                                                                    <ArrowUpDown size={14} />
+                                                                )}
+                                                            </span>
                                                         )}
                                                     </div>
-                                                    {canSort && (
-                                                        <span className="text-[var(--color-white)] shrink-0 font-normal transition-transform duration-150">
-                                                            {sortStatus === "asc" ? (
-                                                                <ArrowUp size={14} />
-                                                            ) : sortStatus === "desc" ? (
-                                                                <ArrowDown size={14} />
-                                                            ) : (
-                                                                <ArrowUpDown size={14} />
-                                                            )}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </th>
-                                    );
-                                })}
-                            </tr>
-                        ))}
-                    </thead>
+                                                )}
+                                            </th>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                        </thead>
 
-                    <tbody className="divide-y divide-zinc-100">
-                        {table.getRowModel().rows.map((row) => (
-                            <tr
-                                key={row.id}
-                                className="odd:bg-white even:bg-zinc-50/40 hover:bg-indigo-50/30 transition-colors duration-100 ease-in"
-                            >
-                                {row.getVisibleCells().map((cell) => {
-                                    const isStudent = cell.column.id === "student";
-                                    const isFinal = cell.column.id === "finalScore";
+                        <tbody className="divide-y divide-zinc-100">
+                            {displayRows.map((row) => (
+                                <tr
+                                    key={row.id}
+                                    className="odd:bg-white even:bg-zinc-50/40 hover:bg-indigo-50/30 transition-colors duration-100 ease-in"
+                                >
+                                    {row.getVisibleCells().map((cell) => {
+                                        const isStudent = cell.column.id === "student";
+                                        const isFinal = cell.column.id === "finalScore";
 
-                                    let cellWidthClass = CLS_SCORE_COL;
-                                    if (isStudent) cellWidthClass = CLS_STICKY_LEFT;
-                                    if (isFinal) cellWidthClass = CLS_STICKY_RIGHT;
+                                        let cellWidthClass = CLS_SCORE_COL;
+                                        if (isStudent) cellWidthClass = CLS_STICKY_LEFT;
+                                        if (isFinal) cellWidthClass = CLS_STICKY_RIGHT;
 
-                                    return (
-                                        <td
-                                            key={cell.id}
-                                            className={`
+                                        return (
+                                            <td
+                                                key={cell.id}
+                                                className={`
                                                 px-3 py-1.5 text-sm border-r border-zinc-100 whitespace-nowrap align-middle border-b-1
                                                 ${cellWidthClass}
-                                                ${isStudent ? "font-medium group-hover:bg-indigo-50/10" : ""}
-                                                ${isFinal ? "bg-inherit" : ""}
+                                                ${isStudent ? "font-medium group-hover:bg-indigo-50/10 bg-white z-20" : ""}
+                                                ${isFinal ? "bg-white z-20" : ""}
                                             `}
-                                        >
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </td>
-                                    );
-                                })}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+
+                            {emptyRowsCount > 0 && Array.from({ length: emptyRowsCount }).map((_, idx) => (
+                                <tr key={`empty-row-${idx}`} className="odd:bg-white even:bg-zinc-50/40 h-[37px]">
+                                    {table.getAllLeafColumns().map((column) => {
+                                        const isStudent = column.id === "student";
+                                        const isFinal = column.id === "finalScore";
+
+                                        let cellWidthClass = CLS_SCORE_COL;
+                                        if (isStudent) cellWidthClass = CLS_STICKY_LEFT;
+                                        if (isFinal) cellWidthClass = CLS_STICKY_RIGHT;
+
+                                        return (
+                                            <td
+                                                key={column.id}
+                                                className={`
+                                                px-3 py-1.5 border-r border-zinc-100 border-b border-zinc-100/60 
+                                                ${cellWidthClass}
+                                                ${isStudent ? "bg-white z-20" : ""}
+                                                ${isFinal ? "bg-white z-20" : ""}
+                                            `}
+                                            >
+                                                &nbsp;
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </SimpleBar>
             </div>
 
+            {/* Pagination Controls Section */}
             <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-white border border-zinc-200 rounded-xl shadow-sm text-xs">
                 <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-zinc-500 font-medium">Rows per page:</span>
-                        <select
-                            value={table.getState().pagination.pageSize}
-                            className="bg-white border border-zinc-200 rounded-lg px-2 py-1 font-medium text-zinc-700 outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm text-xs"
-                            onChange={(e) => table.setPageSize(Number(e.target.value))}
-                        >
-                            {[10, 20, 50, 100].map((size) => (
-                                <option key={size} value={size}>
-                                    {size}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="text-zinc-500 font-medium border-l border-zinc-200 pl-4 py-0.5">
+                    <div className="text-zinc-500 font-medium py-0.5">
                         Showing <span className="text-zinc-800 font-semibold">{table.getRowModel().rows.length}</span> of{" "}
                         <span className="text-zinc-800 font-semibold">{table.getFilteredRowModel().rows.length}</span> Students
                     </div>

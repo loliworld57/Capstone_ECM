@@ -1,4 +1,4 @@
-import { Download, Plus, X } from "lucide-react";
+import { Download, Plus, SlidersHorizontal, X } from "lucide-react";
 import Button from "./button";
 
 interface GradebookToolbarProps {
@@ -42,37 +42,36 @@ export default function GradebookToolbar({
                 <Plus size={16} />
                 Add Score Item
               </Button>
-              <Button
-                variant="excel"
-                onClick={onExport}
-                className="gap-2"
-              >
-                <Download size={16} />
-                Export Excel
-              </Button>
             </>
           ) : null}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Edit mode</span>
+        {/* Right Controls Container: Switches state parameters */}
+        <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-3 bg-zinc-50 border border-zinc-100 px-3 py-1.5 rounded-xl shadow-inner">
+            <div className="flex items-center gap-1.5">
+              <SlidersHorizontal size={13} className={editMode ? "text-indigo-600" : "text-zinc-400"} />
+              <span className={`text-xs font-bold uppercase tracking-wider ${editMode ? "text-indigo-900" : "text-zinc-500"}`}>
+                Edit Mode
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={onEditModeToggle}
-              className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ${editMode ? "border-[var(--color-main)] bg-[var(--color-main)]" : "border-gray-300 bg-gray-200"
+              className={`relative inline-flex h-6 w-11 items-center flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out outline-none focus:ring-4 focus:ring-indigo-500/10 ${editMode ? "bg-[var(--color-main,rgba(79,70,229,1))]" : "bg-zinc-200"
                 }`}
               aria-label="Toggle edit mode"
             >
               <span
-                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform duration-200 ${editMode ? "translate-x-7" : "translate-x-0"
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-1 ring-black/[0.05] transition duration-200 ease-in-out ${editMode ? "translate-x-5" : "translate-x-0"
                   }`}
               />
             </button>
           </div>
 
           {editMode && hasChanges && (
-            
+
             <Button
               onClick={onDiscard}
               variant="outline"

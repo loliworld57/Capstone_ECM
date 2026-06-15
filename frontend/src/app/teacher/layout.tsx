@@ -105,32 +105,35 @@ export default function TeacherLayout({
     const isFullyHidden = isCompactSidebar && collapsed;
 
     return (
-        <div className="flex min-h-[calc(100vh-var(--app-header-height,0px))] w-full bg-[var(--color-soft-white)] text-slate-900">
+        <div className="flex min-h-[calc(100vh-var(--app-header-height,0px))] w-full bg-[var(--color-soft-white)] text-slate-900 selection:bg-indigo-500 selection:text-white">
+            
             {/* HIGH-CONTRAST DARK SIDEBAR */}
             <aside
                 ref={sidebarRef}
-                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-950 bg-slate-950 shadow-2xl transition-all duration-300 xl:sticky ${isFullyHidden
-                        ? "-translate-x-full xl:translate-x-0 xl:w-16"
+                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-900 bg-slate-950 shadow-2xl transition-all duration-300 ease-in-out xl:sticky ${
+                    isFullyHidden
+                        ? "-translate-x-full xl:translate-x-0 xl:w-20"
                         : collapsed
                             ? "w-20"
                             : "w-64"
-                    }`}
+                }`}
             >
                 {/* Header Profile Plate */}
-                <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] bg-black/40 ${collapsed ? "justify-center" : "justify-between"
+                <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] transition-all ${
+                    collapsed ? "justify-center" : "justify-between"
+                }`}>
+                    <div className={`truncate pr-2 transition-all duration-300 ${
+                        collapsed ? "w-0 opacity-0 pointer-events-none hidden" : "w-auto opacity-100 block"
                     }`}>
-                    {!collapsed && (
-                        <div className="truncate pr-2">
-                            <h2 className="text-sm font-black text-white tracking-wider uppercase">Workspace</h2>
-                            <p className="text-xs font-bold text-indigo-400 truncate mt-0.5">
-                                {user?.firstName ? `Faculty: ${user.firstName}` : "Academic Faculty"}
-                            </p>
-                        </div>
-                    )}
+                        <h2 className="text-xs font-black text-slate-400 tracking-widest uppercase">Workspace</h2>
+                        <p className="text-sm font-bold text-white truncate mt-0.5">
+                            {user?.firstName ? `Faculty: ${user.firstName}` : "Academic Faculty"}
+                        </p>
+                    </div>
 
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className="p-1.5 rounded-lg border border-slate-800 text-slate-200 bg-slate-900 hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all active:scale-95 shadow-lg"
+                        className="p-2 rounded-xl border border-slate-800 text-slate-400 bg-slate-900/50 hover:bg-slate-900 hover:text-white hover:border-slate-700 transition-all active:scale-95 shadow-md"
                         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
                         {collapsed ? <ChevronRight size={16} className="stroke-[2.5]" /> : <ChevronLeft size={16} className="stroke-[2.5]" />}
@@ -138,39 +141,49 @@ export default function TeacherLayout({
                 </div>
 
                 {/* High-Contrast Navigation Links array */}
-                <nav className="flex-1 space-y-2 p-3 bg-slate-950">
+                <nav className="flex-1 space-y-1.5 p-3 custom-scrollbar">
                     {menuItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`group relative flex items-center rounded-xl p-3 text-sm font-bold transition-all duration-150 outline-none ${isActive
-                                        ? "bg-indigo-600 text-white shadow-xl border border-indigo-500"
-                                        : "text-slate-300 hover:bg-slate-900 hover:text-white border border-transparent"
-                                    } ${collapsed ? "justify-center" : "gap-3.5"}`}
+                                className={`group relative flex items-center rounded-xl p-3 text-sm font-semibold transition-all duration-200 outline-none ${
+                                    isActive
+                                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10 border border-indigo-500/50"
+                                        : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-100 border border-transparent"
+                                } ${collapsed ? "justify-center" : "gap-3.5"}`}
                             >
-                                {/* Active Left Contrast Anchor Tab */}
-                                {isActive && (
-                                    <span className="absolute left-0 top-2 bottom-2 w-1.5 rounded-r-md bg-white animate-fade-in" />
-                                )}
-
                                 <item.icon
-                                    size={18}
-                                    className={`shrink-0 transition-transform duration-150 group-hover:scale-110 ${isActive ? "text-white stroke-[2.5]" : "text-slate-400 group-hover:text-white stroke-[2]"
-                                        }`}
+                                    size={20}
+                                    className={`shrink-0 transition-transform duration-200 group-hover:scale-105 ${
+                                        isActive ? "text-white stroke-[2.5]" : "text-slate-400 group-hover:text-slate-200 stroke-[2]"
+                                    }`}
                                 />
 
-                                <span className={`tracking-wide transition-opacity duration-200 ${collapsed ? "hidden" : "block"}`}>
+                                {/* Smooth Width/Opacity text transition */}
+                                <span className={`tracking-wide whitespace-nowrap transition-all duration-200 origin-left ${
+                                    collapsed 
+                                        ? "w-0 opacity-0 pointer-events-none hidden" 
+                                        : "w-auto opacity-100 block"
+                                }`}>
                                     {item.name}
                                 </span>
 
+                                {/* Pure CSS Tooltip when sidebar is collapsed */}
+                                {collapsed && (
+                                    <div className="absolute left-full ml-4 px-2.5 py-1.5 bg-slate-900 border border-slate-800 text-slate-200 text-xs font-medium rounded-lg opacity-0 invisible translate-x-[-8px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap pointer-events-none shadow-xl z-50">
+                                        {item.name}
+                                    </div>
+                                )}
+
                                 {/* Notification Alert Badge */}
                                 {item.notify && (
-                                    <span className={`absolute rounded-full bg-rose-500 ring-4 ${collapsed
-                                            ? "top-2 right-4 h-3 w-3 ring-slate-950"
-                                            : "right-3 h-2.5 w-2.5 ring-slate-950 group-hover:ring-slate-900"
-                                        } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""}`} />
+                                    <span className={`absolute rounded-full bg-rose-500 ring-[3px] ${
+                                        collapsed
+                                            ? "top-2.5 right-4 h-2.5 w-2.5 ring-slate-950"
+                                            : "right-3 h-2 w-2 ring-slate-950 group-hover:ring-slate-900"
+                                    } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""} transition-all`} />
                                 )}
                             </Link>
                         );
@@ -181,14 +194,14 @@ export default function TeacherLayout({
             {/* Mobile Navigation Backdrop Mesh */}
             {!isFullyHidden && (
                 <div
-                    className="fixed inset-0 z-20 bg-slate-950/60 backdrop-blur-sm xl:hidden"
+                    className="fixed inset-0 z-20 bg-slate-950/40 backdrop-blur-md xl:hidden transition-all duration-300"
                     onClick={() => setCollapsed(true)}
                 />
             )}
 
             {/* MAIN CONTENT VIEWPORT */}
             <main className="flex-1 min-w-0">
-                <div className="container mx-auto px-4 py-6 sm:px-8 bg-[var(--color-soft-white)] sm:py-8 max-w-7xl">
+                <div className="container mx-auto px-4 py-6 sm:px-8 bg-[var(--color-soft-white)] sm:py-8 max-w-7xl animate-fade-in">
                     <div className="min-h-full">
                         {children}
                     </div>

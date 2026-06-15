@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '@/utils/axiosConfig';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles, FileUp, Files, HelpCircle, CheckCircle, Lightbulb, Copy } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
 import toast from 'react-hot-toast';
 import { useGradebookItems } from './GradebookItem';
@@ -25,7 +25,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
     const [generatedQuestions, setGeneratedQuestions] = useState<any[] | null>(null);
 
-    // 2. Quiz Settings State
+    // Quiz Settings State
     const [questionCount, setQuestionCount] = useState<number>(10);
     const [maxAttempts, setMaxAttempts] = useState<number>(1); // 0 = unlimited
     const [isGraded, setIsGraded] = useState<boolean>(true);
@@ -196,8 +196,8 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                 isOpen: true,
                 title: "Success!",
                 message: isEditMode
-                    ? "🎉 Your changes have been successfully updated in the database."
-                    : "🎉 Your AI Quiz has been successfully generated and published.",
+                    ? "Your changes have been successfully updated."
+                    : "Your AI Quiz has been generated and published.",
                 confirmText: "Back to Course",
                 onConfirm: () => {
                     closeModalConfig();
@@ -251,32 +251,38 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
                 {/* SHOW GENERATION POPUP ONLY IF NOT IN PREVIEW/EDIT MODE */}
                 {isGenerating && !generatedQuestions ? (
-                    <div className="p-12 text-center text-gray-500">
-                        <Loader2 size={32} className="animate-spin text-blue-600 mx-auto mb-3" />
-                        <p className="font-semibold text-gray-700">Loading quiz structural layouts...</p>
+                    <div className="p-12 text-center text-[var(--color-text)]">
+                        <Loader2 size={32} className="animate-spin text-[var(--color-main)] mx-auto mb-3" />
+                        <p className="font-semibold text-[var(--color-text)]">Loading quiz structural layouts...</p>
                     </div>
                 ) : !generatedQuestions ? (
                     <>
-                        <h2 className="text-2xl font-bold mb-4">✨ Create AI Quiz</h2>
+                        <h2 className="text-2xl font-bold mb-4 text-[var(--color-text)] flex items-center gap-2">
+                            <Sparkles size={24} className="text-[var(--color-main)]" />
+                            <span>Create AI Quiz</span>
+                        </h2>
+
                         <div className="flex gap-4 mb-6 border-b pb-2">
                             <button
-                                className={`font-semibold ${sourceType === 'existing' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
+                                className={`font-semibold flex items-center gap-1.5 pb-2 transition-colors ${sourceType === 'existing' ? 'text-[var(--color-main)] border-b-2 border-[var(--color-main)]' : 'text-[var(--color-text)]'}`}
                                 onClick={() => setSourceType('existing')}
                             >
-                                Use Existing Material
+                                <Files size={16} />
+                                <span>Use Existing Material</span>
                             </button>
                             <button
-                                className={`font-semibold ${sourceType === 'upload' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
+                                className={`font-semibold flex items-center gap-1.5 pb-2 transition-colors ${sourceType === 'upload' ? 'text-[var(--color-main)] border-b-2 border-[var(--color-main)]' : 'text-[var(--color-text)]'}`}
                                 onClick={() => setSourceType('upload')}
                             >
-                                Upload New File
+                                <FileUp size={16} />
+                                <span>Upload New File</span>
                             </button>
                         </div>
 
                         <div className="mb-6">
                             {sourceType === 'existing' ? (
                                 <select
-                                    className="w-full border p-2 rounded text-gray-800 bg-white"
+                                    className="w-full border p-2 rounded text-[var(--color-text)] bg-white border-zinc-200"
                                     value={selectedMaterialId}
                                     onChange={(e) => setSelectedMaterialId(e.target.value)}
                                 >
@@ -288,8 +294,9 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     ))}
                                 </select>
                             ) : (
-                                <div className="border-2 border-dashed border-gray-300 p-8 text-center rounded bg-gray-50 cursor-pointer">
-                                    <p className="text-gray-500">Drag & drop your document here, or click to browse</p>
+                                <div className="border-2 border-dashed border-zinc-300 p-8 text-center rounded bg-zinc-50 cursor-pointer flex flex-col items-center justify-center gap-2">
+                                    <FileUp size={24} className="text-[var(--color-text)]" />
+                                    <p className="text-[var(--color-text)]">Drag & drop your document here, or click to browse</p>
                                     <input
                                         type="file"
                                         className="hidden"
@@ -299,7 +306,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded border">
+                        <div className="grid grid-cols-2 gap-4 mb-6 bg-zinc-50 p-4 rounded border border-zinc-200 text-[var(--color-text)]">
                             <div>
                                 <label className="block text-sm font-bold mb-1">Number of Questions: {questionCount}</label>
                                 <input
@@ -307,13 +314,13 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     min="5" max="20"
                                     value={questionCount}
                                     onChange={(e) => setQuestionCount(Number(e.target.value))}
-                                    className="w-full"
+                                    className="w-full accent-[var(--color-main)]"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold mb-1">Attempts Allowed</label>
                                 <select
-                                    className="w-full border p-2 rounded"
+                                    className="w-full border p-2 rounded border-zinc-200 bg-white"
                                     value={maxAttempts}
                                     onChange={(e) => setMaxAttempts(Number(e.target.value))}
                                 >
@@ -326,53 +333,54 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                         </div>
 
                         <div className="flex justify-end gap-3 mt-8">
-                            <button onClick={onClose} className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100">
+                            <button onClick={onClose} className="px-4 py-2 border rounded text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors">
                                 Cancel
                             </button>
                             <button
                                 onClick={handleGenerateClick}
                                 disabled={isGenerating || (sourceType === 'existing' && !selectedMaterialId)}
-                                className="px-6 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                                className="px-6 py-2 bg-[var(--color-main)] text-white rounded font-bold hover:brightness-110 disabled:opacity-50 flex items-center gap-2 transition-all"
                             >
-                                Generate Preview
+                                <Sparkles size={16} />
+                                <span>Generate Preview</span>
                             </button>
                         </div>
                     </>
                 ) : (
                     <div className="flex flex-col max-h-[75vh]">
-                        <h2 className="text-2xl font-bold mb-4 flex-shrink-0 text-gray-800">
+                        <h2 className="text-2xl font-bold mb-4 flex-shrink-0 text-[var(--color-text)]">
                             {isEditMode ? "Edit Quiz Details" : "Review & Publish Quiz"}
                         </h2>
 
                         {/* CONFIGURATION EDITOR VIEW PANEL */}
-                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex-shrink-0 text-gray-800 space-y-4 mb-4">
+                        <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-200 flex-shrink-0 text-[var(--color-text)] space-y-4 mb-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold mb-1">Quiz Title <span className="text-red-500">*</span></label>
+                                    <label className="block text-sm font-bold mb-1">Quiz Title <span className="text-rose-500">*</span></label>
                                     <input
                                         type="text"
-                                        className="w-full border p-2 rounded-lg bg-white"
+                                        className="w-full border p-2 rounded-lg bg-white border-zinc-200 text-[var(--color-text)]"
                                         placeholder="e.g., Chapter 4 Evaluation Exam"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold mb-1">Due Date <span className="text-red-500">*</span></label>
+                                    <label className="block text-sm font-bold mb-1">Due Date <span className="text-rose-500">*</span></label>
                                     <input
                                         type="datetime-local"
-                                        className="w-full border p-2 rounded-lg bg-white"
+                                        className="w-full border p-2 rounded-lg bg-white border-zinc-200 text-[var(--color-text)]"
                                         value={dueDate}
                                         onChange={(e) => setDueDate(e.target.value)}
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-blue-200/60 pt-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-200 pt-3">
                                 <div>
                                     <label className="block text-sm font-bold mb-1">Attempts Allowed</label>
                                     <select
-                                        className="w-full border p-2 rounded-lg bg-white text-sm"
+                                        className="w-full border p-2 rounded-lg bg-white text-sm border-zinc-200 text-[var(--color-text)]"
                                         value={maxAttempts}
                                         onChange={(e) => setMaxAttempts(Number(e.target.value))}
                                     >
@@ -389,7 +397,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     <select
                                         value={scoreItemId}
                                         onChange={(e) => setScoreItemId(e.target.value ? Number(e.target.value) : "")}
-                                        className="w-full border p-2 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full border p-2 rounded-lg text-sm bg-white border-zinc-200 text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-main)]"
                                     >
                                         <option value="">-- Do Not Link (Ungraded Practice) --</option>
                                         {gradebookItems.map((item) => (
@@ -407,25 +415,25 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     id="isGraded"
                                     checked={isGraded}
                                     onChange={(e) => setIsGraded(e.target.checked)}
-                                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                                    className="w-4 h-4 rounded text-[var(--color-main)] focus:ring-[var(--color-main)] border-zinc-300 accent-[var(--color-main)]"
                                 />
-                                <label htmlFor="isGraded" className="font-semibold text-sm select-none">
+                                <label htmlFor="isGraded" className="font-semibold text-sm select-none text-[var(--color-text)]">
                                     Count submissions towards overall class average calculations
                                 </label>
                             </div>
                         </div>
 
                         {/* --- SCROLLABLE QUESTIONS INJECTOR LIST --- */}
-                        <div className="flex-1 overflow-y-auto pr-2 space-y-6 mb-4 text-gray-800 scrollbar-thin">
+                        <div className="flex-1 overflow-y-auto pr-2 space-y-6 mb-4 text-[var(--color-text)] scrollbar-thin border border-zinc-100 rounded-xl p-2">
                             {generatedQuestions.map((q, index) => (
-                                <div key={index} className="p-5 border border-gray-200 rounded-xl bg-gray-50/50 shadow-sm relative">
+                                <div key={index} className="p-5 border border-zinc-200 rounded-xl bg-zinc-50 shadow-xs relative">
                                     <div className="mb-4">
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text)] mb-1">
                                             Question {index + 1}
                                         </label>
                                         <input
                                             type="text"
-                                            className="w-full font-bold text-base p-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full font-bold text-base p-2 border rounded-lg bg-white border-zinc-200 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-main)] outline-none"
                                             value={q.question}
                                             onChange={(e) => {
                                                 const updated = [...generatedQuestions];
@@ -438,41 +446,42 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                         {q.options.map((opt: string, i: number) => {
                                             const isCorrect = isCorrectAnswer(opt, q.correctAnswer);
+                                            // DYNAMICALLY REMOVE ANY HARDCODED "A.", "B.", "C.", "D." PREFIXES FROM CURRENT TEXT
+                                            const cleanedOptionText = opt.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
+
                                             return (
                                                 <div
                                                     key={i}
-                                                    className={`p-2 rounded-xl border transition flex items-center gap-2 ${isCorrect
-                                                        ? "bg-green-50 border-green-500 text-green-900 shadow-sm ring-1 ring-green-500"
-                                                        : "bg-white border-gray-200 text-gray-700 focus-within:border-blue-400"
+                                                    className={`p-2 rounded-xl border transition flex items-center gap-2 min-h-[44px] ${isCorrect
+                                                        ? "bg-emerald-50 border-emerald-500 text-emerald-950 shadow-xs ring-1 ring-emerald-500"
+                                                        : "bg-white border-zinc-200 text-[var(--color-text)] focus-within:border-[var(--color-main)]"
                                                         }`}
                                                 >
                                                     <button
                                                         type="button"
                                                         onClick={() => {
                                                             const updated = [...generatedQuestions];
-                                                            const cleanOptionValue = opt.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
-                                                            updated[index].correctAnswer = cleanOptionValue;
+                                                            updated[index].correctAnswer = cleanedOptionText;
                                                             setGeneratedQuestions(updated);
                                                         }}
-                                                        className={`w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-xs transition ${isCorrect
-                                                            ? "bg-green-600 text-white shadow-sm scale-105"
-                                                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                                        className={`w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-xs transition self-center ${isCorrect
+                                                            ? "bg-emerald-600 text-white shadow-xs scale-105"
+                                                            : "bg-zinc-100 text-[var(--color-text)] hover:bg-zinc-200"
                                                             }`}
                                                     >
                                                         {String.fromCharCode(65 + i)}
                                                     </button>
                                                     <input
                                                         type="text"
-                                                        className={`w-full bg-transparent p-1 text-sm outline-none font-medium ${isCorrect ? "font-semibold text-green-950" : ""}`}
-                                                        value={opt}
+                                                        className={`w-full bg-transparent p-1 text-sm outline-none font-medium self-center ${isCorrect ? "font-semibold text-emerald-950" : "text-[var(--color-text)]"}`}
+                                                        value={cleanedOptionText}
                                                         onChange={(e) => {
                                                             const updated = [...generatedQuestions];
                                                             const oldOptionValue = updated[index].options[i];
                                                             updated[index].options[i] = e.target.value;
 
                                                             if (isCorrectAnswer(oldOptionValue, q.correctAnswer)) {
-                                                                const cleanNewValue = e.target.value.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
-                                                                updated[index].correctAnswer = cleanNewValue;
+                                                                updated[index].correctAnswer = e.target.value.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
                                                             }
                                                             setGeneratedQuestions(updated);
                                                         }}
@@ -482,30 +491,49 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                         })}
                                     </div>
 
-                                    <div className="bg-white border border-gray-100 p-3 rounded-xl">
-                                        <label className="block text-xs font-bold text-green-700 mb-1">💡 AI Explanation</label>
-                                        <textarea
-                                            className="w-full text-xs text-gray-600 bg-transparent border-0 outline-none resize-none focus:ring-1 focus:ring-gray-200 rounded p-1"
-                                            rows={2}
-                                            value={q.explanation}
-                                            onChange={(e) => {
+                                    {/* EXPANDABLE AI EXPLANATION BOX FEATURING AN INTEGRATED COPY ACTION BUTTON */}
+                                    <div className="bg-white border border-zinc-200 p-3 rounded-xl flex flex-col gap-2 relative group">
+                                        <div className="flex items-center justify-between border-b border-zinc-50 pb-1">
+                                            <label className="flex items-center gap-1 text-xs font-bold text-emerald-700">
+                                                <Lightbulb size={14} />
+                                                <span>AI Explanation</span>
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => navigator.clipboard.writeText(q.explanation || '')}
+                                                className="p-1 text-zinc-400 hover:text-zinc-600 rounded-md hover:bg-zinc-100 transition-all flex items-center gap-1 text-[10px] font-medium"
+                                                title="Copy text"
+                                            >
+                                                <Copy size={12} />
+                                                <span>Copy</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Custom Expandable Rich Content Field replacing Textarea */}
+                                        <div
+                                            contentEditable
+                                            suppressContentEditableWarning
+                                            className="w-full text-xs text-[var(--color-text)] bg-transparent border-0 outline-none min-h-[40px] h-auto p-1 leading-relaxed whitespace-pre-wrap break-words focus:ring-1 focus:ring-zinc-100 rounded"
+                                            onBlur={(e) => {
                                                 const updated = [...generatedQuestions];
-                                                updated[index].explanation = e.target.value;
+                                                updated[index].explanation = e.currentTarget.textContent || '';
                                                 setGeneratedQuestions(updated);
                                             }}
-                                        />
+                                        >
+                                            {q.explanation}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* STICKY FOOTER ACTIONS */}
-                        <div className="flex justify-end gap-3 border-t pt-4 bg-white flex-shrink-0">
+                        <div className="flex justify-end gap-3 border-t pt-4 border-zinc-200 bg-white flex-shrink-0">
                             {!isEditMode ? (
                                 <button
                                     onClick={() => setGeneratedQuestions(null)}
                                     disabled={isPublishing}
-                                    className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium"
+                                    className="px-4 py-2 border rounded-lg text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors"
                                 >
                                     Discard & Try Again
                                 </button>
@@ -513,7 +541,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                 <button
                                     onClick={onClose}
                                     disabled={isPublishing}
-                                    className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition"
+                                    className="px-4 py-2 border rounded-lg text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -521,10 +549,10 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                             <button
                                 onClick={handlePublishClick}
                                 disabled={isPublishing}
-                                className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-md transition flex items-center gap-2"
+                                className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:brightness-110 shadow-xs transition flex items-center gap-2"
                             >
-                                {isPublishing ? <Loader2 className="animate-spin" size={18} /> : null}
-                                {isPublishing ? "Saving..." : isEditMode ? "Save Changes" : "Publish Quiz"}
+                                {isPublishing ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle size={18} />}
+                                <span>{isPublishing ? "Saving..." : isEditMode ? "Save Changes" : "Publish Quiz"}</span>
                             </button>
                         </div>
 

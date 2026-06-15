@@ -185,8 +185,7 @@ export default function CourseDetailPage() {
                                         </p>
 
                                         <p className="font-medium text-[var(--color-text)]">
-                                            {course.teacher?.lastName}{" "}
-                                            {course.teacher?.firstName}
+                                            {course.teacher?.lastName}{" "}{course.teacher?.firstName}
                                         </p>
 
                                     </div>
