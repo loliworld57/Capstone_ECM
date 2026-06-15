@@ -237,9 +237,9 @@ export default function TeacherDashboard() {
 
     const stats = useMemo(
         () => [
-            { label: "Teaching Courses", value: String(totalCourses), icon: BookOpen, color: "bg-[var(--color-main)]" },
-            { label: "Active Students", value: String(totalStudents), icon: Users, color: "bg-[var(--color-main)]" },
-            { label: "Classes (14 Days)", value: String(upcomingClasses.length), icon: CalendarDays, color: "bg-[var(--color-main)]" },
+            { label: "Teaching Courses", value: String(totalCourses), icon: BookOpen, color: "bg-linear-to-r from-indigo-500 to-[var(--color-main)]" },
+            { label: "Active Students", value: String(totalStudents), icon: Users, color: "bg-linear-to-r from-indigo-500 to-[var(--color-main)]" },
+            { label: "Classes (14 Days)", value: String(upcomingClasses.length), icon: CalendarDays, color: "bg-linear-to-r from-indigo-500 to-[var(--color-main)]" },
         ],
         [totalCourses, totalStudents, upcomingClasses.length]
     );

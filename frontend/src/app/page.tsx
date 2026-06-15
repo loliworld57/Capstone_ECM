@@ -95,7 +95,7 @@ export default function Home() {
               </div>
               
               {/* Structured Headline Split */}
-              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-black tracking-tight leading-tight text-gray-900 flex flex-col">
+              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-black tracking-tight leading-tight text-[var(--color-text)] flex flex-col">
                 <span className="block">Easily Manage Your</span>
                 <span className="bg-gradient-to-r from-indigo-600 via-[var(--color-main)] to-indigo-500 bg-clip-text text-transparent pb-1">
                   Tutor Center
