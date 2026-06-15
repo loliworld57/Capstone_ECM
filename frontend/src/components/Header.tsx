@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import Logo from "./Logo";
+import Logo from "./Logo"; // Importing your new integrated glyph Logo component
 import type { User } from "@/services/authService";
 import { Settings, LogOut, LayoutDashboard } from "lucide-react";
 
@@ -15,7 +15,6 @@ export default function Header() {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     useEffect(() => {
-        // run on mount and route changes so header reflects login state
         const stored = localStorage.getItem("loginResponse");
         if (stored) {
             try {
@@ -71,82 +70,119 @@ export default function Header() {
                     : "/";
 
     return (
-        <header ref={headerRef} className="sticky top-0 z-40 text-white shadow-md">
-            <div className="bg-[var(--color-soft-white)]">
-                <div className="container flex flex-col gap-1 py-2 text-[var(--color-text)] sm:flex-row sm:items-center sm:justify-between">
-                    <Link href="/" className="text-xl leading-tight font-bold sm:text-2xl lg:text-3xl">
-                    Tutoring Center Management Application
-                    </Link>
-
-                    <p className="text-xs font-normal opacity-70 sm:text-sm">
-                        A project by EIU Students
-                    </p>
+        <header 
+            ref={headerRef} 
+            className="sticky top-0 z-40 w-full border-b border-slate-900/40 bg-slate-950/90 backdrop-blur-md shadow-md"
+        >
+            {/* Top Micro Info Strip */}
+            <div className="bg-slate-300 border-b border-slate-800/50 py-1.5 px-4">
+                <div className="container mx-auto flex items-center justify-between text-xs text-[var(--color-text)] font-medium">
+                    <span className="hidden sm:inline-block tracking-wide">
+                        Education Center Management System
+                    </span>
+                    <span className="mx-auto sm:mx-0 tracking-wider font-semibold uppercase text-[10px] bg-[var(--color-main)] text-white border border-indigo-500/20 px-2 py-0.5 rounded-sm">
+                        EIU Student Project
+                    </span>
                 </div>
             </div>
-            <div className="bg-[var(--color-main)]">
-                <div className="container flex flex-wrap items-center justify-between gap-3 py-2">
-                    <Link href="/" className="flex items-center">
-                        <Logo className="text-white" />
+
+            {/* Main Interactive Command Ribbon */}
+            <div className="px-4 py-3.5">
+                <div className="container mx-auto flex items-center justify-between gap-4">
+                    
+                    {/* Brand Anchor Logo Group - Integrated Glyph Design */}
+                    <Link href="/" className="flex items-center group transition-transform duration-200 active:scale-95 shrink-0">
+                        {/* I have updated the Logo component here. 
+                          By setting color="white", both the symbol and text ECM 
+                          will be crisp white against the dark slate background.
+                          I have kept h-9 to ensure it fits perfectly within the ribbon.
+                        */}
+                        <Logo className="h-9 w-auto" color="white" />
                     </Link>
-                    <nav className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+
+                    {/* Navigation Actions Array */}
+                    <nav className="flex items-center gap-3 ml-auto">
                         {user ? (
-                            <>
-                                <span className="max-w-full break-all text-sm opacity-80 sm:text-base">
+                            <div className="flex items-center gap-4 bg-slate-900 border border-slate-800 rounded-full pl-4 pr-2 py-1 shadow-inner">
+                                <span className="hidden md:inline-block text-xs font-semibold text-slate-300 tracking-tight max-w-[180px] truncate">
                                     {user.email}
                                 </span>
-                                <Link
-                                    href={dashboardHref}
-                                    className="inline-flex items-center"
-                                    title="Dashboard"
-                                    aria-label="Go to dashboard"
-                                >
-                                    <LayoutDashboard size={28} className="transition hover:scale-110 hover:text-[var(--color-secondary)]" />
-                                </Link>
-                                <Link
-                                    href={profileHref}
-                                    className="inline-flex items-center">
-                                    <Settings size={32} className="transition hover:scale-110 hover:text-[var(--color-secondary)]" />
-                                </Link>
+                                
+                                <div className="h-4 w-[1px] bg-slate-800 hidden md:block" />
 
-                                <button
-                                    onClick={() => setShowLogoutConfirm(true)}
-                                    className="inline-flex items-center"
-                                    title="Logout"
-                                >
-                                    <LogOut size={32} className="transition hover:scale-110 hover:text-[var(--color-alert)]" />
-                                </button>
-                            </>
+                                <div className="flex items-center gap-1.5">
+                                    <Link
+                                        href={dashboardHref}
+                                        className="p-1.5 text-slate-400 rounded-full hover:bg-slate-800 hover:text-white transition-all duration-200"
+                                        title="Dashboard"
+                                        aria-label="Go to dashboard"
+                                    >
+                                        <LayoutDashboard size={18} />
+                                    </Link>
+                                    
+                                    <Link
+                                        href={profileHref}
+                                        className="p-1.5 text-slate-400 rounded-full hover:bg-slate-800 hover:text-white transition-all duration-200"
+                                        title="Settings"
+                                    >
+                                        <Settings size={18} />
+                                    </Link>
+
+                                    <button
+                                        onClick={() => setShowLogoutConfirm(true)}
+                                        className="p-1.5 text-slate-500 rounded-full hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
+                                        title="Logout"
+                                    >
+                                        <LogOut size={18} />
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
-                            <>
-                                <Link href="/login" className="loginBtn">
+                            <div className="flex items-center gap-2">
+                                <Link 
+                                    href="/login" 
+                                    className="text-sm font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg transition-colors"
+                                >
                                     Login
                                 </Link>
-                                <Link href="/register" className="regBtn">
+                                <Link 
+                                    href="/register" 
+                                    className="bg-linear-to-r from-indigo-500 to-[var(--color-main)] hover:from-indigo-600 hover:to-[var(--color-main)] text-white text-sm font-bold px-4 py-2 rounded-lg shadow-md shadow-indigo-950/50 transition-all transform active:scale-98"
+                                >
                                     Get Started
                                 </Link>
-                            </>
+                            </div>
                         )}
                     </nav>
                 </div>
             </div>
-            {showLogoutConfirm && (
-                <div className="fixed inset-0 bg-[var(--color-main)]/20 flex items-center justify-center z-50"
-                    onClick={() => setShowLogoutConfirm(false)}>
 
-                    <div className="bg-white rounded-xl p-6 w-80 shadow-xl text-center"
-                        onClick={(e) => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-[var(--color-text)] mb-4">
+            {/* Backdrop Modal Overlay Layer */}
+            {showLogoutConfirm && (
+                <div 
+                    className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+                    onClick={() => setShowLogoutConfirm(false)}
+                >
+                    <div 
+                        className="bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-800 transform transition-all duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-400 mb-4">
+                            <LogOut size={24} />
+                        </div>
+
+                        <h3 className="text-xl font-bold text-white mb-2 text-center">
                             Confirm Logout
                         </h3>
 
-                        <p className="mb-6 text-[var(--color-text)]">
-                            Are you sure you want to log out?
+                        <p className="text-sm text-slate-400 mb-6 text-center leading-relaxed">
+                            Are you sure you want to log out? You will need to re-authenticate to access your workspace.
                         </p>
 
-                        <div className="flex justify-center gap-4">
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setShowLogoutConfirm(false)}
-                                className="px-4 py-1 font-bold rounded-lg border-2 border-[var(--color-main)] text-[var(--color-soft-white)] bg-[var(--color-main)]  hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] transition"
+                                className="flex-1 px-4 py-2 text-sm font-bold rounded-xl border border-slate-700 text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white transition active:scale-98"
                             >
                                 Cancel
                             </button>
@@ -159,9 +195,9 @@ export default function Header() {
                                     setShowLogoutConfirm(false);
                                     router.push("/login");
                                 }}
-                                className="px-4 py-1 font-bold rounded-lg border-2 border-[var(--color-alert)] text-[var(--color-alert)] bg-[var(--color-soft-white)]  hover:bg-[var(--color-alert)] hover:text-[var(--color-soft-white)] transition"
+                                className="flex-1 px-4 py-2 text-sm font-bold rounded-xl text-white bg-red-500 hover:bg-red-600 transition shadow-sm active:scale-98"
                             >
-                                Logout
+                                Log out
                             </button>
                         </div>
                     </div>

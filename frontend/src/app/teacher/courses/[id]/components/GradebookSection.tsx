@@ -287,7 +287,7 @@ export default function GradebookSection({ courseId }: Props) {
     if (!gradebook) return <div className="p-8 text-center">No gradebook data available</div>;
 
     return (
-        <div className="h-[calc(100vh-120px)] flex flex-col bg-[var(--color-soft-white)] rounded-xl border border-[var(--color-main)] shadow-sm mt-6 overflow-hidden">
+        <div className="h-auto flex flex-col bg-[var(--color-soft-white)] rounded-xl border border-[var(--color-main)] shadow-sm overflow-visible md:overflow-hidden">
             <div className="shrink-0 bg-[var(--color-main)] text-white px-6 py-4 flex items-center justify-between font-semibold">
                 <div className="flex items-center gap-2">
                     <span className="text-lg font-semibold">Gradebook</span>
@@ -295,7 +295,7 @@ export default function GradebookSection({ courseId }: Props) {
                 <div className="text-sm text-white/90">{gradebook.courseName}</div>
             </div>
 
-            <div className="p-6 flex flex-col flex-1 min-h-0">
+            <div className="p-4 sm:p-6 flex flex-col md:flex-1 md:min-h-0">
                 {!gradebook.weightComplete && (
                     <div className="shrink-0 mb-4">
                         <WeightWarningBanner totalWeight={gradebook.totalWeight} />
@@ -330,9 +330,9 @@ export default function GradebookSection({ courseId }: Props) {
                     />
                 </div>
 
-                <div className="mt-6 flex-1 min-h-0 flex flex-col">
+                <div className="mt-6 md:flex-1 md:min-h-0 flex flex-col w-full overflow-x-auto">
                     {activeView === "Score Sheet" && (
-                                <div className="flex-1 min-h-0">
+                        <div className="md:flex-1 md:min-h-0 w-full overflow-x-auto">
                             <GradebookTable
                                 gradebook={gradebook}
                                 editMode={editMode}
@@ -415,78 +415,77 @@ export default function GradebookSection({ courseId }: Props) {
                     )}
 
                     {activeView === "Score Items" && (
-                        <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-                            <table className="min-w-[760px] w-full border-collapse">
-                                <thead className="bg-gray-50 sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Category</th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Score Item</th>
-                                        {editMode && (
-                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">
-                                                Actions
-                                            </th>
-                                        )}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {categoriesWithItems.flatMap((category) =>
-                                        category.items.map((scoreItem) => (
-                                            <tr key={scoreItem.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                                {/* CATEGORY COLUMN */}
-                                                <td className="px-4 py-3">
-                                                    {editMode ? (
-                                                        <select
-                                                            value={scoreItemEdits[scoreItem.id]?.categoryId ?? scoreItem.scoreCategoryId}
-                                                            onChange={(e) => handleScoreItemHeaderChange(scoreItem.id, "categoryId", Number(e.target.value))}
-                                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[var(--color-main)] focus:outline-none"
-                                                        >
-                                                            {gradebook.categories.map((cat) => (
-                                                                <option key={cat.id} value={cat.id}>
-                                                                    {cat.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    ) : (
-                                                        category.name
-                                                    )}
-                                                </td>
-
-                                                {/* SCORE ITEM NAME COLUMN */}
-                                                <td className="px-4 py-3">
-                                                    {editMode ? (
-                                                        <input
-                                                            type="text"
-                                                            value={scoreItemEdits[scoreItem.id]?.name ?? scoreItem.name}
-                                                            onChange={(e) => handleScoreItemHeaderChange(scoreItem.id, "name", e.target.value)}
-                                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[var(--color-main)] focus:outline-none"
-                                                        />
-                                                    ) : (
-                                                        scoreItem.name
-                                                    )}
-                                                </td>
-
-                                                {/* ACTIONS COLUMN */}
-                                                {editMode && (
-                                                    <td className="px-4 py-3 text-sm text-gray-700">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setDeletingScoreItem({
-                                                                    id: scoreItem.id,
-                                                                    name: scoreItem.name,
-                                                                })
-                                                            }
-                                                            className="rounded-lg border-2 border-[var(--color-alert)] bg-[var(--color-alert)] p-2 text-white transition hover:bg-white hover:text-[var(--color-alert)]"
-                                                        >
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                    </td>
-                                                )}
-                                            </tr>
-                                        ))
+                        <div className="flex-1 min-h-[300px] overflow-auto border border-zinc-200 rounded-xl bg-white shadow-sm ring-1 ring-black/[0.02]">                            <table className="min-w-[760px] w-full border-collapse">
+                            <thead className="bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Category</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">Score Item</th>
+                                    {editMode && (
+                                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 border-b border-gray-200">
+                                            Actions
+                                        </th>
                                     )}
-                                </tbody>
-                            </table>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {categoriesWithItems.flatMap((category) =>
+                                    category.items.map((scoreItem) => (
+                                        <tr key={scoreItem.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                            {/* CATEGORY COLUMN */}
+                                            <td className="px-4 py-3">
+                                                {editMode ? (
+                                                    <select
+                                                        value={scoreItemEdits[scoreItem.id]?.categoryId ?? scoreItem.scoreCategoryId}
+                                                        onChange={(e) => handleScoreItemHeaderChange(scoreItem.id, "categoryId", Number(e.target.value))}
+                                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[var(--color-main)] focus:outline-none"
+                                                    >
+                                                        {gradebook.categories.map((cat) => (
+                                                            <option key={cat.id} value={cat.id}>
+                                                                {cat.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    category.name
+                                                )}
+                                            </td>
+
+                                            {/* SCORE ITEM NAME COLUMN */}
+                                            <td className="px-4 py-3">
+                                                {editMode ? (
+                                                    <input
+                                                        type="text"
+                                                        value={scoreItemEdits[scoreItem.id]?.name ?? scoreItem.name}
+                                                        onChange={(e) => handleScoreItemHeaderChange(scoreItem.id, "name", e.target.value)}
+                                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[var(--color-main)] focus:outline-none"
+                                                    />
+                                                ) : (
+                                                    scoreItem.name
+                                                )}
+                                            </td>
+
+                                            {/* ACTIONS COLUMN */}
+                                            {editMode && (
+                                                <td className="px-4 py-3 text-sm text-gray-700">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setDeletingScoreItem({
+                                                                id: scoreItem.id,
+                                                                name: scoreItem.name,
+                                                            })
+                                                        }
+                                                        className="rounded-lg border-2 border-[var(--color-alert)] bg-[var(--color-alert)] p-2 text-white transition hover:bg-white hover:text-[var(--color-alert)]"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                         </div>
                     )}
                 </div>

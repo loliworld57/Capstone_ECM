@@ -5,14 +5,9 @@ import { useRouter } from "next/navigation";
 import { loginUser, type User as AuthUser } from "@/services/authService";
 import { getApiErrorMessage } from "@/utils/axiosConfig";
 import toast from "react-hot-toast";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Mail, Loader2 } from "lucide-react";
 import LockedAccountModal from '@/components/LockedAccountModal';
-
-type ApiError = {
-    response?: {
-        data?: string | { message?: string };
-    };
-};
+import Link from "next/link";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -29,15 +24,11 @@ export default function LoginPage() {
 
     const getVerificationRecipientLabel = (value: string) => {
         const username = value.split("@")[0]?.trim();
-
-        if (!username) {
-            return "your personal email";
-        }
-
+        if (!username) return "your personal email";
         return `${username}'s personal email`;
     };
 
-    // redirect away if already logged in
+    // Redirect away if already logged in
     useEffect(() => {
         const stored = localStorage.getItem("loginResponse");
         if (stored) {
@@ -45,15 +36,10 @@ export default function LoginPage() {
                 const { user } = JSON.parse(stored);
                 const roleName = getRoleName(user?.role);
                 if (roleName) {
-                    if (roleName === "TEACHER") {
-                        router.replace("/teacher/dashboard");
-                    } else if (roleName === "STUDENT") {
-                        router.replace("/student/dashboard");
-                    } else if (roleName === "ADMIN") {
-                        router.replace("/admin/users");
-                    } else {
-                        router.replace("/");
-                    }
+                    if (roleName === "TEACHER") router.replace("/teacher/dashboard");
+                    else if (roleName === "STUDENT") router.replace("/student/dashboard");
+                    else if (roleName === "ADMIN") router.replace("/admin/users");
+                    else router.replace("/");
                 }
             } catch { }
         }
@@ -73,21 +59,13 @@ export default function LoginPage() {
             const roleName = getRoleName(user?.role);
 
             toast.success(`Hello ${user.firstName} ${user.lastName}!`);
-
             localStorage.setItem("user", JSON.stringify(user));
 
             setTimeout(() => {
-                if (roleName === "TEACHER") {
-                    router.push("/teacher/dashboard");
-                }
-                else if (roleName === "STUDENT") {
-                    router.push("/student/dashboard");
-                } else if (roleName === "ADMIN") {
-                    router.push("/admin/users");
-                }
-                else {
-                    router.push("/");
-                }
+                if (roleName === "TEACHER") router.push("/teacher/dashboard");
+                else if (roleName === "STUDENT") router.push("/student/dashboard");
+                else if (roleName === "ADMIN") router.push("/admin/users");
+                else router.push("/");
             }, 1000);
 
         } catch (error: unknown) {
@@ -108,7 +86,6 @@ export default function LoginPage() {
                     );
                 }, 2000);
             }
-
             else if (typeof msg === 'string' && msg.toLowerCase().includes("locked")) {
                 setShowLockedModal(true);
             }
@@ -125,81 +102,107 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-[var(--color-soft-white)] to-[var(--color-main)]/30 p-4 sm:p-8 lg:p-12">
-
+        <div className="flex-1 min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50/50 relative overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
+            
+            {/* Soft geometric background grid layer */}
+            <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
             <LockedAccountModal
                 isOpen={showLockedModal}
                 onClose={() => setShowLockedModal(false)}
             />
 
-            <div className="w-full max-w-md rounded-2xl bg-[var(--color-soft-white)]/40 p-6 shadow-xl transition-all hover:shadow-2xl sm:p-8">
+            {/* Core Authentic Form Container Card */}
+            <div className="w-full max-w-[420px] bg-white border border-gray-200/70 rounded-2xl p-6 sm:p-10 shadow-xl shadow-gray-100/40 relative z-10 transition-all duration-300">
+                
+                {/* Branding Block Header */}
                 <div className="mb-8 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-main)] text-white">
-                        <Lock size={32} />
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-[var(--color-main)] text-white shadow-md shadow-indigo-500/10">
+                        <Lock size={22} className="stroke-[2.2]" />
                     </div>
-                    <h2 className="header-1">Sign In to ECM</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-gray-900">Sign In to ECM</h2>
+                    <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wider">Education Center Management</p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
-                    {/* Input Email */}
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">Email <span className="text-[var(--color-negative)]">*</span></label>
+                <form onSubmit={handleLogin} className="space-y-5">
+                    
+                    {/* Input Block: Email address */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wide text-gray-500 flex items-center justify-between">
+                            <span>Email Address</span>
+                            <span className="text-red-500 text-sm">*</span>
+                        </label>
                         <div className="relative">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--color-text)]">
-                                <Mail size={20} />
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+                                <Mail size={18} />
                             </div>
                             <input
                                 type="email"
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full rounded-lg border-2 border-[var(--color-main)] bg-[var(--color-soft-white)] p-3 pl-10 text-[var(--color-text)] outline-none focus:border-[var(--color-alert)] focus:ring-2 focus:ring-blue-200 transition"
+                                className="block w-full rounded-xl border border-gray-200 bg-gray-50/30 p-3 pl-11 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium"
                                 placeholder="name@ecm.edu.vn"
                             />
                         </div>
                     </div>
 
-                    {/* Input Password */}
-                    <div>
-                        <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">Password <span className="text-[var(--color-negative)]">*</span></label>
+                    {/* Input Block: Security Password */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wide text-gray-500 flex items-center justify-between">
+                            <span>Password</span>
+                            <span className="text-red-500 text-sm">*</span>
+                        </label>
                         <div className="relative">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--color-text)]">
-                                <Lock size={20} />
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+                                <Lock size={18} />
                             </div>
                             <input
                                 type="password"
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full rounded-lg border-2 border-[var(--color-main)] bg-[var(--color-soft-white)] p-3 pl-10 text-[var(--color-text)] outline-none focus:border-[var(--color-alert)] focus:ring-2 focus:ring-blue-200 transition"
+                                className="block w-full rounded-xl border border-gray-200 bg-gray-50/30 p-3 pl-11 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium"
                                 placeholder="••••••••"
                             />
                         </div>
                     </div>
 
+                    {/* Error Alerts */}
                     {errorMessage && (
-                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div className="rounded-xl border border-red-100 bg-red-50/60 p-3.5 text-xs font-medium text-red-600 leading-relaxed">
                             {errorMessage}
                         </div>
                     )}
 
-                    {/* Button Submit */}
+                    {/* Submission Core CTA */}
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full rounded-lg bg-[var(--color-main)] border-2 border-[var(--color-main)] px-5 py-3 text-center text-base font-medium text-white hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] hover:border-2 hover:border-[var(--color-main)] focus:ring-4 focus:ring-[var(--color-secondary)] transition ${loading ? "cursor-not-allowed opacity-70" : ""
-                            }`}
+                        className={`w-full relative inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-500 to-[var(--color-main)] text-white text-sm font-bold p-3.5 shadow-md shadow-indigo-500/10 hover:opacity-95 active:scale-98 transition transform duration-150 ${
+                            loading ? "cursor-not-allowed opacity-75" : ""
+                        }`}
                     >
-                        {loading ? "Handling..." : "Continue"}
+                        {loading ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                <span>Verifying credentials...</span>
+                            </>
+                        ) : (
+                            <span>Continue</span>
+                        )}
                     </button>
                 </form>
 
-                <p className="mt-6 text-center text-sm text-gray-500">
-                    Don&apos;t have an account ?{" "}
-                    <a href={`/register`} className="font-semibold text-[var(--color-main)] underline hover:text-[var(--color-alert)]">
+                {/* Registration Deep Link redirection path */}
+                <p className="mt-8 text-center text-sm text-gray-500 font-medium">
+                    Don&apos;t have an account?{" "}
+                    <Link 
+                        href="/register" 
+                        className="font-bold text-indigo-600 hover:text-indigo-700 underline underline-offset-4 decoration-indigo-500/30 hover:decoration-indigo-600 transition-colors"
+                    >
                         Go to register
-                    </a>
+                    </Link>
                 </p>
             </div>
         </div>

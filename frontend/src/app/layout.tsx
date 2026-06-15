@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SessionManager from "@/components/SessionManage";
 import { Toaster } from "react-hot-toast";
+import 'simplebar-react/dist/simplebar.min.css';
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,13 +28,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // 1. Added scroll-smooth and ensured html behaves as a base layer
+    <html lang="en" className="h-full scroll-smooth">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[var(--color-soft-white)] text-[var(--color-text)]`}
       >
-        <div className="flex min-h-screen flex-col">
+        {/* 2. Replaced nested min-h-screen with flex-1 layout engine */}
+        <div className="flex min-h-screen flex-col w-full">
           <Header />
           <SessionManager />
+          
           <Toaster
             position="top-right"
             containerStyle={{ zIndex: 4000 }}
@@ -43,7 +47,8 @@ export default function RootLayout({
             }}
           />
 
-          <main className="flex min-h-0 flex-1 flex-col">
+          {/* 3. Replaced min-h-0 with h-auto to prevent inner layout boxing */}
+          <main className="flex flex-1 flex-col h-auto w-full">
             {children}
           </main>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ShieldAlert, UserCog, UserPlus, Unlink, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShieldAlert, UserCog, UserPlus, Unlink, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { User } from "@/services/authService";
 import toast from "react-hot-toast";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -90,7 +90,6 @@ export default function TeacherListTab({ centerId, teachers, isManager, onUpdate
 
     return (
         <div className="space-y-4">
-
             <ConfirmModal
                 isOpen={unlinkTeacherId !== null}
                 title="Unlink Teacher"
@@ -108,138 +107,135 @@ export default function TeacherListTab({ centerId, teachers, isManager, onUpdate
                 onSuccess={onUpdate}
             />
 
-            {/* HEADER */}
-            <div className="flex justify-between items-center">
-                <h3 className="font-bold text-[var(--color-text)] flex items-center gap-2">
-                    <UserCog size={18} /> Teachers
-                    ({teachers.length})
-                </h3>
+            {/* UPGRADED HEADER STYLE BLOCK */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-r from-gray-50 to-transparent p-4 rounded-xl border border-gray-100">
+                <div className="space-y-1.5">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-lg bg-[var(--color-secondary)]/10 text-[var(--color-main)] shrink-0">
+                            <UserCog size={20} className="stroke-[2.2]" />
+                        </div>
+                        <div>
+                            <h3 className="font-extrabold text-lg text-[var(--color-text)] tracking-tight">
+                                Teachers Hub
+                            </h3>
+                            <p className="text-xs text-gray-500 font-medium">
+                                Manage instructor profiles, course assignment rights, and roster links ({teachers.length} tracked)
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 <button
                     onClick={() => setInviteModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-main)] text-white hover:bg-[var(--color-secondary)] transition"
+                    className="flex items-center gap-2 bg-[var(--color-main)] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[var(--color-main)]/90 border border-transparent shadow-sm active:scale-[0.98] transition-all self-start sm:self-auto"
                 >
-                    <UserPlus size={16} />
+                    <UserPlus size={18} />
                     Invite Teacher
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
-                <input
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    placeholder="Search teacher by name or email"
-                    className="w-full p-3 border-2 border-[var(--color-main)] rounded-lg outline-none bg-white"
-                />
+            {/* FILTER MODIFIER BAR CONTAINER */}
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200/60 bg-gray-50/60 p-2">
+                <div className="relative w-full">
+                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        placeholder="Search teacher by name or email..."
+                        className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-[var(--color-text)] outline-none transition placeholder-gray-400 focus:border-[var(--color-main)] focus:ring-2 focus:ring-[var(--color-main)]/10"
+                    />
+                </div>
             </div>
 
-            {/* TABLE */}
-            <div className="bg-[var(--color-soft-white)] border border-[var(--color-main)] rounded-xl shadow-sm overflow-hidden">
-
+            {/* REFINED TABLE DATA MATRIX */}
+            <div className="bg-white border border-gray-200/70 rounded-xl shadow-sm overflow-hidden">
                 {filteredTeachers.length === 0 ? (
-                    <div className="p-10 text-center text-gray-500">
-                        {teachers.length === 0 ? "No teachers found." : "No teachers match your search."}
+                    <div className="p-10 text-center text-xs font-bold text-gray-400">
+                        {teachers.length === 0 ? "No records found" : "Zero matching metrics match selection"}
                     </div>
                 ) : (
-
-                    <table className="w-full text-sm text-left">
-
-                        {/* HEADER */}
-                        <thead className="bg-[var(--color-main)] text-white text-xs uppercase">
-                            <tr>
-                                <th className="px-6 py-4">Name</th>
-                                <th className="px-6 py-4">Email</th>
-                                <th className="px-6 py-4">Phone</th>
-                                <th className="px-6 py-4 text-right">Action</th>
-                            </tr>
-                        </thead>
-
-                        {/* BODY */}
-                        <tbody className="divide-y divide-gray-100">
-
-                            {paginatedTeachers.map((t) => (
-                                <tr
-                                    key={t.id}
-                                    className="hover:bg-blue-50 transition"
-                                >
-
-                                    {/* NAME */}
-                                    <td className="px-6 py-4 font-semibold text-[var(--color-text)]">
-                                        {t.firstName} {t.lastName}
-                                    </td>
-
-                                    {/* EMAIL */}
-                                    <td className="px-6 py-4 text-[var(--color-text)]">
-                                        {t.email}
-                                    </td>
-
-                                    {/* PHONE */}
-                                    <td className="px-6 py-4 text-gray-500">
-                                        {t.phoneNumber || "---"}
-                                    </td>
-
-                                    <td className="px-6 py-4 text-right">
-                                        {managerId === t.id ? (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-slate-300 text-slate-400 cursor-not-allowed">
-                                                <Unlink size={14} />
-                                                Owner
-                                            </span>
-                                        ) : (
-                                            <button
-                                                onClick={() => setUnlinkTeacherId(t.id)}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-[var(--color-alert)] text-[var(--color-alert)] hover:bg-[var(--color-alert)] hover:text-white transition"
-                                            >
-                                                <Unlink size={14} />
-                                                Unlink
-                                            </button>
-                                        )}
-                                    </td>
-
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left table-auto">
+                            <thead className="bg-[var(--color-main)] border-b border-gray-200 text-white uppercase font-bold tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-3.5 font-semibold">Name</th>
+                                    <th className="px-6 py-3.5 font-semibold">Email</th>
+                                    <th className="px-6 py-3.5 font-semibold">Phone</th>
+                                    <th className="px-6 py-3.5 font-semibold text-right">Action</th>
                                 </tr>
-                            ))}
-
-                        </tbody>
-
-                    </table>
-
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 text-gray-700 font-medium">
+                                {paginatedTeachers.map((t) => (
+                                    <tr
+                                        key={t.id}
+                                        className="hover:bg-gray-50/70 transition-colors duration-150"
+                                    >
+                                        <td className="px-6 py-4 font-bold text-[var(--color-text)]">
+                                            {t.firstName} {t.lastName}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs font-medium text-gray-600">
+                                            {t.email}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs font-medium text-gray-500">
+                                            {t.phoneNumber || "---"}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {managerId === t.id ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-gray-100 text-gray-400 border border-gray-200/50 cursor-not-allowed select-none">
+                                                    <Unlink size={13} />
+                                                    Owner
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setUnlinkTeacherId(t.id)}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border border-red-100 text-red-500 bg-red-50/30 hover:bg-red-50 hover:text-red-600 transition active:scale-[0.98]"
+                                                >
+                                                    <Unlink size={13} />
+                                                    Unlink
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
-
             </div>
 
+            {/* CONTROLLERS FOOTER PAGE LAYOUT */}
             {filteredTeachers.length > 0 && (
-                <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-main)]/15 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-                    <p className="text-sm text-[var(--color-text)]">
-                        Showing {(currentPage - 1) * teachersPerPage + 1}
-                        {" - "}
-                        {Math.min(currentPage * teachersPerPage, filteredTeachers.length)} of {filteredTeachers.length} teachers
+                <div className="flex flex-col gap-3 rounded-xl border border-gray-200/60 bg-white p-3 shadow-sm md:flex-row md:items-center md:justify-between">
+                    <p className="text-[11px] font-semibold text-gray-400">
+                        Showing entries {(currentPage - 1) * teachersPerPage + 1} to{" "}
+                        {Math.min(currentPage * teachersPerPage, filteredTeachers.length)} of {filteredTeachers.length} rows
                     </p>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <button
                             onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                             disabled={currentPage === 1}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-main)] px-3 py-2 text-sm font-medium text-[var(--color-main)] transition hover:bg-[var(--color-main)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[var(--color-main)]"
+                            className="inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-bold text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed"
                         >
-                            <ChevronLeft size={16} />
-                            Previous
+                            <ChevronLeft size={14} />
+                            Prev
                         </button>
 
-                        <span className="min-w-[90px] text-center text-sm font-semibold text-[var(--color-text)]">
-                            Page {currentPage} / {totalPages}
+                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
+                            {currentPage} / {totalPages}
                         </span>
 
                         <button
                             onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                             disabled={currentPage === totalPages}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-main)] px-3 py-2 text-sm font-medium text-[var(--color-main)] transition hover:bg-[var(--color-main)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[var(--color-main)]"
+                            className="inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-bold text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed"
                         >
                             Next
-                            <ChevronRight size={16} />
+                            <ChevronRight size={14} />
                         </button>
                     </div>
                 </div>
             )}
-
         </div>
     );
 }

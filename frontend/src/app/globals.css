@@ -23,6 +23,18 @@ html {
     --app-header-height: 7rem;
 }
 
+/* Add this to your styles/globals.css */
+@layer utilities {
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
+
 .teacher-sidebar-fixed {
     position: fixed;
     top: var(--app-header-height);
@@ -179,8 +191,17 @@ html {
 }
 
 .main-btn:hover {
-    background-color: var(--color-main);
-    color: var(--color-soft-white);
+    /* Pure Tailwind v4 linear-gradient mapping */
+    background-image: linear-gradient(
+        to right,
+        #6366f1 5%,               /* from-indigo-500 from-5% */
+        var(--color-main) 50%,     /* via-[var(--color-main)] via-50% */
+        #6366f1 95%               /* to-indigo-500 to-95% */
+    );
+    
+    /* Keeps text crisp and legible over your main purple-blue feature gradient */
+    color: var(--color-soft-white); 
+    border-color:var(--color-soft-main)f1;
 }
 
 .header-1 {
@@ -309,12 +330,10 @@ html {
     font-size: 11px;
     line-height: 13px;
     padding: 2px 4px;
-    overflow: hidden;
 }
 
 .teacher-schedule-event-line {
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
 }
 
@@ -372,9 +391,11 @@ html {
 .schedule-timeline .rct-horizontal-lines .rct-hl-odd {
     background: #ffffff;
 }
+
 .rbc-day-slot .rbc-events-container {
     margin: 0px !important;
 }
+
 .rct-dateHeader-primary {
     color: var(--color-text) !important;
 }
@@ -390,11 +411,39 @@ html {
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,0.35),
-        transparent
-    );
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.35),
+            transparent);
     animation: shimmer 2s infinite;
+}
+
+/* Hide vertical scrollbar */
+.tabs-scroll .simplebar-track.simplebar-vertical {
+    display: none !important;
+}
+
+/* Horizontal track */
+.tabs-scroll .simplebar-track.simplebar-horizontal {
+    height: 4px !important;
+    background: transparent !important;
+}
+
+/* Thumb */
+.tabs-scroll .simplebar-scrollbar::before {
+    background: var(--color-main) !important;
+
+    border-radius: 0 !important;
+
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+
+    opacity: 1 !important;
+}
+
+/* Disable hover effect */
+.tabs-scroll .simplebar-scrollbar:hover {
+    background: var(--color-secondary) !important;
 }

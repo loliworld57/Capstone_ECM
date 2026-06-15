@@ -5,6 +5,7 @@ import {
     addDays,
     endOfMonth,
     endOfWeek,
+    endOfDay,
     format,
     getDay,
     isAfter,
@@ -104,8 +105,13 @@ export default function SchedulePage() {
     const [loading, setLoading] = useState(true);
     const calendarHeightClass = view === Views.MONTH ? "min-h-[900px]" : "h-[1800px]";
 
+    // Force react-big-calendar to recalculate layout when switching views/dates.
+    const calendarKey = `${view}-${toIsoDate(date)}-${events.length}`;
+
+
     const EventCard = ({ event }: { event?: ScheduleEvent }) => {
         const titleParts = (event?.title || "").split(" • ");
+
         const fallbackCourse = titleParts[0] || "Class";
         const fallbackRoom = titleParts[1] || "Not assigned";
         const courseName = event?.courseName || fallbackCourse;
@@ -117,7 +123,7 @@ export default function SchedulePage() {
         const studentsText = event?.studentsText || "0";
 
         return (
-            <div className="group relative h-full w-full bg-[var(--color-main)]/90 border border-white/20 p-1 rounded-sm cursor-pointer transition-colors hover:bg-[var(--color-main)]">
+                        <div className="group relative h-full w-full bg-[var(--color-main)]/90 border border-white/20 p-1 rounded-sm cursor-pointer transition-colors hover:bg-[var(--color-main)]">
 
                 {/* 1. VISIBLE CONTENT (Short & truncated to fit small blocks) */}
                 <div className="font-bold text-white text-[11px] leading-tight truncate">
@@ -126,6 +132,7 @@ export default function SchedulePage() {
                 <div className="text-white/80 text-[10px] truncate mt-0.5">
                     {timeText}
                 </div>
+
 
                 {/* 2. HOVER POP-UP (Tooltip) */}
                 <div className="pointer-events-none absolute left-full top-0 ml-2 w-56 opacity-0 transition-opacity group-hover:opacity-100 z-[9999] bg-white text-gray-800 shadow-xl border border-gray-200 rounded-lg p-3 text-xs hidden sm:block">
@@ -183,9 +190,10 @@ export default function SchedulePage() {
                             ? startOfMonth(date)
                             : startOfWeek(date, { weekStartsOn: 1 });
 
+                // FIX: Changed startOfDay(date) to endOfDay(date) to prevent calculations looping out of bounds in horizontal grids
                 const rangeEnd =
                     view === Views.DAY
-                        ? startOfDay(date)
+                        ? endOfDay(date)
                         : view === Views.MONTH
                             ? endOfMonth(date)
                             : endOfWeek(date, { weekStartsOn: 1 });
@@ -286,7 +294,7 @@ export default function SchedulePage() {
                         current = addDays(current, 1);
                     }
                 }
-
+                console.log("Mapped events:", mappedEvents);
                 setEvents(mappedEvents);
             } catch (error) {
                 console.error(error);
@@ -299,6 +307,12 @@ export default function SchedulePage() {
         fetchSchedule();
     }, [date, view]);
 
+    useEffect(() => {
+        console.log("Events changed:", events);
+        console.log("Current calendar date:", date);
+        console.log("Current view:", view);
+    }, [events]);
+
     return (
         <div>
             <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">
@@ -309,9 +323,11 @@ export default function SchedulePage() {
                 {loading && (
                     <div className="mb-3 text-sm text-[var(--color-text)]">Loading active classes...</div>
                 )}
-                <div className={`schedule-calendar ${calendarHeightClass}`}>
+            <div className={`schedule-calendar ${calendarHeightClass}`}>
                     <Calendar
+                        key={calendarKey}
                         localizer={localizer}
+
                         events={events}
                         components={{
                             event: EventCard,
@@ -319,7 +335,8 @@ export default function SchedulePage() {
                             week: { event: EventCard },
                             day: { event: EventCard },
                         }}
-                        titleAccessor={() => ""}
+                        // Simply pass the valid title string so internal grid layouts calculate properly
+                        titleAccessor={(event) => event.title}
                         formats={{
                             eventTimeRangeFormat: () => "",
                             agendaTimeRangeFormat: () => "",
@@ -339,8 +356,9 @@ export default function SchedulePage() {
                         startAccessor="start"
                         endAccessor="end"
                         views={[Views.MONTH, Views.WEEK, Views.DAY]}
-                        min={new Date(0, 0, 0, 0, 0, 0)}
-                        max={new Date(0, 0, 0, 23, 59, 59)}
+                        min={new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0)}
+                        max={new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59)}
+
                         popup
                     />
                 </div>
