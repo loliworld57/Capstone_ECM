@@ -39,7 +39,7 @@ export default function Footer() {
             </div>
             <div>
               <p className="text-xs font-bold text-white">EIU Capstone Project</p>
-              <p className="text-[11px] text-slate-400 font-medium tracking-wide">Education Center Management</p>
+              <p className="text-[11px] text-slate-400 font-medium tracking-wide">Extra Center Management</p>
             </div>
           </div>
 

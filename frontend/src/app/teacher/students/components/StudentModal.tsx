@@ -511,27 +511,27 @@ export default function StudentModal({
 
                     <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
 
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm transition hover:bg-gray-50 sm:w-auto"
-                                >
-                                    Cancel
-                                </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-full rounded-lg border border-gray-200 px-4 py-2 text-sm transition hover:bg-gray-50 sm:w-auto"
+                        >
+                            Cancel
+                        </button>
 
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full rounded-lg border-2 border-[var(--color-main)] bg-[var(--color-main)] px-4 py-2 font-bold text-white transition hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] disabled:opacity-50 sm:w-auto"
-                                >
-                                    {loading ? "Saving..." : "Save"}
-                                </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full rounded-lg border-2 border-[var(--color-main)] bg-[var(--color-main)] px-4 py-2 font-bold text-white transition hover:bg-[var(--color-soft-white)] hover:text-[var(--color-main)] disabled:opacity-50 sm:w-auto"
+                        >
+                            {loading ? "Saving..." : "Save"}
+                        </button>
 
-                            </div>
+                    </div>
 
-                        </form>
+                </form>
 
-            
+
             </div>
 
         </div>

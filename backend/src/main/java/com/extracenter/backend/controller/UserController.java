@@ -24,6 +24,7 @@ import com.extracenter.backend.dto.LoginResponse;
 import com.extracenter.backend.dto.RegisterRequest;
 import com.extracenter.backend.dto.TeacherStudentResponse;
 import com.extracenter.backend.dto.UpdateProfileRequest;
+import com.extracenter.backend.dto.UpdateStudentRequest;
 import com.extracenter.backend.dto.UserProfileResponse;
 import com.extracenter.backend.dto.UserStatsResponse;
 import com.extracenter.backend.dto.VerifyOtpRequest;
@@ -211,7 +212,7 @@ public class UserController {
     public ResponseEntity<?> updateTeacherStudent(
             @PathVariable Long teacherId,
             @PathVariable Long studentId,
-            @Valid @RequestBody CreateStudentRequest request) {
+            @Valid @RequestBody UpdateStudentRequest request) {
         try {
             User updated = userService.updateTeacherManagedStudent(teacherId, studentId, request);
             return ResponseEntity.ok(updated);

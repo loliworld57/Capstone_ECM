@@ -21,6 +21,7 @@ import com.extracenter.backend.dto.LoginResponse;
 import com.extracenter.backend.dto.RegisterRequest;
 import com.extracenter.backend.dto.TeacherStudentResponse;
 import com.extracenter.backend.dto.UpdateProfileRequest;
+import com.extracenter.backend.dto.UpdateStudentRequest;
 import com.extracenter.backend.dto.UserProfileResponse;
 import com.extracenter.backend.dto.UserStatsResponse;
 import com.extracenter.backend.entity.Center;
@@ -234,7 +235,7 @@ public class UserService {
     }
 
     @Transactional
-    public User updateTeacherManagedStudent(Long teacherId, Long studentId, CreateStudentRequest request) {
+    public User updateTeacherManagedStudent(Long teacherId, Long studentId, UpdateStudentRequest request) {
         User student = getActiveOwnedStudent(teacherId, studentId);
 
         student.setFirstName(request.getFirstName());
