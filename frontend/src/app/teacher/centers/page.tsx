@@ -275,9 +275,9 @@ return (
 
         {/* Center Invitations Panel */}
         {centerInvitations.length > 0 && (
-            <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 shadow-sm shadow-indigo-500/5 animate-slide-up">
+            <div className="bg-[var(--color-positive)]/10 border-4 border-[var(--color-positive)] rounded-2xl p-5 shadow-sm shadow-indigo-500/5 animate-slide-up">
                 <div className="flex items-center gap-2.5 mb-4">
-                    <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-sm">
+                    <div className="p-1.5 bg-[var(--color-positive)] text-white rounded-lg shadow-sm">
                         <Bell size={16} className="stroke-[2.5]" />
                     </div>
                     <h3 className="text-indigo-900 font-extrabold text-base tracking-wide">
@@ -297,7 +297,7 @@ return (
 
                             <Link
                                 href={`/teacher/centers/${center.id}`}
-                                className="w-full sm:w-auto text-center px-4 py-2 rounded-lg bg-indigo-600 border border-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 hover:border-indigo-700 transition shadow-sm"
+                                className="w-full sm:w-auto text-center px-4 py-2 rounded-lg bg-linear-to-r from-indigo-500 to-[var(--color-main)] border-2 border-[var(--color-main)] text-white text-sm font-bold hover:bg-indigo-700 hover:border-indigo-700 transition shadow-sm"
                             >
                                 View Center
                             </Link>
