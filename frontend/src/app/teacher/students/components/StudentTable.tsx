@@ -1,20 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { 
-    Mail, 
-    Phone, 
-    Building2, 
-    Unlink, 
-    Trash2, 
-    Edit2, 
-    KeyRound, 
-    RotateCcw, 
-    Copy, 
-    Check, 
-    ArrowUpDown, 
-    ArrowUp, 
-    ArrowDown 
+import {
+    Mail,
+    Phone,
+    Building2,
+    Unlink,
+    Trash2,
+    Edit2,
+    KeyRound,
+    RotateCcw,
+    Copy,
+    Check,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown
 } from "lucide-react";
 
 interface Student {
@@ -114,7 +114,7 @@ export default function StudentTable({
                 {/* TABLE HEADER */}
                 <thead className="bg-[var(--color-text)]/[0.02] text-[var(--color-text)]/60 uppercase text-xs font-bold tracking-wider border-b border-[var(--color-text)]/15 select-none">
                     <tr>
-                        <th 
+                        <th
                             onClick={handleSortToggle}
                             className="px-6 py-3.5 font-bold cursor-pointer hover:bg-[var(--color-main)]/[0.04] hover:text-[var(--color-text)] transition-colors group"
                         >
@@ -158,7 +158,11 @@ export default function StudentTable({
                                                 {student.lastName} {student.firstName}
                                             </p>
                                             <p className="text-xs font-medium text-[var(--color-text)]/40 tracking-wide">
-                                                ID: #{student.id}
+                                                {new Date(student.dateOfBirth).toLocaleDateString("en-GB", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "2-digit",
+                                                }).replace(/\//g, "/")}
                                             </p>
                                         </div>
                                     </div>

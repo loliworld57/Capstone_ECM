@@ -106,7 +106,6 @@ public class CourseService {
         // Tuition fee base (VND) used for tracking student tuition offline
         course.setTuitionFeeVnd(request.getTuitionFeeVnd());
 
-
         if (request.getSubjectId() != null) {
             Subject subject = subjectRepository.findById(request.getSubjectId())
                     .orElseThrow(() -> new RuntimeException("Subject does not exist"));
@@ -201,30 +200,29 @@ public class CourseService {
         scoreCategoryRepository.save(finalExamCategory);
     }
 
-
     public List<Course> getAllCourses() {
         return courseRepository.findByArchivedAtIsNull().stream()
-            .map(this::syncCourseStatus)
-            .collect(Collectors.toList());
+                .map(this::syncCourseStatus)
+                .collect(Collectors.toList());
     }
 
     public List<Course> getCoursesByTeacher(Long teacherId) {
         validateTeacherCourseAccess(teacherId);
         return courseRepository.findByTeacherIdAndArchivedAtIsNull(teacherId).stream()
-            .map(this::syncCourseStatus)
-            .collect(Collectors.toList());
+                .map(this::syncCourseStatus)
+                .collect(Collectors.toList());
     }
 
     public List<Course> getCoursesByStudentId(Long studentId) {
         return courseRepository.findByStudentId(studentId).stream()
-            .map(this::syncCourseStatus)
-            .collect(Collectors.toList());
+                .map(this::syncCourseStatus)
+                .collect(Collectors.toList());
     }
 
     public List<Course> getCoursesByCenter(Long centerId) {
         return courseRepository.findByCenterIdAndArchivedAtIsNull(centerId).stream()
-            .map(this::syncCourseStatus)
-            .collect(Collectors.toList());
+                .map(this::syncCourseStatus)
+                .collect(Collectors.toList());
     }
 
     public List<Course> getArchivedCoursesByCenter(Long centerId) {
@@ -253,7 +251,8 @@ public class CourseService {
         }
 
         if (isTeacher(currentUser)) {
-            return courseRepository.findByCenterIdAndTeacherIdAndArchivedAtIsNull(centerId, currentUser.getId()).stream()
+            return courseRepository.findByCenterIdAndTeacherIdAndArchivedAtIsNull(centerId, currentUser.getId())
+                    .stream()
                     .map(this::syncCourseStatus)
                     .collect(Collectors.toList());
         }
@@ -263,7 +262,7 @@ public class CourseService {
 
     public Course getCourseById(Long id) {
         Course course = courseRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Course not found!"));
+                .orElseThrow(() -> new RuntimeException("Course not found!"));
         validateCourseViewer(course);
         return syncCourseStatus(course);
     }
@@ -396,19 +395,19 @@ public class CourseService {
                 .orElseThrow(() -> new RuntimeException("Course not found!"));
 
         Center center = centerRepository.findById(request.getCenterId())
-            .orElseThrow(() -> new RuntimeException("Center not found!"));
+                .orElseThrow(() -> new RuntimeException("Center not found!"));
         User teacher = userRepository.findById(request.getTeacherId())
-            .orElseThrow(() -> new RuntimeException("Teacher not found!"));
+                .orElseThrow(() -> new RuntimeException("Teacher not found!"));
 
         applyCourseRequest(course, request, center, teacher, course.getStatus() != CourseStatus.ENDED);
 
         return courseRepository.save(course);
-        }
+    }
 
-        @Transactional
-        public Course endCourseEarly(Long courseId) {
+    @Transactional
+    public Course endCourseEarly(Long courseId) {
         Course course = courseRepository.findById(courseId)
-            .orElseThrow(() -> new RuntimeException("Course not found!"));
+                .orElseThrow(() -> new RuntimeException("Course not found!"));
 
         if (course.getStatus() == CourseStatus.ENDED) {
             throw new RuntimeException("Course is already ended.");
@@ -416,28 +415,29 @@ public class CourseService {
 
         course.setStatus(CourseStatus.ENDED);
         return courseRepository.save(course);
-        }
+    }
 
-        @Transactional
-        public Course reopenCourse(Long courseId, CourseRequest request) {
+    @Transactional
+    public Course reopenCourse(Long courseId, CourseRequest request) {
         Course course = courseRepository.findById(courseId)
-            .orElseThrow(() -> new RuntimeException("Course not found!"));
+                .orElseThrow(() -> new RuntimeException("Course not found!"));
 
         Center center = centerRepository.findById(request.getCenterId())
-            .orElseThrow(() -> new RuntimeException("Center not found!"));
+                .orElseThrow(() -> new RuntimeException("Center not found!"));
         User teacher = userRepository.findById(request.getTeacherId())
-            .orElseThrow(() -> new RuntimeException("Teacher not found!"));
+                .orElseThrow(() -> new RuntimeException("Teacher not found!"));
 
         applyCourseRequest(course, request, center, teacher, true);
 
         if (course.getStatus() == CourseStatus.ENDED) {
-            throw new RuntimeException("Updated dates still result in an ended course. Please choose a current or future range.");
+            throw new RuntimeException(
+                    "Updated dates still result in an ended course. Please choose a current or future range.");
         }
 
         return courseRepository.save(course);
-        }
+    }
 
-        private void applyCourseRequest(Course course, CourseRequest request, Center center, User teacher,
+    private void applyCourseRequest(Course course, CourseRequest request, Center center, User teacher,
             boolean deriveStatusFromDates) {
         validateCourseDates(request.getStartDate(), request.getEndDate());
 
@@ -695,7 +695,7 @@ public class CourseService {
     // Retrieve list of students via Enrollment repository for better performance
     public Set<User> getCourseStudents(Long courseId) {
         Course course = courseRepository.findById(courseId)
-            .orElseThrow(() -> new RuntimeException("Course not found!"));
+                .orElseThrow(() -> new RuntimeException("Course not found!"));
         validateCourseViewer(course);
 
         // OPTIMIZATION: Instead of loading the Course and relying on Lazy Loading,
@@ -733,7 +733,8 @@ public class CourseService {
                 && course.getTeacher().getId().equals(currentUser.getId());
 
         boolean isEnrolledStudent = isStudent(currentUser)
-                && enrollmentRepository.existsByStudentIdAndCourseIdAndArchivedAtIsNull(currentUser.getId(), course.getId());
+                && enrollmentRepository.existsByStudentIdAndCourseIdAndArchivedAtIsNull(currentUser.getId(),
+                        course.getId());
 
         if (!isManager && !isAssignedTeacher && !isEnrolledStudent) {
             throw new RuntimeException("You do not have permission to view this course.");
@@ -836,7 +837,8 @@ public class CourseService {
         }
     }
 
-    private void synchronizeSessionsFromActiveClassSlots(Course course) {
+    @Transactional
+    public void synchronizeSessionsFromActiveClassSlots(Course course) {
         if (course.getStartDate() == null || course.getEndDate() == null) {
             return;
         }

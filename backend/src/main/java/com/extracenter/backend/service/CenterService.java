@@ -68,6 +68,9 @@ public class CenterService {
     @Autowired
     private EnrollmentRepository enrollmentRepository;
 
+    @Autowired
+    private CourseService courseService;
+
     // 1. Create a new Center
     // @Transactional added: If saving the center works but updating the manager
     // fails, we roll back!
@@ -335,7 +338,8 @@ public class CenterService {
     }
 
     private boolean hasTeachingAccessToCenter(Long centerId, User user) {
-        boolean linkedToCenter = user.getConnectedCenters().stream().anyMatch(center -> center.getId().equals(centerId));
+        boolean linkedToCenter = user.getConnectedCenters().stream()
+                .anyMatch(center -> center.getId().equals(centerId));
         boolean teachesInCenter = !courseRepository.findByCenterIdAndTeacherId(centerId, user.getId()).isEmpty();
         return linkedToCenter || teachesInCenter;
     }
@@ -536,19 +540,19 @@ public class CenterService {
         }
 
         Classroom classroom = classroomRepository.findByIdAndCenterId(request.getClassroomId(), centerId)
-            .orElseThrow(() -> new RuntimeException("Classroom not found in this center."));
+                .orElseThrow(() -> new RuntimeException("Classroom not found in this center."));
 
         validateSlotTimes(request.getStartTime(), request.getEndTime());
         validateNoTimeConflicts(
-            centerId,
-            request.getCourseId(),
-            request.getClassroomId(),
-            course.getStartDate(),
-            course.getEndDate(),
-            request.getStartTime(),
-            request.getEndTime(),
-            request.getDaysOfWeek(),
-            null);
+                centerId,
+                request.getCourseId(),
+                request.getClassroomId(),
+                course.getStartDate(),
+                course.getEndDate(),
+                request.getStartTime(),
+                request.getEndTime(),
+                request.getDaysOfWeek(),
+                null);
 
         ClassSlot slot = new ClassSlot();
         slot.setCenter(center);
@@ -561,7 +565,11 @@ public class CenterService {
         slot.setDaysOfWeek(request.getDaysOfWeek());
         slot.setIsRecurring(Boolean.TRUE.equals(request.getRecurring()) || request.getRecurring() == null);
 
-        return classSlotRepository.save(slot);
+        ClassSlot saved = classSlotRepository.save(slot);
+
+        courseService.synchronizeSessionsFromActiveClassSlots(course);
+
+        return saved;
     }
 
     @Transactional
@@ -579,19 +587,19 @@ public class CenterService {
         }
 
         Classroom classroom = classroomRepository.findByIdAndCenterId(request.getClassroomId(), centerId)
-            .orElseThrow(() -> new RuntimeException("Classroom not found in this center."));
+                .orElseThrow(() -> new RuntimeException("Classroom not found in this center."));
 
         validateSlotTimes(request.getStartTime(), request.getEndTime());
         validateNoTimeConflicts(
-            centerId,
-            request.getCourseId(),
-            request.getClassroomId(),
-            course.getStartDate(),
-            course.getEndDate(),
-            request.getStartTime(),
-            request.getEndTime(),
-            request.getDaysOfWeek(),
-            slotId);
+                centerId,
+                request.getCourseId(),
+                request.getClassroomId(),
+                course.getStartDate(),
+                course.getEndDate(),
+                request.getStartTime(),
+                request.getEndTime(),
+                request.getDaysOfWeek(),
+                slotId);
 
         slot.setCourse(course);
         slot.setClassroom(classroom);
@@ -602,18 +610,21 @@ public class CenterService {
         slot.setDaysOfWeek(request.getDaysOfWeek());
         slot.setIsRecurring(Boolean.TRUE.equals(request.getRecurring()) || request.getRecurring() == null);
 
-        return classSlotRepository.save(slot);
+        ClassSlot saved = classSlotRepository.save(slot);
+
+        courseService.synchronizeSessionsFromActiveClassSlots(course);
+
+        return saved;
     }
 
     @Transactional
     public void deleteClassSlot(Long centerId, Long slotId, Long managerId) {
         getEditableOwnedCenter(centerId, managerId);
-
         ClassSlot slot = classSlotRepository.findByIdAndCenterId(slotId, centerId)
                 .orElseThrow(() -> new RuntimeException("ClassSlot not found in this center."));
-
-        attendanceRepository.deleteByClassSlotId(slotId);
+        attendanceRepository.deleteByClassSlotId(slotId);     
         classSlotRepository.delete(slot);
+
     }
 
     @Transactional
@@ -662,7 +673,7 @@ public class CenterService {
         validateSlotTimes(request.getStartTime(), request.getEndTime());
 
         Classroom overrideClassroom = classroomRepository.findByIdAndCenterId(request.getClassroomId(), centerId)
-            .orElseThrow(() -> new RuntimeException("Classroom not found in this center."));
+                .orElseThrow(() -> new RuntimeException("Classroom not found in this center."));
 
         Set<DayOfWeek> singleDay = new HashSet<>();
         singleDay.add(date.getDayOfWeek());
