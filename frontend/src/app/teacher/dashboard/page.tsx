@@ -192,6 +192,8 @@ export default function TeacherDashboard() {
             const sessionResponse = await api.get<UpcomingSession[]>(
                 `/schedule/teacher/${teacherId}/sessions?startDate=${startDate}&endDate=${endDate}`
             );
+            console.log("SESSION RESPONSE", sessionResponse.data);
+            console.log("NOW", dayjs().format());
 
             const now = dayjs();
             const upcoming = (sessionResponse.data || [])
@@ -288,7 +290,7 @@ export default function TeacherDashboard() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-black text-[var(--color-text)] uppercase tracking-wider">Upcoming Schedule</h2>
+                            <h2 className="text-sm font-black text-[var(--color-main)] uppercase tracking-wider">Upcoming Schedule</h2>
                             <Link href="/teacher/schedule" className="text-xs font-bold text-[var(--color-main)] hover:underline">View Calendar</Link>
                         </div>
 
