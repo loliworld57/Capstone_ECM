@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { BookOpen, Users, CalendarDays, Clock3, MapPin, CheckCircle2, Megaphone, ClipboardList, BarChart3, AlertCircle, Building2, Check, X } from "lucide-react";
+import { 
+    BookOpen, 
+    Users, 
+    CalendarDays, 
+    Clock3, 
+    MapPin, 
+    CheckCircle2, 
+    Building2, 
+    Check, 
+    X, 
+    ChevronLeft, 
+    ChevronRight 
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { getTeacherCourses, getStudentsInCourse, getInvitations, respondInvitation } from "@/services/courseService";
 import api from "@/utils/axiosConfig";
@@ -27,56 +39,32 @@ type Invitation = {
     status: string;
 };
 
-type AtRiskStudent = {
-    id: number;
-    name: string;
-    courseName: string;
-    missedCount: number;
-};
+const ITEMS_PER_PAGE = 5;
 
 function ActiveClassBanner({
     upcomingClasses,
     loading,
+    nowTick,
+    activeSession,
 }: {
     upcomingClasses: UpcomingSession[];
     loading: boolean;
+    nowTick: number;
+    activeSession: UpcomingSession | null;
 }) {
-    const [nowTick, setNowTick] = useState(() => Date.now());
-
-    useEffect(() => {
-        const t = window.setInterval(() => setNowTick(Date.now()), 1000);
-        return () => window.clearInterval(t);
-    }, []);
-
-    const active = useMemo(() => {
-        if (loading) return null;
-        const threshold = dayjs(nowTick + 30 * 60 * 1000);
-
-        const candidates = (upcomingClasses || [])
-            .filter((s) => s.date && s.startTime)
-            .map((s) => {
-                const start = dayjs(`${s.date}T${s.startTime}`);
-                return { ...s, _startMs: start.valueOf() };
-            })
-            .filter((s) => {
-                const startMs = s._startMs as number;
-                return startMs <= threshold.valueOf() && startMs >= nowTick - 60 * 60 * 1000;
-            })
-            .sort((a, b) => (a._startMs as number) - (b._startMs as number));
-
-        return candidates[0] ?? null;
-    }, [loading, upcomingClasses, nowTick]);
-
     const countdown = useMemo(() => {
-        if (!active?.date || !active?.startTime) return null;
-        const start = dayjs(`${active.date}T${active.startTime}`).valueOf();
-        const diffMs = start - nowTick;
-        if (diffMs < 0) return { totalSeconds: 0, mm: "00", ss: "00" };
+        if (!activeSession) return null;
+        
+        const start = dayjs(`${activeSession.date}T${activeSession.startTime}`);
+        const diffMs = start.valueOf() - nowTick;
+        
+        if (diffMs <= 0) return { isLive: true, mm: "00", ss: "00" };
+
         const totalSeconds = Math.floor(diffMs / 1000);
         const mm = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
         const ss = String(totalSeconds % 60).padStart(2, "0");
-        return { totalSeconds, mm, ss };
-    }, [active, nowTick]);
+        return { isLive: false, mm, ss };
+    }, [activeSession, nowTick]);
 
     if (loading) {
         return (
@@ -87,27 +75,31 @@ function ActiveClassBanner({
         );
     }
 
-    if (!active) return null;
+    if (!activeSession) return null;
 
-    const minutesOrNow = countdown?.totalSeconds === 0 ? "Now Active" : `Starts in ${countdown?.mm}:${countdown?.ss}`;
+    const statusLabel = countdown?.isLive 
+        ? "Now Active" 
+        : `Starts in ${countdown?.mm}:${countdown?.ss}`;
 
     return (
-        <div className="rounded-xl border-2 border-indigo-500 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-4 sm:p-6 shadow-md transition-all duration-300">
+        <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-r from-[var(--color-main)]/10 to-[var(--color-main)]/20 text-[var(--color-text)] p-4 sm:p-6 shadow-md transition-all duration-300">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="min-w-0">
-                    <span className="bg-white/20 text-white text-[10px] font-black tracking-widest px-2 py-0.5 rounded uppercase">
-                        {minutesOrNow}
+                    <span className="bg-[var(--color-main)] text-white text-[10px] font-black tracking-widest px-2 py-0.5 rounded uppercase">
+                        {statusLabel}
                     </span>
                     <div className="mt-2">
-                        <div className="text-lg sm:text-xl font-black leading-tight truncate">{active.courseName || "Course"}</div>
-                        <div className="text-xs font-semibold text-white/90 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                        <div className="text-lg sm:text-xl font-black leading-tight truncate text-[var(--color-text)]">
+                            {activeSession.courseName || "Course"}
+                        </div>
+                        <div className="text-xs font-semibold text-slate-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
                             <span className="inline-flex items-center gap-1.5">
-                                <Clock3 size={13} />
-                                {active.startTime?.slice(0, 5)} - {active.endTime?.slice(0, 5)}
+                                <Clock3 size={13} className="text-[var(--color-main)]" />
+                                {activeSession.startTime?.slice(0, 5)} - {activeSession.endTime?.slice(0, 5)}
                             </span>
                             <span className="inline-flex items-center gap-1.5">
-                                <MapPin size={13} />
-                                {active.roomName || "TBD"}
+                                <MapPin size={13} className="text-[var(--color-main)]" />
+                                {activeSession.roomName || "TBD"}
                             </span>
                         </div>
                     </div>
@@ -115,7 +107,7 @@ function ActiveClassBanner({
 
                 <Link
                     href="/teacher/schedule"
-                    className="inline-flex items-center justify-center rounded-xl bg-white text-indigo-700 font-bold px-4 py-2.5 hover:bg-slate-100 transition text-sm active:scale-[0.99] shadow-sm shrink-0"
+                    className="inline-flex items-center justify-center rounded-xl bg-[var(--color-main)] text-white font-bold px-4 py-2.5 hover:opacity-90 transition text-sm active:scale-[0.99] shadow-sm shrink-0"
                 >
                     <CheckCircle2 size={16} className="mr-2" />
                     Take Attendance
@@ -131,7 +123,13 @@ export default function TeacherDashboard() {
     const [totalStudents, setTotalStudents] = useState(0);
     const [upcomingClasses, setUpcomingClasses] = useState<UpcomingSession[]>([]);
     const [invitations, setInvitations] = useState<Invitation[]>([]);
-    const [atRiskStudents, setAtRiskStudents] = useState<AtRiskStudent[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [nowTick, setNowTick] = useState(() => Date.now());
+
+    useEffect(() => {
+        const t = window.setInterval(() => setNowTick(Date.now()), 1000);
+        return () => window.clearInterval(t);
+    }, []);
 
     const fetchOverview = async () => {
         const userRaw = localStorage.getItem("user");
@@ -147,11 +145,9 @@ export default function TeacherDashboard() {
         try {
             setLoading(true);
 
-            // 1. Fetch Courses
             const courses = await getTeacherCourses(teacherId);
             setTotalCourses(Array.isArray(courses) ? courses.length : 0);
 
-            // 2. Fetch Students & Identify At-Risk Students (Stubbed logic based on data)
             const studentLists = await Promise.all(
                 (courses || []).map(async (course) => {
                     try {
@@ -164,50 +160,32 @@ export default function TeacherDashboard() {
             );
 
             const uniqueStudentIds = new Set<number>();
-            const riskPool: AtRiskStudent[] = [];
-
-            studentLists.forEach(({ courseName, students }) => {
-                students.forEach((student: { id?: number; name?: string; missedSessions?: number }) => {
+            studentLists.forEach(({ students }) => {
+                students.forEach((student: { id?: number }) => {
                     if (typeof student?.id === "number") {
                         uniqueStudentIds.add(student.id);
-                        
-                        // If student has missed more than 2 classes, flag them on the dashboard
-                        if ((student.missedSessions ?? 0) >= 2) {
-                            riskPool.push({
-                                id: student.id,
-                                name: student.name || "Unknown Student",
-                                courseName: courseName,
-                                missedCount: student.missedSessions || 2
-                            });
-                        }
                     }
                 });
             });
             setTotalStudents(uniqueStudentIds.size);
-            setAtRiskStudents(riskPool.slice(0, 3)); // Display top 3 critical issues
 
-            // 3. Fetch Schedules
             const startDate = dayjs().format("YYYY-MM-DD");
             const endDate = dayjs().add(14, "day").format("YYYY-MM-DD");
             const sessionResponse = await api.get<UpcomingSession[]>(
                 `/schedule/teacher/${teacherId}/sessions?startDate=${startDate}&endDate=${endDate}`
             );
-            console.log("SESSION RESPONSE", sessionResponse.data);
-            console.log("NOW", dayjs().format());
 
             const now = dayjs();
             const upcoming = (sessionResponse.data || [])
                 .filter((session) => {
-                    if (!session.date || !session.startTime) return false;
-                    const start = dayjs(`${session.date}T${session.startTime}`);
-                    return start.isAfter(now) || start.isSame(now);
+                    if (!session.date || !session.startTime || !session.endTime) return false;
+                    const end = dayjs(`${session.date}T${session.endTime}`);
+                    return end.isAfter(now);
                 })
-                .sort((a, b) => dayjs(`${a.date}T${a.startTime}`).valueOf() - dayjs(`${b.date}T${b.startTime}`).valueOf())
-                .slice(0, 5);
+                .sort((a, b) => dayjs(`${a.date}T${a.startTime}`).valueOf() - dayjs(`${b.date}T${b.startTime}`).valueOf());
 
             setUpcomingClasses(upcoming);
 
-            // 4. Fetch Center Invitations
             try {
                 const invites = await getInvitations(teacherId);
                 setInvitations(invites.filter((inv: Invitation) => inv.status === "PENDING"));
@@ -237,11 +215,39 @@ export default function TeacherDashboard() {
         }
     };
 
+    // Determine which session is currently the active banner candidate
+    const activeSession = useMemo(() => {
+        if (!upcomingClasses.length) return null;
+        
+        const activeCandidates = upcomingClasses
+            .filter((s) => {
+                const end = dayjs(`${s.date}T${s.endTime}`);
+                return end.valueOf() > nowTick;
+            });
+            
+        return activeCandidates[0] ?? null;
+    }, [upcomingClasses, nowTick]);
+
+    // Filter out the current active session completely from the upcoming schedule feed
+    const filteredUpcomingClasses = useMemo(() => {
+        if (!activeSession) return upcomingClasses;
+        return upcomingClasses.filter(
+            (session) => session.sessionId !== activeSession.sessionId
+        );
+    }, [upcomingClasses, activeSession]);
+
+    // Ledger Items Pagination Logic based on filtered array
+    const totalPages = Math.ceil(filteredUpcomingClasses.length / ITEMS_PER_PAGE);
+    const paginatedClasses = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredUpcomingClasses.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredUpcomingClasses, currentPage]);
+
     const stats = useMemo(
         () => [
-            { label: "Teaching Courses", value: String(totalCourses), icon: BookOpen, color: "bg-linear-to-r from-indigo-500 to-[var(--color-main)]" },
-            { label: "Active Students", value: String(totalStudents), icon: Users, color: "bg-linear-to-r from-indigo-500 to-[var(--color-main)]" },
-            { label: "Classes (14 Days)", value: String(upcomingClasses.length), icon: CalendarDays, color: "bg-linear-to-r from-indigo-500 to-[var(--color-main)]" },
+            { label: "Teaching Courses", value: String(totalCourses), icon: BookOpen },
+            { label: "Active Students", value: String(totalStudents), icon: Users },
+            { label: "Classes (14 Days)", value: String(upcomingClasses.length), icon: CalendarDays },
         ],
         [totalCourses, totalStudents, upcomingClasses.length]
     );
@@ -251,12 +257,12 @@ export default function TeacherDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black tracking-tight text-[var(--color-text)]">Overview</h1>
-                    <p className="text-xs font-semibold text-[var(--color-text)] mt-0.5">Welcome back! Here is your daily teaching brief.</p>
+                    <p className="text-xs font-semibold text-slate-500 mt-0.5">Welcome back! Here is your daily teaching brief.</p>
                 </div>
             </div>
 
             {/* LIVE CLASS BANNER COMPONENT */}
-            <ActiveClassBanner upcomingClasses={upcomingClasses} loading={loading} />
+            <ActiveClassBanner upcomingClasses={upcomingClasses} loading={loading} nowTick={nowTick} activeSession={activeSession} />
 
             {/* STATS ROW BLOCKS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -272,7 +278,7 @@ export default function TeacherDashboard() {
                     ))
                     : stats.map((stat, index) => (
                         <div key={index} className="bg-white p-5 rounded-xl border border-slate-200/60 flex items-center gap-4 shadow-2xs">
-                            <div className={`${stat.color} p-3 rounded-xl text-white shadow-xs`}>
+                            <div className="bg-[var(--color-main)] p-3 rounded-xl text-white shadow-xs">
                                 <stat.icon size={20} className="stroke-[2.2]" />
                             </div>
                             <div>
@@ -286,36 +292,97 @@ export default function TeacherDashboard() {
             {/* MAIN WORKING PANELS SPLIT VIEW GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* LEFT BLOCK: UPCOMING SCHEDULE LEDGER */}
+                {/* LEFT BLOCK: UPCOMING SCHEDULE LEDGER W/ PAGINATION */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-black text-[var(--color-main)] uppercase tracking-wider">Upcoming Schedule</h2>
-                            <Link href="/teacher/schedule" className="text-xs font-bold text-[var(--color-main)] hover:underline">View Calendar</Link>
+                    <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs flex flex-col justify-between min-h-[380px]">
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-sm font-black text-[var(--color-main)] uppercase tracking-wider">Upcoming Schedule</h2>
+                                <Link href="/teacher/schedule" className="text-xs font-bold text-[var(--color-main)] hover:underline">View Calendar</Link>
+                            </div>
+
+                            {loading ? (
+                                <div className="space-y-2">
+                                    {Array.from({ length: 4 }).map((_, i) => (
+                                        <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
+                                    ))}
+                                </div>
+                            ) : filteredUpcomingClasses.length === 0 ? (
+                                <p className="text-xs font-medium text-slate-500 py-12 text-center">No upcoming classes scheduled.</p>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    {paginatedClasses.map((session, index) => {
+                                        // The first absolute element on the absolute first page is always "Next Up"
+                                        const isNextUp = currentPage === 1 && index === 0;
+
+                                        return (
+                                            <div 
+                                                key={index} 
+                                                className={`rounded-xl border p-3 flex items-center justify-between text-xs transition duration-200 ${
+                                                    isNextUp 
+                                                        ? "border-[var(--color-main)] bg-[var(--color-main)]/5 shadow-2xs font-semibold" 
+                                                        : "border-slate-100 bg-slate-50/40 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                                <div className="min-w-0">
+                                                    <div className="font-bold text-[var(--color-text)] truncate flex items-center gap-2">
+                                                        {session.courseName}
+                                                        {isNextUp && (
+                                                            <span className="text-[10px] font-extrabold uppercase bg-[var(--color-main)] text-white px-1.5 py-0.5 rounded tracking-wider">
+                                                                Next Up
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-slate-500 font-medium mt-1 flex items-center gap-3">
+                                                        <span className="flex items-center gap-1"><CalendarDays size={12} className="text-[var(--color-main)]" />{formatDateValue(session.date)}</span>
+                                                        <span className="flex items-center gap-1"><Clock3 size={12} className="text-[var(--color-main)]" />{session.startTime?.slice(0, 5)} - {session.endTime?.slice(0, 5)}</span>
+                                                        <span className="flex items-center gap-1"><MapPin size={12} className="text-[var(--color-main)]" />{session.roomName || "TBD"}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
-                        {loading ? (
-                            <div className="space-y-2">
-                                {Array.from({ length: 3 }).map((_, i) => (
-                                    <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
-                                ))}
-                            </div>
-                        ) : upcomingClasses.length === 0 ? (
-                            <p className="text-xs font-medium text--[var(--color-text)] py-4 text-center">No upcoming classes scheduled.</p>
-                        ) : (
-                            <div className="space-y-2.5">
-                                {upcomingClasses.map((session, index) => (
-                                    <div key={index} className="rounded-xl border border-slate-100 bg-slate-50/40 p-3 flex items-center justify-between text-xs hover:bg-slate-50 transition">
-                                        <div className="min-w-0">
-                                            <div className="font-bold text-[var(--color-text)] truncate">{session.courseName}</div>
-                                            <div className="text-[var(--color-main)] font-semibold mt-1 flex items-center gap-3">
-                                                <span className="flex items-center gap-1"><CalendarDays size={12} />{formatDateValue(session.date)}</span>
-                                                <span className="flex items-center gap-1"><Clock3 size={12} />{session.startTime?.slice(0, 5)}</span>
-                                                <span className="flex items-center gap-1"><MapPin size={12} />{session.roomName || "TBD"}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                        {/* PAGINATION NAVIGATION CONTROLS */}
+                        {!loading && totalPages > 1 && (
+                            <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
+                                <p className="text-xs font-semibold text-slate-500">
+                                    Showing <span className="text-[var(--color-text)] font-bold">{Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredUpcomingClasses.length)}</span> to{" "}
+                                    <span className="text-[var(--color-text)] font-bold">{Math.min(currentPage * ITEMS_PER_PAGE, filteredUpcomingClasses.length)}</span> of{" "}
+                                    <span className="text-[var(--color-text)] font-bold">{filteredUpcomingClasses.length}</span> classes
+                                </p>
+                                <nav className="inline-flex gap-1">
+                                    <button
+                                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    {Array.from({ length: totalPages }).map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setCurrentPage(i + 1)}
+                                            className={`px-3 py-1 text-xs font-bold rounded-lg transition border ${
+                                                currentPage === i + 1
+                                                    ? "bg-[var(--color-main)] border-[var(--color-main)] text-white"
+                                                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            }`}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </nav>
                             </div>
                         )}
                     </div>
@@ -329,17 +396,17 @@ export default function TeacherDashboard() {
                         <div className="grid grid-cols-1 gap-2">
                             <Link href="/teacher/centers" 
                             className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
-                                <Building2 size={14} />
+                                <Building2 size={14} className="text-[var(--color-main)]" />
                                 Your Centers
                             </Link>
                             <Link href="/teacher/courses" 
                             className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
-                                <BookOpen size={14}/>
+                                <BookOpen size={14} className="text-[var(--color-main)]"/>
                                 Your Courses
                             </Link>
                             <Link href="/teacher/students" 
                             className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
-                                <Users size={14} />
+                                <Users size={14} className="text-[var(--color-main)]" />
                                 Your Students
                             </Link>
                         </div>
@@ -366,7 +433,7 @@ export default function TeacherDashboard() {
                                         <div className="flex gap-1.5 mt-3">
                                             <button
                                                 onClick={() => handleInviteAction(invite.id, "ACCEPTED")}
-                                                className="flex-1 inline-flex items-center justify-center py-1.5 bg-indigo-600 text-white font-bold rounded-md hover:bg-indigo-700 transition"
+                                                className="flex-1 inline-flex items-center justify-center py-1.5 bg-[var(--color-main)] text-white font-bold rounded-md hover:opacity-90 transition"
                                             >
                                                 <Check size={12} className="mr-1" /> Accept
                                             </button>
