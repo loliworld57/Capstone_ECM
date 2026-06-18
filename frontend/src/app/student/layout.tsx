@@ -16,12 +16,15 @@ export default function StudentLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const compactSidebarQuery = "(max-width: 1919px)";
     const pathname = usePathname();
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
     const [collapsed, setCollapsed] = useState(false);
-    const [isCompactSidebar, setIsCompactSidebar] = useState(false);
+    
+    // Distinct tier states
+    const [isFHDAndAbove, setIsFHDAndAbove] = useState(true);
+    const [isBelowHD, setIsBelowHD] = useState(false);
+    
     const sidebarRef = useRef<HTMLElement | null>(null);
 
     useEffect(() => {
@@ -41,21 +44,31 @@ export default function StudentLayout({
         setUser(storedUser);
     }, [router]);
 
-    // Handle responsive breakpoint compact constraints
+    // Track both structural breakpoints (FHD: 1920px, HD: 1024px)
     useEffect(() => {
-        const mediaQuery = window.matchMedia(compactSidebarQuery);
+        const fhdQuery = window.matchMedia("(min-width: 1920px)");
+        const mobileQuery = window.matchMedia("(max-width: 1023px)");
 
-        const updateCompactSidebar = (event: MediaQueryList | MediaQueryListEvent) => {
-            const matches = event.matches;
-            setIsCompactSidebar(matches);
-            setCollapsed(matches);
+        const handleResizeUpdate = () => {
+            setIsFHDAndAbove(fhdQuery.matches);
+            setIsBelowHD(mobileQuery.matches);
+
+            // Default behaviors per screen real-estate bracket
+            if (fhdQuery.matches) {
+                setCollapsed(false); // Default open wide on large viewports
+            } else {
+                setCollapsed(true);  // Default compact strip on HD or hidden drawer on mobile
+            }
         };
 
-        updateCompactSidebar(mediaQuery);
-        mediaQuery.addEventListener("change", updateCompactSidebar);
+        handleResizeUpdate();
+        
+        fhdQuery.addEventListener("change", handleResizeUpdate);
+        mobileQuery.addEventListener("change", handleResizeUpdate);
 
         return () => {
-            mediaQuery.removeEventListener("change", updateCompactSidebar);
+            fhdQuery.removeEventListener("change", handleResizeUpdate);
+            mobileQuery.removeEventListener("change", handleResizeUpdate);
         };
     }, []);
 
@@ -66,7 +79,6 @@ export default function StudentLayout({
 
             const target = event.target as Node | null;
             if (!target) return;
-
             if (sidebarRef.current?.contains(target)) return;
 
             setCollapsed(true);
@@ -78,53 +90,54 @@ export default function StudentLayout({
         };
     }, [collapsed]);
 
-    // Automatically close the mobile sidebar drawer after selecting a navigation route
+    // Automatically close the mobile sidebar drawer after selecting a navigation element
     useEffect(() => {
-        if (isCompactSidebar) {
+        if (isBelowHD) {
             setCollapsed(true);
         }
-    }, [pathname, isCompactSidebar]);
+    }, [pathname, isBelowHD]);
 
     const menuItems = [
         { name: "Overview", href: "/student/dashboard", icon: LayoutDashboard },
         { name: "Courses", href: "/student/courses", icon: BookOpen },
     ];
 
-    const isFullyHidden = isCompactSidebar && collapsed;
+    // Show floating arrow only on mobile view when hidden away
+    const showFloatingArrow = isBelowHD && collapsed;
 
     return (
-        <div className="flex min-h-screen w-full bg-[var(--color-soft-white)] text-slate-900 selection:bg-indigo-500 selection:text-white flex-col xl:flex-row">
+        <div className="flex min-h-screen w-full bg-[var(--color-soft-white)] text-slate-900 selection:bg-indigo-500 selection:text-white flex-col lg:flex-row">
             
-            {/* FLOATING ACTION ARROW BUTTON FOR COMPACT/MOBILE VIEWPORTS */}
-            {isFullyHidden && (
+            {/* FLOATING ACTION ARROW BUTTON - visible only on mobile/below-HD layouts */}
+            {showFloatingArrow && (
                 <button
                     onClick={() => setCollapsed(false)}
-                    className="fixed top-[14vh] left-0 z-40 flex items-center justify-center p-2.5 rounded-r-xl border-y border-r border-slate-800 text-slate-400 bg-slate-950/80 backdrop-blur-sm opacity-30 hover:opacity-100 transition-all active:scale-95 shadow-xl xl:hidden animate-fade-in"
-                    aria-label="Reveal workspace links panel"
+                    className="fixed top-[75vh] left-0 z-40 flex items-center justify-center p-2.5 rounded-r-xl border-y border-r border-slate-800 text-slate-400 bg-slate-950/80 backdrop-blur-sm opacity-30 hover:opacity-100 transition-all active:scale-95 shadow-xl lg:hidden animate-fade-in"
+                    aria-label="Reveal workspace menu panel"
                 >
                     <ChevronRight size={18} className="stroke-[3]" />
                 </button>
             )}
 
-            {/* HIGH-CONTRAST DARK SIDEBAR */}
+            {/* THREE-TIER STRUCTURAL SIDEBAR PANEL */}
             <aside
                 ref={sidebarRef}
-                className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-900 bg-slate-950 shadow-2xl transition-all duration-300 ease-in-out xl:sticky xl:top-0 xl:h-[100vh] ${
-                    isCompactSidebar
+                className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-900 bg-slate-950 shadow-2xl transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:h-[100vh] ${
+                    isBelowHD
                         ? collapsed
-                            ? "-translate-x-full"
-                            : "translate-x-0 w-64 h-full"
+                            ? "-translate-x-full w-64" // hidden completely on small displays
+                            : "translate-x-0 w-64 h-full" // side panel overlay
                         : collapsed
-                            ? "w-20"
-                            : "w-64"
+                            ? "w-20" // mini compact strip for standard layout widths
+                            : "w-64" // default layout structure
                 }`}
             >
                 {/* Header Profile Plate */}
                 <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] transition-all ${
-                    collapsed && !isCompactSidebar ? "justify-center" : "justify-between"
+                    collapsed ? "justify-center" : "justify-between"
                 }`}>
                     <div className={`truncate pr-2 transition-all duration-300 ${
-                        collapsed && !isCompactSidebar ? "w-0 opacity-0 pointer-events-none hidden" : "w-auto opacity-100 block"
+                        collapsed ? "w-0 opacity-0 pointer-events-none hidden" : "w-auto opacity-100 block"
                     }`}>
                         <h2 className="text-xs font-black text-slate-400 tracking-widest uppercase">Workspace</h2>
                         <p className="text-sm font-bold text-white truncate mt-0.5">
@@ -132,13 +145,16 @@ export default function StudentLayout({
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => setCollapsed(!collapsed)}
-                        className="p-2 rounded-xl border border-slate-800 text-slate-400 bg-slate-900/50 hover:bg-slate-900 hover:text-white hover:border-slate-700 transition-all active:scale-95 shadow-md"
-                        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    >
-                        {collapsed ? <ChevronRight size={16} className="stroke-[2.5]" /> : <ChevronLeft size={16} className="stroke-[2.5]" />}
-                    </button>
+                    {/* Hide toggle controls on mobile layout screens */}
+                    {!isBelowHD && (
+                        <button
+                            onClick={() => setCollapsed(!collapsed)}
+                            className="p-2 rounded-xl border border-slate-800 text-slate-400 bg-slate-900/50 hover:bg-slate-900 hover:text-white hover:border-slate-700 transition-all active:scale-95 shadow-md"
+                            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                        >
+                            {collapsed ? <ChevronRight size={16} className="stroke-[2.5]" /> : <ChevronLeft size={16} className="stroke-[2.5]" />}
+                        </button>
+                    )}
                 </div>
 
                 {/* High-Contrast Navigation Links */}
@@ -153,7 +169,7 @@ export default function StudentLayout({
                                     isActive
                                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10 border border-indigo-500/50"
                                         : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-100 border border-transparent"
-                                } ${(!isCompactSidebar && collapsed) ? "justify-center" : "gap-3.5"}`}
+                                } ${collapsed ? "justify-center" : "gap-3.5"}`}
                             >
                                 <item.icon
                                     size={20}
@@ -164,15 +180,15 @@ export default function StudentLayout({
 
                                 {/* Smooth Width/Opacity text transition */}
                                 <span className={`tracking-wide whitespace-nowrap transition-all duration-200 origin-left ${
-                                    (!isCompactSidebar && collapsed) 
+                                    collapsed 
                                         ? "w-0 opacity-0 pointer-events-none hidden" 
                                         : "w-auto opacity-100 block"
                                 }`}>
                                     {item.name}
                                 </span>
 
-                                {/* Pure CSS Tooltip when sidebar is collapsed (Desktop Only) */}
-                                {!isCompactSidebar && collapsed && (
+                                {/* Pure CSS Tooltip when sidebar is mini strip (Desktop Only) */}
+                                {collapsed && !isBelowHD && (
                                     <div className="absolute left-full ml-4 px-2.5 py-1.5 bg-slate-900 border border-slate-800 text-slate-200 text-xs font-medium rounded-lg opacity-0 invisible translate-x-[-8px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap pointer-events-none shadow-xl z-50">
                                         {item.name}
                                     </div>
@@ -184,9 +200,9 @@ export default function StudentLayout({
             </aside>
 
             {/* Mobile Navigation Backdrop Mesh */}
-            {!isFullyHidden && (
+            {isBelowHD && !collapsed && (
                 <div
-                    className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-md xl:hidden transition-all duration-300"
+                    className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-md lg:hidden transition-all duration-300"
                     onClick={() => setCollapsed(true)}
                 />
             )}
