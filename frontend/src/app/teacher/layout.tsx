@@ -93,6 +93,13 @@ export default function TeacherLayout({
         };
     }, [collapsed]);
 
+    // Automatically close the mobile sidebar menu drawer after selecting a workspace page view
+    useEffect(() => {
+        if (isCompactSidebar) {
+            setCollapsed(true);
+        }
+    }, [pathname, isCompactSidebar]);
+
     const menuItems = [
         { name: "Overview", href: "/teacher/dashboard", icon: LayoutDashboard },
         { name: "Centers", href: "/teacher/centers", icon: Building2, notify: pendingInvites > 0 },
@@ -105,25 +112,38 @@ export default function TeacherLayout({
     const isFullyHidden = isCompactSidebar && collapsed;
 
     return (
-        <div className="flex min-h-[calc(100vh-var(--app-header-height,0px))] w-full bg-[var(--color-soft-white)] text-slate-900 selection:bg-indigo-500 selection:text-white">
+        <div className="flex min-h-screen w-full bg-[var(--color-soft-white)] text-slate-900 selection:bg-indigo-500 selection:text-white flex-col xl:flex-row">
             
-            {/* HIGH-CONTRAST DARK SIDEBAR */}
+            {/* FLOATING ACTION ARROW BUTTON FOR COMPACT/MOBILE VIEWPORTS */}
+            {isFullyHidden && (
+                <button
+                    onClick={() => setCollapsed(false)}
+                    className="fixed top-[14vh] left-0 z-40 flex items-center justify-center p-2.5 rounded-r-xl border-y border-r border-slate-800 text-slate-400 bg-slate-950/80 backdrop-blur-sm opacity-30 hover:opacity-100 transition-all active:scale-95 shadow-xl xl:hidden animate-fade-in"
+                    aria-label="Reveal workspace links panel"
+                >
+                    <ChevronRight size={18} className="stroke-[3]" />
+                </button>
+            )}
+
+            {/* SIDEBAR NAVIGATION CONTROL COMPONENT CONTAINER */}
             <aside
                 ref={sidebarRef}
-                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-900 bg-slate-950 shadow-2xl transition-all duration-300 ease-in-out xl:sticky ${
-                    isFullyHidden
-                        ? "-translate-x-full xl:translate-x-0 xl:w-20"
-                        : collapsed
-                            ? "w-20"
+                className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-900 bg-slate-950 shadow-2xl transition-all duration-300 ease-in-out xl:sticky xl:top-0 xl:h-[100vh] ${
+                    isCompactSidebar 
+                        ? collapsed 
+                            ? "-translate-x-full" 
+                            : "translate-x-0 w-64 h-full"
+                        : collapsed 
+                            ? "w-20" 
                             : "w-64"
                 }`}
             >
                 {/* Header Profile Plate */}
                 <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] transition-all ${
-                    collapsed ? "justify-center" : "justify-between"
+                    collapsed && !isCompactSidebar ? "justify-center" : "justify-between"
                 }`}>
                     <div className={`truncate pr-2 transition-all duration-300 ${
-                        collapsed ? "w-0 opacity-0 pointer-events-none hidden" : "w-auto opacity-100 block"
+                        collapsed && !isCompactSidebar ? "w-0 opacity-0 pointer-events-none hidden" : "w-auto opacity-100 block"
                     }`}>
                         <h2 className="text-xs font-black text-slate-400 tracking-widest uppercase">Workspace</h2>
                         <p className="text-sm font-bold text-white truncate mt-0.5">
@@ -141,7 +161,7 @@ export default function TeacherLayout({
                 </div>
 
                 {/* High-Contrast Navigation Links array */}
-                <nav className="flex-1 space-y-1.5 p-3 custom-scrollbar">
+                <nav className="flex-1 space-y-1.5 p-3 overflow-y-auto custom-scrollbar">
                     {menuItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
@@ -152,7 +172,7 @@ export default function TeacherLayout({
                                     isActive
                                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10 border border-indigo-500/50"
                                         : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-100 border border-transparent"
-                                } ${collapsed ? "justify-center" : "gap-3.5"}`}
+                                } ${(!isCompactSidebar && collapsed) ? "justify-center" : "gap-3.5"}`}
                             >
                                 <item.icon
                                     size={20}
@@ -163,15 +183,15 @@ export default function TeacherLayout({
 
                                 {/* Smooth Width/Opacity text transition */}
                                 <span className={`tracking-wide whitespace-nowrap transition-all duration-200 origin-left ${
-                                    collapsed 
+                                    (!isCompactSidebar && collapsed) 
                                         ? "w-0 opacity-0 pointer-events-none hidden" 
                                         : "w-auto opacity-100 block"
                                 }`}>
                                     {item.name}
                                 </span>
 
-                                {/* Pure CSS Tooltip when sidebar is collapsed */}
-                                {collapsed && (
+                                {/* Pure CSS Tooltip when sidebar is collapsed (Desktop Only) */}
+                                {!isCompactSidebar && collapsed && (
                                     <div className="absolute left-full ml-4 px-2.5 py-1.5 bg-slate-900 border border-slate-800 text-slate-200 text-xs font-medium rounded-lg opacity-0 invisible translate-x-[-8px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap pointer-events-none shadow-xl z-50">
                                         {item.name}
                                     </div>
@@ -180,7 +200,7 @@ export default function TeacherLayout({
                                 {/* Notification Alert Badge */}
                                 {item.notify && (
                                     <span className={`absolute rounded-full bg-rose-500 ring-[3px] ${
-                                        collapsed
+                                        (!isCompactSidebar && collapsed)
                                             ? "top-2.5 right-4 h-2.5 w-2.5 ring-slate-950"
                                             : "right-3 h-2 w-2 ring-slate-950 group-hover:ring-slate-900"
                                     } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""} transition-all`} />
@@ -194,13 +214,13 @@ export default function TeacherLayout({
             {/* Mobile Navigation Backdrop Mesh */}
             {!isFullyHidden && (
                 <div
-                    className="fixed inset-0 z-20 bg-slate-950/40 backdrop-blur-md xl:hidden transition-all duration-300"
+                    className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-md xl:hidden transition-all duration-300"
                     onClick={() => setCollapsed(true)}
                 />
             )}
 
             {/* MAIN CONTENT VIEWPORT */}
-            <main className="flex-1 min-w-0">
+            <main className="flex-1 min-w-0 w-full">
                 <div className="container mx-auto px-4 py-6 sm:px-8 bg-[var(--color-soft-white)] sm:py-8 max-w-7xl animate-fade-in">
                     <div className="min-h-full">
                         {children}
