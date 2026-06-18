@@ -24,6 +24,7 @@ import api from "@/utils/axiosConfig";
 import { getStudentsInCourse, getTeacherCourses } from "@/services/courseService";
 import { CenterClassSlot } from "@/services/centerService";
 import { isCourseOngoing } from "@/utils/courseStatus";
+import { Clock, MapPin, Users, BookOpen, Calendar as CalendarIcon, Loader2 } from "lucide-react";
 
 interface ScheduleEvent {
     id: number;
@@ -59,11 +60,9 @@ const getSlotDayNames = (slot: CenterClassSlot): string[] => {
     if (Array.isArray(slot.daysOfWeek) && slot.daysOfWeek.length > 0) {
         return slot.daysOfWeek;
     }
-
     if (slot.dayOfWeek) {
         return [slot.dayOfWeek];
     }
-
     return [];
 };
 
@@ -80,22 +79,16 @@ const getUserDisplayName = (user: any): string => {
 };
 
 export default function SchedulePage() {
-    const locales = useMemo(
-        () => ({
-            "en-US": enUS,
-        }),
-        []
-    );
+    const locales = useMemo(() => ({ "en-US": enUS }), []);
 
-    const localizer = useMemo(
-        () =>
-            dateFnsLocalizer({
-                format,
-                parse,
-                startOfWeek,
-                getDay,
-                locales,
-            }),
+    const localizer = useMemo(() =>
+        dateFnsLocalizer({
+            format,
+            parse,
+            startOfWeek,
+            getDay,
+            locales,
+        }),
         [locales]
     );
 
@@ -103,62 +96,47 @@ export default function SchedulePage() {
     const [view, setView] = useState<View>(Views.WEEK);
     const [events, setEvents] = useState<ScheduleEvent[]>([]);
     const [loading, setLoading] = useState(true);
-    const calendarHeightClass = view === Views.MONTH ? "min-h-[900px]" : "h-[1800px]";
+    const [activeCoursesCount, setActiveCoursesCount] = useState(0);
 
-    // Force react-big-calendar to recalculate layout when switching views/dates.
+    const calendarHeight = view === Views.MONTH ? "850px" : "1100px";
     const calendarKey = `${view}-${toIsoDate(date)}-${events.length}`;
 
-
     const EventCard = ({ event }: { event?: ScheduleEvent }) => {
-        const titleParts = (event?.title || "").split(" • ");
+        if (!event) return null;
+        const fallbackCourse = (event.title || "").split(" • ")[0] || "Class";
+        const courseName = event.courseName || fallbackCourse;
+        const timeText = event.timeText || `${format(event.start, "HH:mm")} - ${format(event.end, "HH:mm")}`;
+        const roomName = event.roomName || "Not assigned";
 
-        const fallbackCourse = titleParts[0] || "Class";
-        const fallbackRoom = titleParts[1] || "Not assigned";
-        const courseName = event?.courseName || fallbackCourse;
-        const teacherName = event?.teacherName || "Not assigned";
-        const roomName = event?.roomName || fallbackRoom;
-        const timeText = event?.timeText || (event?.start && event?.end
-            ? `${format(event.start, "HH:mm")} - ${format(event.end, "HH:mm")}`
-            : "N/A");
-        const studentsText = event?.studentsText || "0";
+        const tooltipString = `${courseName}\nTime: ${timeText}\nRoom: ${roomName}\nStudents: ${event.studentsText || 0}`;
 
         return (
-                        <div className="group relative h-full w-full bg-[var(--color-main)]/90 border border-white/20 p-1 rounded-sm cursor-pointer transition-colors hover:bg-[var(--color-main)]">
-
-                {/* 1. VISIBLE CONTENT (Short & truncated to fit small blocks) */}
-                <div className="font-bold text-white text-[11px] leading-tight truncate">
+            <div 
+                title={tooltipString}
+                className="group relative flex flex-col h-full w-full bg-[var(--color-main,indigo-600)] text-white px-2 py-1.5 rounded-lg shadow-sm border border-white/10 hover:brightness-110 active:scale-[0.99] transition-all duration-150 overflow-hidden"
+                style={{ borderLeft: "4px solid rgba(255, 255, 255, 0.4)" }}
+            >
+                <div className="font-semibold text-[12px] leading-tight truncate mb-0.5">
                     {courseName}
                 </div>
-                <div className="text-white/80 text-[10px] truncate mt-0.5">
-                    {timeText}
-                </div>
-
-
-                {/* 2. HOVER POP-UP (Tooltip) */}
-                <div className="pointer-events-none absolute left-full top-0 ml-2 w-56 opacity-0 transition-opacity group-hover:opacity-100 z-[9999] bg-white text-gray-800 shadow-xl border border-gray-200 rounded-lg p-3 text-xs hidden sm:block">
-                    <div className="font-bold text-[var(--color-main)] text-sm mb-2 border-b border-gray-100 pb-1">
-                        {courseName}
+                
+                <div className="flex flex-col gap-0.5 text-white/80 text-[10px]">
+                    <div className="flex items-center gap-1 truncate">
+                        <Clock className="w-3 h-3 min-w-3 text-white/60" />
+                        <span>{timeText}</span>
                     </div>
-                    <div className="space-y-1.5">
-                        <div className="flex justify-between">
-                            <span className="text-gray-500 font-semibold">Teacher:</span>
-                            <span className="font-medium text-right">{teacherName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500 font-semibold">Students:</span>
-                            <span className="font-medium">{studentsText}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500 font-semibold">Time:</span>
-                            <span className="font-medium">{timeText}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-500 font-semibold">Room:</span>
-                            <span className="font-medium">{roomName}</span>
-                        </div>
-                    </div>
-                    {/* Arrow pointing left */}
-                    <div className="absolute top-3 -left-1.5 w-3 h-3 bg-white border-l border-b border-gray-200 transform rotate-45"></div>
+                    {view !== Views.MONTH && (
+                        <>
+                            <div className="flex items-center gap-1 truncate">
+                                <MapPin className="w-3 h-3 min-w-3 text-white/60" />
+                                <span>{roomName}</span>
+                            </div>
+                            <div className="flex items-center gap-1 truncate">
+                                <Users className="w-3 h-3 min-w-3 text-white/60" />
+                                <span>{event.studentsText} Students</span>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         );
@@ -190,7 +168,6 @@ export default function SchedulePage() {
                             ? startOfMonth(date)
                             : startOfWeek(date, { weekStartsOn: 1 });
 
-                // FIX: Changed startOfDay(date) to endOfDay(date) to prevent calculations looping out of bounds in horizontal grids
                 const rangeEnd =
                     view === Views.DAY
                         ? endOfDay(date)
@@ -203,11 +180,10 @@ export default function SchedulePage() {
                     api.get<CenterClassSlot[]>(`/schedule/teacher/${teacherId}/class-slots`),
                 ]);
 
-                const activeCourseIds = new Set(
-                    teacherCourses
-                        .filter((course) => isCourseOngoing(course.status))
-                        .map((course) => course.id)
-                );
+                const activeCourses = teacherCourses.filter((course) => isCourseOngoing(course.status));
+                setActiveCoursesCount(activeCourses.length);
+
+                const activeCourseIds = new Set(activeCourses.map((course) => course.id));
 
                 if (activeCourseIds.size === 0) {
                     setEvents([]);
@@ -215,7 +191,6 @@ export default function SchedulePage() {
                 }
 
                 const allSlots = slotRes.data || [];
-
                 const uniqueCourseIds = Array.from(
                     new Set(
                         allSlots
@@ -246,8 +221,8 @@ export default function SchedulePage() {
                     const slotStartDate = parse(slot.startDate, "yyyy-MM-dd", new Date());
                     const slotEndDate = parse(slot.endDate, "yyyy-MM-dd", new Date());
 
-                    let current = isBefore(slotStartDate, rangeStart) ? rangeStart : slotStartDate;
-                    const effectiveEnd = isAfter(slotEndDate, rangeEnd) ? rangeEnd : slotEndDate;
+                    let current = isBefore(slotStartDate, rangeStart) ? startOfDay(rangeStart) : startOfDay(slotStartDate);
+                    const effectiveEnd = isAfter(slotEndDate, rangeEnd) ? endOfDay(rangeEnd) : endOfDay(slotEndDate);
 
                     const daySet = new Set(getSlotDayNames(slot));
                     const excludedSet = new Set(slot.excludedDates || []);
@@ -264,19 +239,10 @@ export default function SchedulePage() {
                                 slot.course?.teacherName ||
                                 slot.course?.teacher?.fullName ||
                                 slot.course?.teacher?.name ||
-                                [slot.course?.teacher?.firstName, slot.course?.teacher?.lastName]
-                                    .filter(Boolean)
-                                    .join(" ") ||
                                 loggedInTeacherName;
                             const roomName = slot.classroom?.location || "Not assigned";
                             const timeText = `${format(start, "h:mm a")} - ${format(end, "h:mm a")}`;
-                            const studentsCount =
-                                slot.course?.studentCount ??
-                                slot.course?.totalStudents ??
-                                slot.course?.totalStudent ??
-                                slot.course?.numberOfStudents ??
-                                (Array.isArray(slot.course?.students) ? slot.course?.students.length : undefined) ??
-                                (slot.course?.id ? studentCountMap[slot.course.id] : undefined);
+                            const studentsCount = slot.course?.studentCount ?? studentCountMap[slot.course?.id || 0] ?? 0;
 
                             mappedEvents.push({
                                 id: eventCounter++,
@@ -287,14 +253,12 @@ export default function SchedulePage() {
                                 teacherName,
                                 roomName,
                                 timeText,
-                                studentsText: studentsCount != null ? String(studentsCount) : "0",
+                                studentsText: String(studentsCount),
                             });
                         }
-
                         current = addDays(current, 1);
                     }
                 }
-                console.log("Mapped events:", mappedEvents);
                 setEvents(mappedEvents);
             } catch (error) {
                 console.error(error);
@@ -307,35 +271,54 @@ export default function SchedulePage() {
         fetchSchedule();
     }, [date, view]);
 
-    useEffect(() => {
-        console.log("Events changed:", events);
-        console.log("Current calendar date:", date);
-        console.log("Current view:", view);
-    }, [events]);
-
     return (
-        <div>
-            <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">
-                Schedule
-            </h1>
+        <div className="w-full h-full p-4 space-y-6 bg-transparent text-[var(--color-text)]">
+            {/* Header section with Stats widgets */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[var(--color-main)]/10 pb-4">
+                <div>
+                    <h1 className="text-3xl font-extrabold tracking-tight">
+                        Schedule Overview
+                    </h1>
+                    <p className="text-sm text-[var(--color-text)]/70 mt-1">
+                        Manage, review, and track your active classroom distribution timeslots.
+                    </p>
+                </div>
 
-            <div className="rounded-xl border border-[var(--color-main)] bg-[var(--color-soft-white)] p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 bg-[var(--color-soft-white)] border border-[var(--color-main)]/20 px-4 py-2.5 rounded-xl shadow-sm">
+                        <BookOpen className="w-5 h-5 text-[var(--color-main)]" />
+                        <div>
+                            <div className="text-[10px] uppercase font-bold text-[var(--color-text)]/60 tracking-wider">Ongoing Courses</div>
+                            <div className="text-lg font-bold leading-none">{activeCoursesCount}</div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 bg-[var(--color-soft-white)] border border-[var(--color-main)]/20 px-4 py-2.5 rounded-xl shadow-sm">
+                        <CalendarIcon className="w-5 h-5 text-[var(--color-main)]" />
+                        <div>
+                            <div className="text-[10px] uppercase font-bold text-[var(--color-text)]/60 tracking-wider">Total Slots This Period</div>
+                            <div className="text-lg font-bold leading-none">{events.length}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Calendar Container */}
+            <div className="relative rounded-2xl border border-[var(--color-main)]/20 bg-[var(--color-soft-white)] p-5 shadow-md">
                 {loading && (
-                    <div className="mb-3 text-sm text-[var(--color-text)]">Loading active classes...</div>
+                    <div className="absolute inset-0 z-50 rounded-2xl bg-[var(--color-soft-white)]/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition-all duration-200">
+                        <Loader2 className="w-10 h-10 animate-spin text-[var(--color-main)]" />
+                        <span className="text-sm font-medium">Syncing live timetable schedules...</span>
+                    </div>
                 )}
-            <div className={`schedule-calendar ${calendarHeightClass}`}>
+
+                <div className="schedule-calendar w-full" style={{ height: calendarHeight }}>
                     <Calendar
                         key={calendarKey}
                         localizer={localizer}
-
                         events={events}
                         components={{
-                            event: EventCard,
-                            month: { event: EventCard },
-                            week: { event: EventCard },
-                            day: { event: EventCard },
+                            event: EventCard
                         }}
-                        // Simply pass the valid title string so internal grid layouts calculate properly
                         titleAccessor={(event) => event.title}
                         formats={{
                             eventTimeRangeFormat: () => "",
@@ -343,10 +326,9 @@ export default function SchedulePage() {
                         }}
                         eventPropGetter={() => ({
                             style: {
-                                padding: 0,
-                                border: "none",
-                                minHeight: view === Views.MONTH ? 88 : undefined,
+                                padding: "2px",
                                 background: "transparent",
+                                border: "none"
                             },
                         })}
                         date={date}
@@ -356,52 +338,89 @@ export default function SchedulePage() {
                         startAccessor="start"
                         endAccessor="end"
                         views={[Views.MONTH, Views.WEEK, Views.DAY]}
-                        min={new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0)}
-                        max={new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59)}
-
-                        popup
+                        popup={true}
                     />
                 </div>
             </div>
 
+            {/* Strict Global CSS Override System applying your custom styles/variables */}
             <style jsx global>{`
-    /* Hide the default time label inside the event */
-    .schedule-calendar,
-    .schedule-calendar .rbc-calendar {
-        height: 100%;
-    }
+                /* Hide native time markers and clean up layout elements */
+                .schedule-calendar .rbc-event-label {
+                    display: none !important;
+                }
+                .schedule-calendar .rbc-event {
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    padding: 0 !important;
+                }
+                .schedule-calendar .rbc-row-segment {
+                    padding: 3px 5px !important;
+                }
+                .schedule-calendar .rbc-calendar {
+                    height: 100%;
+                    font-family: inherit;
+                }
 
-    .schedule-calendar .rbc-time-view,
-    .schedule-calendar .rbc-month-view,
-    .schedule-calendar .rbc-agenda-view {
-        height: 100%;
-    }
+                /* Variable styling for buttons and controls */
+                .schedule-calendar .rbc-toolbar button {
+                    color: var(--color-text);
+                    border: 1px solid rgba(0, 0, 0, 0.1);
+                    background-color: transparent;
+                    border-radius: 8px;
+                    padding: 6px 14px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: all 0.15s ease;
+                }
+                .schedule-calendar .rbc-toolbar button:hover {
+                    background-color: var(--color-main);
+                    color: white;
+                    border-color: var(--color-main);
+                }
+                .schedule-calendar .rbc-toolbar button.rbc-active {
+                    background-color: var(--color-main);
+                    color: white;
+                    border-color: var(--color-main);
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+                }
 
-    .schedule-calendar .rbc-time-content,
-    .schedule-calendar .rbc-time-view,
-    .schedule-calendar .rbc-month-view {
-        overflow: visible !important;
-    }
+                /* Grid layout border variables */
+                .schedule-calendar .rbc-month-view,
+                .schedule-calendar .rbc-time-view {
+                    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    background: white;
+                }
+                .schedule-calendar .rbc-header {
+                    padding: 10px 0 !important;
+                    font-weight: 600 !important;
+                    font-size: 13px;
+                    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+                    background-color: rgba(0, 0, 0, 0.01);
+                }
+                .schedule-calendar .rbc-day-bg + .rbc-day-bg,
+                .schedule-calendar .rbc-time-content > * + * {
+                    border-left: 1px solid rgba(0, 0, 0, 0.05) !important;
+                }
+                .schedule-calendar .rbc-month-row + .rbc-month-row,
+                .schedule-calendar .rbc-timeslot-group {
+                    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+                }
 
-    .schedule-calendar .rbc-event-label {
-        display: none;
-    }
+                /* Today color variable indicator ring */
+                .schedule-calendar .rbc-today {
+                    background-color: rgba(var(--color-main-rgb, 79, 70, 229), 0.04) !important;
+                }
 
-
-    /* IMPORTANT: Allow the hover pop-up to escape the calendar block */
-    .schedule-calendar .rbc-event {
-        box-shadow: none;
-        padding: 0;
-        overflow: visible !important;
-        background: transparent !important;
-        border: none !important;
-    }
-
-    .schedule-calendar .rbc-event-content {
-        height: 100%;
-        overflow: visible !important;
-    }
-`}</style>
+                /* Off-month calendar grid days variable */
+                .schedule-calendar .rbc-off-range-bg {
+                    background-color: rgba(0, 0, 0, 0.02) !important;
+                    opacity: 0.6;
+                }
+            `}</style>
         </div>
     );
 }

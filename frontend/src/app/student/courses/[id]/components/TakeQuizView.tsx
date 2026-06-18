@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Clock, SendHorizontal, AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Clock, SendHorizontal, ArrowLeft, CheckCircle2, Award, FileText, ListOrdered, Loader2 } from "lucide-react";
 import api from '@/utils/axiosConfig';
 
 interface TakeQuizViewProps {
@@ -20,9 +20,11 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
     useEffect(() => {
         const loadQuizDetails = async () => {
             try {
-                // Fetch the full quiz with questions from your backend endpoint
                 const res = await api.get(`/quizzes/student/${quizId}`);
                 setQuizData(res.data);
+                if (res.data?.duration) {
+                    setTimeLeft(res.data.duration * 60);
+                }
             } catch (err) {
                 console.error("Failed to load quiz active instance", err);
             } finally {
@@ -32,7 +34,6 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
         loadQuizDetails();
     }, [quizId]);
 
-    // Timer Countdown handling loop
     useEffect(() => {
         if (isLoading || results || timeLeft <= 0) return;
         const timer = setInterval(() => {
@@ -48,12 +49,11 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
     };
 
     const handleOptionSelect = (questionId: number, optionText: string) => {
-        if (results) return; // Freeze selections once submitted
+        if (results) return; 
         setSelectedAnswers(prev => ({ ...prev, [questionId]: optionText }));
     };
 
     const handleSubmitQuiz = async () => {
-        // Build map schema format matching your student submission processing pipeline
         setIsSubmitting(true);
         try {
             const payload = {
@@ -65,7 +65,7 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
             };
 
             const response = await api.post(`/quizzes/${quizId}/submit`, payload);
-            setResults(response.data); // Backends sends score metrics & correct checks
+            setResults(response.data);
         } catch (error) {
             console.error("Submission failed", error);
             alert("Could not process your answers. Please try submitting again.");
@@ -75,57 +75,106 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
     };
 
     if (isLoading) return (
-        <div className="p-12 text-center text-gray-500">
-            <Clock className="animate-spin mx-auto mb-2 text-blue-600" size={32} />
-            Loading active exam workspace...
+        <div className="flex flex-col items-center justify-center min-h-[400px] p-12 text-center text-[var(--color-text)]/70">
+            <Loader2 className="animate-spin mb-3 text-[var(--color-main)]" size={40} />
+            <p className="text-sm font-medium tracking-wide animate-pulse">Setting up your secure exam environment...</p>
         </div>
     );
 
+    const questionsCount = quizData?.questions?.length || 0;
+    const answeredCount = Object.keys(selectedAnswers).length;
+
     return (
-        <div className="max-w-4xl mx-auto mt-6 px-4 pb-12 text-gray-800">
+        <div className="max-w-4xl mx-auto mt-4 px-4 pb-16 text-[var(--color-text)] antialiased">
+            
             {/* STICKY WORKSPACE HEADER BAR */}
-            <div className="sticky top-0 bg-white z-40 shadow-md border rounded-xl p-4 flex items-center justify-between mb-6">
-                <div>
-                    <button onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-1 font-medium">
-                        <ArrowLeft size={14} /> Back to Course Dashboard
+            <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 border border-[var(--color-main)]/10 shadow-sm rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 transition-all duration-200">
+                <div className="space-y-0.5">
+                    <button 
+                        onClick={onBack} 
+                        className="flex items-center gap-1.5 text-xs text-[var(--color-text)]/60 hover:text-[var(--color-main)] mb-1 font-semibold transition-colors"
+                    >
+                        <ArrowLeft size={14} /> Leave Assessment
                     </button>
-                    <h1 className="text-xl font-bold text-gray-900">{quizData?.title}</h1>
+                    <div className="flex items-center gap-2">
+                        <FileText size={18} className="text-[var(--color-main)] shrink-0" />
+                        <h1 className="text-lg font-bold tracking-tight">{quizData?.title || "Quiz Workspace"}</h1>
+                    </div>
                 </div>
 
-                {!results && (
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border font-mono text-lg font-bold ${timeLeft < 300 ? "bg-red-50 text-red-600 border-red-200 animate-pulse" : "bg-gray-50 text-gray-700"
+                <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
+                    {/* Progress tracking badge */}
+                    {!results && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 text-xs font-medium border border-gray-100">
+                            <ListOrdered size={14} className="opacity-60" />
+                            <span>Progress: <strong className="text-[var(--color-main)]">{answeredCount}</strong>/{questionsCount}</span>
+                        </div>
+                    )}
+
+                    {!results && (
+                        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-mono text-base font-bold shadow-sm tracking-wide transition-all ${
+                            timeLeft < 300 
+                                ? "bg-red-50 text-red-600 border-red-200 animate-pulse" 
+                                : "bg-[var(--color-soft-white)] text-[var(--color-text)] border-[var(--color-main)]/20"
                         }`}>
-                        <Clock size={20} />
-                        {formatTime(timeLeft)}
-                    </div>
-                )}
+                            <Clock size={18} className={timeLeft < 300 ? "text-red-500" : "text-[var(--color-main)]"} />
+                            {formatTime(timeLeft)}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* IF RESULTS LOADED: SHOW CONGRATS HERO SUMMARY BADGE */}
+            {/* SCORE DISCOVERY HERO SECTION */}
             {results && (
-                <div className="bg-green-50 border-2 border-green-200 p-6 rounded-xl mb-6 flex items-center gap-4">
-                    <CheckCircle2 size={48} className="text-green-600 flex-shrink-0" />
-                    <div>
-                        <h2 className="text-xl font-bold text-green-900">Quiz Completed Successfully!</h2>
-                        <p className="text-sm text-green-700 font-medium mt-0.5">
-                            You scored <span className="font-extrabold">{results.score} out of {quizData.questions.length}</span> questions correctly.
-                        </p>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 p-6 rounded-2xl mb-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                        <div className="p-3 bg-green-500 text-white rounded-2xl shadow-sm shadow-green-500/20">
+                            <CheckCircle2 size={32} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-extrabold text-green-950">Quiz Finished Successfully!</h2>
+                            <p className="text-sm text-green-800/80 mt-1 font-medium max-w-md">
+                                Your answers have been successfully locked and recorded. Review your overall grade score below.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 bg-white border border-green-200 p-4 rounded-xl shadow-inner shrink-0 self-stretch md:self-auto justify-center">
+                        <Award size={24} className="text-green-600" />
+                        <div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Final Result</div>
+                            <div className="text-xl font-black text-green-950">
+                                {results.score} <span className="text-sm text-gray-400 font-normal">/ {questionsCount} Correct</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* EXAM CORE QUESTIONS LOOP TREE */}
+            {/* EXAM CORE QUESTIONS GRID TREE */}
             <div className="space-y-6">
-                {quizData?.questions.map((q: any, idx: number) => {
+                {quizData?.questions?.map((q: any, idx: number) => {
                     const studentAnswer = selectedAnswers[q.id];
 
                     return (
-                        <div key={q.id} className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-                            <p className="font-bold text-base mb-4 text-gray-900">
-                                Question {idx + 1}: <span className="font-semibold text-gray-800">{q.questionText}</span>
-                            </p>
+                        <div 
+                            key={q.id} 
+                            className={`p-6 bg-white rounded-2xl border transition-all duration-200 shadow-sm ${
+                                studentAnswer && !results 
+                                    ? "border-[var(--color-main)]/30 ring-1 ring-[var(--color-main)]/5" 
+                                    : "border-gray-100"
+                            }`}
+                        >
+                            <div className="flex items-start gap-3 mb-4">
+                                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-main)]/5 text-[var(--color-main)] font-bold text-xs shrink-0 mt-0.5">
+                                    {idx + 1}
+                                </span>
+                                <p className="font-bold text-base text-gray-900 leading-snug">
+                                    {q.questionText}
+                                </p>
+                            </div>
 
-                            <div className="grid grid-cols-1 gap-2.5">
+                            <div className="grid grid-cols-1 gap-3 pl-0 md:pl-10">
                                 {q.options.map((opt: string, optIdx: number) => {
                                     const isSelected = studentAnswer === opt;
 
@@ -133,17 +182,24 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                                         <button
                                             key={optIdx}
                                             type="button"
+                                            disabled={!!results}
                                             onClick={() => handleOptionSelect(q.id, opt)}
-                                            className={`p-3 px-4 rounded-xl border text-left text-sm transition flex items-center gap-3 ${isSelected
-                                                ? "bg-blue-50 border-blue-500 text-blue-900 font-semibold ring-1 ring-blue-500"
-                                                : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
-                                                }`}
+                                            className={`group w-full p-3.5 px-4 rounded-xl border text-left text-sm transition-all duration-150 flex items-center gap-3.5 ${
+                                                isSelected
+                                                    ? "bg-[var(--color-main)]/[0.03] border-[var(--color-main)] text-gray-900 font-semibold shadow-sm"
+                                                    : "bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50/50 text-gray-700 disabled:bg-gray-50/50 disabled:border-gray-100"
+                                            }`}
                                         >
-                                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-xs font-bold ${isSelected ? "bg-blue-600 border-blue-600 text-white" : "border-gray-300 bg-gray-50 text-gray-500"
-                                                }`}>
+                                            {/* Choice Index Bubble */}
+                                            <div className={`w-6 h-6 rounded-lg border font-bold text-xs flex items-center justify-center shrink-0 transition-colors ${
+                                                isSelected 
+                                                    ? "bg-[var(--color-main)] border-[var(--color-main)] text-white shadow-sm shadow-[var(--color-main)]/20" 
+                                                    : "border-gray-200 bg-gray-50 text-gray-400 group-hover:border-gray-300"
+                                            }`}>
                                                 {String.fromCharCode(65 + optIdx)}
                                             </div>
-                                            {opt}
+                                            
+                                            <span className="flex-1 leading-normal">{opt}</span>
                                         </button>
                                     );
                                 })}
@@ -155,14 +211,29 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
 
             {/* ACTIONS FOOTER SUBMISSION BAR */}
             {!results && (
-                <div className="mt-8 flex justify-end">
+                <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
+                    <p className="text-xs text-[var(--color-text)]/50 font-medium">
+                        {answeredCount === questionsCount 
+                            ? "All questions answered. Ready to submit." 
+                            : `Unanswered tasks remaining: ${questionsCount - answeredCount}`}
+                    </p>
+
                     <button
                         onClick={handleSubmitQuiz}
-                        disabled={isSubmitting || Object.keys(selectedAnswers).length === 0}
-                        className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        disabled={isSubmitting || answeredCount === 0}
+                        className="px-6 py-3 bg-[var(--color-main)] text-white font-bold text-sm rounded-xl shadow-md shadow-[var(--color-main)]/10 hover:brightness-110 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 flex items-center gap-2 shrink-0"
                     >
-                        {isSubmitting ? "Processing Submission..." : "Submit Answers"}
-                        <SendHorizontal size={18} />
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Processing Grade...
+                            </>
+                        ) : (
+                            <>
+                                Finish & Submit
+                                <SendHorizontal size={16} />
+                            </>
+                        )}
                     </button>
                 </div>
             )}
