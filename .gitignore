@@ -5,3 +5,5 @@ backend/src/main/resources/application.properties
 .env
 frontend/src/utils/axiosConfig.ts
 backend/src/main/java/com/extracenter/backend/CorsConfig.java
+frontend/src/utils/axiosConfig.ts
+TODO.md
