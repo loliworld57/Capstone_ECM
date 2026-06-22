@@ -1,18 +1,18 @@
 package com.extracenter.backend.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.extracenter.backend.dto.CreateQuizRequest;
 import com.extracenter.backend.dto.QuizQuestionDTO;
 import com.extracenter.backend.entity.Quiz;
 import com.extracenter.backend.entity.QuizQuestion;
 import com.extracenter.backend.repository.QuizRepository;
 import com.extracenter.backend.repository.ScoreItemRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class QuizService {
@@ -35,6 +35,7 @@ public class QuizService {
         quiz.setIsGraded(request.getIsGraded());
         quiz.setDueDate(request.getDueDate());
         quiz.setScoreItemId(request.getScoreItemId());
+        quiz.setDurationInMinutes(request.getDurationInMinutes());
 
         // 2. Map the DTO questions to the Entity questions
         List<QuizQuestion> questionEntities = new ArrayList<>();
@@ -66,4 +67,6 @@ public class QuizService {
 
         return savedQuiz;
     }
+
+    
 }

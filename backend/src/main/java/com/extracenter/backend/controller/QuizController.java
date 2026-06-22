@@ -1,5 +1,29 @@
 package com.extracenter.backend.controller;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
+
+import com.extracenter.backend.dto.CreateQuizRequest;
+import com.extracenter.backend.dto.QuizDashboardDTO;
+import com.extracenter.backend.dto.QuizGenerationRequest;
 import com.extracenter.backend.dto.QuizQuestionDTO;
 import com.extracenter.backend.dto.QuizResultResponse;
 import com.extracenter.backend.dto.QuizSubmissionRequest;
@@ -7,39 +31,24 @@ import com.extracenter.backend.dto.StudentQuestionDTO;
 import com.extracenter.backend.dto.StudentQuizDTO;
 import com.extracenter.backend.dto.StudentScoreRequest;
 import com.extracenter.backend.dto.TeacherQuizReportDTO;
-import com.extracenter.backend.dto.QuizGenerationRequest;
-import com.extracenter.backend.repository.MaterialRepository;
-import com.extracenter.backend.repository.QuizRepository;
-import com.extracenter.backend.repository.QuizSubmissionRepository;
-import com.extracenter.backend.repository.ScoreCategoryRepository;
-import com.extracenter.backend.repository.ScoreItemRepository;
 import com.extracenter.backend.entity.Material;
-import com.extracenter.backend.dto.CreateQuizRequest;
-import com.extracenter.backend.dto.QuizDashboardDTO;
-import com.extracenter.backend.service.QuizService;
-import com.extracenter.backend.service.StudentScoreService;
 import com.extracenter.backend.entity.Quiz;
 import com.extracenter.backend.entity.QuizQuestion;
 import com.extracenter.backend.entity.QuizSubmission;
 import com.extracenter.backend.entity.ScoreCategory;
 import com.extracenter.backend.entity.ScoreItem;
 import com.extracenter.backend.entity.StudentScore;
+import com.extracenter.backend.entity.User;
+import com.extracenter.backend.repository.MaterialRepository;
+import com.extracenter.backend.repository.QuizRepository;
+import com.extracenter.backend.repository.QuizSubmissionRepository;
+import com.extracenter.backend.repository.ScoreCategoryRepository;
+import com.extracenter.backend.repository.ScoreItemRepository;
+import com.extracenter.backend.repository.UserRepository;
 import com.extracenter.backend.service.DocumentExtractionService;
 import com.extracenter.backend.service.GeminiService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpServerErrorException;
-
-import org.springframework.security.core.Authentication;
-import com.extracenter.backend.entity.User;
-import com.extracenter.backend.repository.UserRepository;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.extracenter.backend.service.QuizService;
+import com.extracenter.backend.service.StudentScoreService;
 
 @RestController
 @RequestMapping("/api/quizzes")
@@ -171,6 +180,7 @@ public class QuizController {
             existingQuiz.setIsGraded(request.getIsGraded());
             existingQuiz.setDueDate(request.getDueDate());
             existingQuiz.setScoreItemId(request.getScoreItemId());
+            existingQuiz.setDurationInMinutes(request.getDurationInMinutes());
 
             existingQuiz.getQuestions().clear();
 
@@ -285,12 +295,29 @@ public class QuizController {
 
         Quiz quiz = quizOptional.get();
 
-        List<StudentQuestionDTO> studentQuestions = quiz.getQuestions().stream()
-                .map(q -> new StudentQuestionDTO(q.getId(), q.getQuestionText(), q.getOptions()))
+        System.out.println("REQUEST START");
+        List<QuizQuestion> shuffledQuestions = new ArrayList<>(quiz.getQuestions());
+        Collections.shuffle(shuffledQuestions);
+        shuffledQuestions.forEach(q -> System.out.println(q.getQuestionText()));
+
+        System.out.println("REQUEST END");
+        List<StudentQuestionDTO> studentQuestions = shuffledQuestions.stream()
+                .map(q -> {
+
+                    List<String> shuffledOptions = new ArrayList<>(q.getOptions());
+
+                    Collections.shuffle(shuffledOptions);
+
+                    return new StudentQuestionDTO(
+                            q.getId(),
+                            q.getQuestionText(),
+                            shuffledOptions);
+                })
                 .collect(Collectors.toList());
 
         // 3. Assemble and return the safe DTO payload container
-        StudentQuizDTO secureQuizPayload = new StudentQuizDTO(quiz.getId(), quiz.getTitle(), studentQuestions);
+        StudentQuizDTO secureQuizPayload = new StudentQuizDTO(quiz.getId(), quiz.getTitle(), studentQuestions,
+                quiz.getDurationInMinutes());
 
         return ResponseEntity.ok(secureQuizPayload);
     }

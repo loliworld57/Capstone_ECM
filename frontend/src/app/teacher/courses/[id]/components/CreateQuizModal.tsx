@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import api from '@/utils/axiosConfig';
-import { Loader2, Sparkles, FileUp, Files, HelpCircle, CheckCircle, Lightbulb, Copy } from 'lucide-react';
+import { Loader2, Sparkles, FileUp, Files, HelpCircle, CheckCircle, Lightbulb, Copy, X, Clock } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
 import toast from 'react-hot-toast';
 import { useGradebookItems } from './GradebookItem';
@@ -20,6 +20,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [title, setTitle] = useState<string>('');
     const [dueDate, setDueDate] = useState<string>('');
+    const [durationInMinutes, setDurationInMinutes] = useState<string>('30'); // Added Time Limit state
     const [isPublishing, setIsPublishing] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -34,6 +35,9 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
     const { gradebookItems } = useGradebookItems(courseId);
     const [scoreItemId, setScoreItemId] = useState<number | "">("");
+
+    // Reference to programmatically trigger hidden file input click
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
@@ -53,6 +57,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                 setGeneratedQuestions(null);
                 setTitle('');
                 setDueDate('');
+                setDurationInMinutes('30');
                 setMaxAttempts(1);
                 setIsGraded(true);
                 setScoreItemId("");
@@ -71,6 +76,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                 setMaxAttempts(quizData.maxAttempts);
                 setIsGraded(quizData.isGraded);
                 setScoreItemId(quizData.scoreItemId || "");
+                setDurationInMinutes(quizData.durationInMinutes ? String(quizData.durationInMinutes) : '30');
 
                 if (quizData.dueDate) {
                     setDueDate(quizData.dueDate.substring(0, 16));
@@ -84,7 +90,6 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                     explanation: q.explanation
                 }));
 
-                // Crucial: Setting this skips the generation view and sends the user directly to the preview editor
                 setGeneratedQuestions(mappedQuestions);
 
             } catch (error: any) {
@@ -145,7 +150,27 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
             }
 
             const response = await api.post('/quizzes/generate', payload, { timeout: 60000 });
-            setGeneratedQuestions(response.data);
+            
+            // --- CRITICAL AUTO-SELECTION FIX: MAPPING AND ALIGNING AI DATA ---
+            const alignedQuestions = (response.data || []).map((q: any) => {
+                const opts = q.options || [];
+                let correctStr = (q.correctAnswer || q.correctOption || '').trim();
+
+                // If AI returns a single indicator letter ("A", "B", etc.), map it directly to the choice content string
+                if (correctStr === 'A' && opts[0]) correctStr = opts[0];
+                else if (correctStr === 'B' && opts[1]) correctStr = opts[1];
+                else if (correctStr === 'C' && opts[2]) correctStr = opts[2];
+                else if (correctStr === 'D' && opts[3]) correctStr = opts[3];
+
+                return {
+                    question: q.questionText || q.question || '',
+                    options: opts,
+                    correctAnswer: correctStr,
+                    explanation: q.explanation || ''
+                };
+            });
+
+            setGeneratedQuestions(alignedQuestions);
 
         } catch (error: any) {
             console.error("Failed to generate quiz:", error);
@@ -175,14 +200,18 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
         setIsPublishing(true);
         try {
+            // Default to 30 mins if blank or invalid
+            const finalDuration = durationInMinutes.trim() === "" ? 30 : Math.max(1, parseInt(durationInMinutes) || 30);
+
             const payload = {
                 title: title,
                 courseId: courseId,
                 materialId: sourceType === 'existing' && !isEditMode ? Number(selectedMaterialId) : null,
                 maxAttempts: maxAttempts,
                 isGraded: isGraded,
-                scoreItemId: scoreItemId || null, // Included in payload on submission
+                scoreItemId: scoreItemId || null,
                 dueDate: dueDate.length === 16 ? `${dueDate}:00` : dueDate,
+                durationInMinutes: finalDuration, // Appended to request payload
                 questions: generatedQuestions
             };
 
@@ -235,8 +264,8 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white p-6 rounded-lg w-full max-w-2xl shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm p-0 md:p-4 overflow-y-auto">
+            <div className="bg-white w-full h-full md:h-[95vh] md:max-w-6xl md:rounded-xl shadow-2xl flex flex-col overflow-hidden">
 
                 {modalConfig && (
                     <ConfirmModal
@@ -249,18 +278,22 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                     />
                 )}
 
-                {/* SHOW GENERATION POPUP ONLY IF NOT IN PREVIEW/EDIT MODE */}
                 {isGenerating && !generatedQuestions ? (
-                    <div className="p-12 text-center text-[var(--color-text)]">
-                        <Loader2 size={32} className="animate-spin text-[var(--color-main)] mx-auto mb-3" />
-                        <p className="font-semibold text-[var(--color-text)]">Loading quiz structural layouts...</p>
+                    <div className="m-auto p-12 text-center text-[var(--color-text)]">
+                        <Loader2 size={40} className="animate-spin text-[var(--color-main)] mx-auto mb-4" />
+                        <p className="font-semibold text-lg text-[var(--color-text)]">Loading quiz structural layouts...</p>
                     </div>
                 ) : !generatedQuestions ? (
-                    <>
-                        <h2 className="text-2xl font-bold mb-4 text-[var(--color-text)] flex items-center gap-2">
-                            <Sparkles size={24} className="text-[var(--color-main)]" />
-                            <span>Create AI Quiz</span>
-                        </h2>
+                    <div className="flex flex-col h-full overflow-y-auto p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold text-[var(--color-text)] flex items-center gap-2">
+                                <Sparkles size={26} className="text-[var(--color-main)]" />
+                                <span>Create AI Quiz</span>
+                            </h2>
+                            <button onClick={onClose} className="p-1 rounded-lg hover:bg-zinc-100 transition text-zinc-400 hover:text-zinc-600">
+                                <X size={24} />
+                            </button>
+                        </div>
 
                         <div className="flex gap-4 mb-6 border-b pb-2">
                             <button
@@ -282,7 +315,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                         <div className="mb-6">
                             {sourceType === 'existing' ? (
                                 <select
-                                    className="w-full border p-2 rounded text-[var(--color-text)] bg-white border-zinc-200"
+                                    className="w-full border p-3 rounded-lg text-[var(--color-text)] bg-white border-zinc-200 focus:ring-2 focus:ring-[var(--color-main)] outline-none"
                                     value={selectedMaterialId}
                                     onChange={(e) => setSelectedMaterialId(e.target.value)}
                                 >
@@ -294,21 +327,48 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     ))}
                                 </select>
                             ) : (
-                                <div className="border-2 border-dashed border-zinc-300 p-8 text-center rounded bg-zinc-50 cursor-pointer flex flex-col items-center justify-center gap-2">
-                                    <FileUp size={24} className="text-[var(--color-text)]" />
-                                    <p className="text-[var(--color-text)]">Drag & drop your document here, or click to browse</p>
+                                <div 
+                                    className={`border-2 border-dashed p-12 text-center rounded-xl bg-zinc-50 cursor-pointer flex flex-col items-center justify-center gap-2 transition-all ${
+                                        uploadFile ? 'border-emerald-500 bg-emerald-50/20' : 'border-zinc-300 hover:border-[var(--color-main)]'
+                                    }`}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                            setUploadFile(e.dataTransfer.files[0]);
+                                            toast.success(`Selected file: ${e.dataTransfer.files[0].name}`);
+                                        }
+                                    }}
+                                >
+                                    <FileUp size={32} className={uploadFile ? "text-emerald-600" : "text-[var(--color-text)]"} />
+                                    {uploadFile ? (
+                                        <div>
+                                            <p className="text-emerald-800 font-semibold text-base">File Loaded Successfully</p>
+                                            <p className="text-xs text-zinc-500 font-mono mt-2 max-w-[400px] truncate mx-auto bg-white border px-3 py-1 rounded shadow-xs">
+                                                {uploadFile.name}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[var(--color-text)] text-base">Drag & drop your document here, or click to browse</p>
+                                    )}
                                     <input
                                         type="file"
+                                        ref={fileInputRef}
                                         className="hidden"
-                                        onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                setUploadFile(e.target.files[0]);
+                                            }
+                                        }}
                                     />
                                 </div>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6 bg-zinc-50 p-4 rounded border border-zinc-200 text-[var(--color-text)]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-zinc-50 p-5 rounded-xl border border-zinc-200 text-[var(--color-text)]">
                             <div>
-                                <label className="block text-sm font-bold mb-1">Number of Questions: {questionCount}</label>
+                                <label className="block text-sm font-bold mb-2">Number of Questions: {questionCount}</label>
                                 <input
                                     type="range"
                                     min="5" max="20"
@@ -318,9 +378,9 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold mb-1">Attempts Allowed</label>
+                                <label className="block text-sm font-bold mb-2">Attempts Allowed</label>
                                 <select
-                                    className="w-full border p-2 rounded border-zinc-200 bg-white"
+                                    className="w-full border p-2.5 rounded-lg border-zinc-200 bg-white focus:ring-2 focus:ring-[var(--color-main)] outline-none"
                                     value={maxAttempts}
                                     onChange={(e) => setMaxAttempts(Number(e.target.value))}
                                 >
@@ -332,208 +392,228 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button onClick={onClose} className="px-4 py-2 border rounded text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors">
+                        <div className="flex justify-end gap-3 mt-auto pt-6 border-t">
+                            <button onClick={onClose} className="px-5 py-2.5 border rounded-lg text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors">
                                 Cancel
                             </button>
                             <button
                                 onClick={handleGenerateClick}
-                                disabled={isGenerating || (sourceType === 'existing' && !selectedMaterialId)}
-                                className="px-6 py-2 bg-[var(--color-main)] text-white rounded font-bold hover:brightness-110 disabled:opacity-50 flex items-center gap-2 transition-all"
+                                disabled={isGenerating || (sourceType === 'existing' && !selectedMaterialId) || (sourceType === 'upload' && !uploadFile)}
+                                className="px-6 py-2.5 bg-[var(--color-main)] text-white rounded-lg font-bold hover:brightness-110 disabled:opacity-50 flex items-center gap-2 transition-all"
                             >
                                 <Sparkles size={16} />
                                 <span>Generate Preview</span>
                             </button>
                         </div>
-                    </>
+                    </div>
                 ) : (
-                    <div className="flex flex-col max-h-[75vh]">
-                        <h2 className="text-2xl font-bold mb-4 flex-shrink-0 text-[var(--color-text)]">
-                            {isEditMode ? "Edit Quiz Details" : "Review & Publish Quiz"}
-                        </h2>
-
-                        {/* CONFIGURATION EDITOR VIEW PANEL */}
-                        <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-200 flex-shrink-0 text-[var(--color-text)] space-y-4 mb-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold mb-1">Quiz Title <span className="text-rose-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        className="w-full border p-2 rounded-lg bg-white border-zinc-200 text-[var(--color-text)]"
-                                        placeholder="e.g., Chapter 4 Evaluation Exam"
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold mb-1">Due Date <span className="text-rose-500">*</span></label>
-                                    <input
-                                        type="datetime-local"
-                                        className="w-full border p-2 rounded-lg bg-white border-zinc-200 text-[var(--color-text)]"
-                                        value={dueDate}
-                                        onChange={(e) => setDueDate(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-200 pt-3">
-                                <div>
-                                    <label className="block text-sm font-bold mb-1">Attempts Allowed</label>
-                                    <select
-                                        className="w-full border p-2 rounded-lg bg-white text-sm border-zinc-200 text-[var(--color-text)]"
-                                        value={maxAttempts}
-                                        onChange={(e) => setMaxAttempts(Number(e.target.value))}
-                                    >
-                                        <option value={1}>1 (Strict Exam)</option>
-                                        <option value={2}>2</option>
-                                        <option value={3}>3</option>
-                                        <option value={0}>Unlimited Attempts</option>
-                                    </select>
-                                </div>
-
-                                {/* POSITIONED DROPDOWN HERE IN THE PREVIEW EDITOR SCREEN */}
-                                <div>
-                                    <label className="block text-sm font-bold mb-1">Link to Gradebook Column</label>
-                                    <select
-                                        value={scoreItemId}
-                                        onChange={(e) => setScoreItemId(e.target.value ? Number(e.target.value) : "")}
-                                        className="w-full border p-2 rounded-lg text-sm bg-white border-zinc-200 text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-main)]"
-                                    >
-                                        <option value="">-- Do Not Link (Ungraded Practice) --</option>
-                                        {gradebookItems.map((item) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 pt-1">
-                                <input
-                                    type="checkbox"
-                                    id="isGraded"
-                                    checked={isGraded}
-                                    onChange={(e) => setIsGraded(e.target.checked)}
-                                    className="w-4 h-4 rounded text-[var(--color-main)] focus:ring-[var(--color-main)] border-zinc-300 accent-[var(--color-main)]"
-                                />
-                                <label htmlFor="isGraded" className="font-semibold text-sm select-none text-[var(--color-text)]">
-                                    Count submissions towards overall class average calculations
-                                </label>
-                            </div>
+                    <div className="flex flex-col h-full">
+                        <div className="flex items-center justify-between p-6 border-b border-zinc-200 flex-shrink-0">
+                            <h2 className="text-2xl font-bold text-[var(--color-text)]">
+                                {isEditMode ? "Edit Quiz Details" : "Review & Publish Quiz"}
+                            </h2>
+                            <button onClick={onClose} className="p-1 rounded-lg hover:bg-zinc-100 transition text-zinc-400 hover:text-zinc-600">
+                                <X size={24} />
+                            </button>
                         </div>
 
-                        {/* --- SCROLLABLE QUESTIONS INJECTOR LIST --- */}
-                        <div className="flex-1 overflow-y-auto pr-2 space-y-6 mb-4 text-[var(--color-text)] scrollbar-thin border border-zinc-100 rounded-xl p-2">
-                            {generatedQuestions.map((q, index) => (
-                                <div key={index} className="p-5 border border-zinc-200 rounded-xl bg-zinc-50 shadow-xs relative">
-                                    <div className="mb-4">
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text)] mb-1">
-                                            Question {index + 1}
-                                        </label>
+                        <div className="p-6 overflow-y-auto flex-1 space-y-6 scrollbar-thin">
+                            <div className="bg-zinc-50 p-5 rounded-xl border border-zinc-200 text-[var(--color-text)] space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1">Quiz Title <span className="text-rose-500">*</span></label>
                                         <input
                                             type="text"
-                                            className="w-full font-bold text-base p-2 border rounded-lg bg-white border-zinc-200 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-main)] outline-none"
-                                            value={q.question}
-                                            onChange={(e) => {
-                                                const updated = [...generatedQuestions];
-                                                updated[index].question = e.target.value;
-                                                setGeneratedQuestions(updated);
-                                            }}
+                                            className="w-full border p-2.5 rounded-lg bg-white border-zinc-200 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-main)] outline-none"
+                                            placeholder="e.g., Evaluation Exam"
+                                            value={title}
+                                            onChange={(e) => setTitle(e.target.value)}
                                         />
                                     </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                                        {q.options.map((opt: string, i: number) => {
-                                            const isCorrect = isCorrectAnswer(opt, q.correctAnswer);
-                                            // DYNAMICALLY REMOVE ANY HARDCODED "A.", "B.", "C.", "D." PREFIXES FROM CURRENT TEXT
-                                            const cleanedOptionText = opt.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
-
-                                            return (
-                                                <div
-                                                    key={i}
-                                                    className={`p-2 rounded-xl border transition flex items-center gap-2 min-h-[44px] ${isCorrect
-                                                        ? "bg-emerald-50 border-emerald-500 text-emerald-950 shadow-xs ring-1 ring-emerald-500"
-                                                        : "bg-white border-zinc-200 text-[var(--color-text)] focus-within:border-[var(--color-main)]"
-                                                        }`}
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const updated = [...generatedQuestions];
-                                                            updated[index].correctAnswer = cleanedOptionText;
-                                                            setGeneratedQuestions(updated);
-                                                        }}
-                                                        className={`w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-xs transition self-center ${isCorrect
-                                                            ? "bg-emerald-600 text-white shadow-xs scale-105"
-                                                            : "bg-zinc-100 text-[var(--color-text)] hover:bg-zinc-200"
-                                                            }`}
-                                                    >
-                                                        {String.fromCharCode(65 + i)}
-                                                    </button>
-                                                    <input
-                                                        type="text"
-                                                        className={`w-full bg-transparent p-1 text-sm outline-none font-medium self-center ${isCorrect ? "font-semibold text-emerald-950" : "text-[var(--color-text)]"}`}
-                                                        value={cleanedOptionText}
-                                                        onChange={(e) => {
-                                                            const updated = [...generatedQuestions];
-                                                            const oldOptionValue = updated[index].options[i];
-                                                            updated[index].options[i] = e.target.value;
-
-                                                            if (isCorrectAnswer(oldOptionValue, q.correctAnswer)) {
-                                                                updated[index].correctAnswer = e.target.value.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
-                                                            }
-                                                            setGeneratedQuestions(updated);
-                                                        }}
-                                                    />
-                                                </div>
-                                            );
-                                        })}
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1">Due Date <span className="text-rose-500">*</span></label>
+                                        <input
+                                            type="datetime-local"
+                                            className="w-full border p-2.5 rounded-lg bg-white border-zinc-200 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-main)] outline-none"
+                                            value={dueDate}
+                                            onChange={(e) => setDueDate(e.target.value)}
+                                        />
                                     </div>
-
-                                    {/* EXPANDABLE AI EXPLANATION BOX FEATURING AN INTEGRATED COPY ACTION BUTTON */}
-                                    <div className="bg-white border border-zinc-200 p-3 rounded-xl flex flex-col gap-2 relative group">
-                                        <div className="flex items-center justify-between border-b border-zinc-50 pb-1">
-                                            <label className="flex items-center gap-1 text-xs font-bold text-emerald-700">
-                                                <Lightbulb size={14} />
-                                                <span>AI Explanation</span>
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={() => navigator.clipboard.writeText(q.explanation || '')}
-                                                className="p-1 text-zinc-400 hover:text-zinc-600 rounded-md hover:bg-zinc-100 transition-all flex items-center gap-1 text-[10px] font-medium"
-                                                title="Copy text"
-                                            >
-                                                <Copy size={12} />
-                                                <span>Copy</span>
-                                            </button>
-                                        </div>
-
-                                        {/* Custom Expandable Rich Content Field replacing Textarea */}
-                                        <div
-                                            contentEditable
-                                            suppressContentEditableWarning
-                                            className="w-full text-xs text-[var(--color-text)] bg-transparent border-0 outline-none min-h-[40px] h-auto p-1 leading-relaxed whitespace-pre-wrap break-words focus:ring-1 focus:ring-zinc-100 rounded"
-                                            onBlur={(e) => {
-                                                const updated = [...generatedQuestions];
-                                                updated[index].explanation = e.currentTarget.textContent || '';
-                                                setGeneratedQuestions(updated);
-                                            }}
-                                        >
-                                            {q.explanation}
-                                        </div>
+                                    {/* TIME LIMIT DURATION FIELD */}
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1 flex items-center gap-1">
+                                            <Clock size={15} className="text-zinc-500" />
+                                            <span>Time Limit (Minutes)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            placeholder="30 (Defaults if blank)"
+                                            className="w-full border p-2.5 rounded-lg bg-white border-zinc-200 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-main)] outline-none"
+                                            value={durationInMinutes}
+                                            onChange={(e) => setDurationInMinutes(e.target.value)}
+                                        />
                                     </div>
                                 </div>
-                            ))}
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-zinc-200 pt-4">
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1">Attempts Allowed</label>
+                                        <select
+                                            className="w-full border p-2.5 rounded-lg bg-white text-sm border-zinc-200 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-main)] outline-none"
+                                            value={maxAttempts}
+                                            onChange={(e) => setMaxAttempts(Number(e.target.value))}
+                                        >
+                                            <option value={1}>1 (Strict Exam)</option>
+                                            <option value={2}>2</option>
+                                            <option value={3}>3</option>
+                                            <option value={0}>Unlimited Attempts</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1">Link to Gradebook Column</label>
+                                        <select
+                                            value={scoreItemId}
+                                            onChange={(e) => setScoreItemId(e.target.value ? Number(e.target.value) : "")}
+                                            className="w-full border p-2.5 rounded-lg text-sm bg-white border-zinc-200 text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-main)]"
+                                        >
+                                            <option value="">-- Do Not Link (Ungraded Practice) --</option>
+                                            {gradebookItems.map((item) => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 pt-1">
+                                    <input
+                                        type="checkbox"
+                                        id="isGraded"
+                                        checked={isGraded}
+                                        onChange={(e) => setIsGraded(e.target.checked)}
+                                        className="w-4 h-4 rounded text-[var(--color-main)] focus:ring-[var(--color-main)] border-zinc-300 accent-[var(--color-main)]"
+                                    />
+                                    <label htmlFor="isGraded" className="font-semibold text-sm select-none text-[var(--color-text)]">
+                                        Count submissions towards overall class average calculations
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6 text-[var(--color-text)]">
+                                {generatedQuestions.map((q, index) => (
+                                    <div key={index} className="p-6 border border-zinc-200 rounded-xl bg-zinc-50 shadow-xs relative">
+                                        <div className="mb-4">
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text)] mb-1">
+                                                Question {index + 1}
+                                            </label>
+                                            <div
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                className="w-full font-bold text-base p-2.5 border rounded-lg bg-white border-zinc-200 text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-main)] outline-none min-h-[44px] h-auto leading-relaxed whitespace-pre-wrap break-words"
+                                                onBlur={(e) => {
+                                                    const updated = [...generatedQuestions];
+                                                    updated[index].question = e.currentTarget.textContent || '';
+                                                    setGeneratedQuestions(updated);
+                                                }}
+                                            >
+                                                {q.question}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-4 mb-4">
+                                            {q.options.map((opt: string, i: number) => {
+                                                const isCorrect = isCorrectAnswer(opt, q.correctAnswer);
+                                                const cleanedOptionText = opt.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
+
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        className={`p-3 rounded-xl border transition flex items-start gap-3 h-auto ${isCorrect
+                                                            ? "bg-emerald-50 border-emerald-500 text-emerald-950 shadow-xs ring-1 ring-emerald-500"
+                                                            : "bg-white border-zinc-200 text-[var(--color-text)] focus-within:border-[var(--color-main)]"
+                                                            }`}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const updated = [...generatedQuestions];
+                                                                updated[index].correctAnswer = cleanedOptionText;
+                                                                setGeneratedQuestions(updated);
+                                                            }}
+                                                            className={`w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-xs transition mt-1 ${isCorrect
+                                                                ? "bg-emerald-600 text-white shadow-xs scale-105"
+                                                                : "bg-zinc-100 text-[var(--color-text)] hover:bg-zinc-200"
+                                                                }`}
+                                                        >
+                                                            {String.fromCharCode(65 + i)}
+                                                        </button>
+                                                        <div
+                                                            contentEditable
+                                                            suppressContentEditableWarning
+                                                            className={`w-full bg-transparent p-1 text-sm outline-none font-medium leading-relaxed whitespace-pre-wrap break-words h-auto min-h-[24px] ${isCorrect ? "font-semibold text-emerald-950" : "text-[var(--color-text)]"}`}
+                                                            onBlur={(e) => {
+                                                                const updated = [...generatedQuestions];
+                                                                const newText = e.currentTarget.textContent || '';
+                                                                const oldOptionValue = updated[index].options[i];
+                                                                updated[index].options[i] = newText;
+
+                                                                if (isCorrectAnswer(oldOptionValue, q.correctAnswer)) {
+                                                                    updated[index].correctAnswer = newText.replace(/^[a-d][\.\s\-:\/)]+/i, '').trim();
+                                                                }
+                                                                setGeneratedQuestions(updated);
+                                                            }}
+                                                        >
+                                                            {cleanedOptionText}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="bg-white border border-zinc-200 p-4 rounded-xl flex flex-col gap-2 relative group">
+                                            <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+                                                <label className="flex items-center gap-1 text-xs font-bold text-emerald-700">
+                                                    <Lightbulb size={14} />
+                                                    <span>AI Explanation</span>
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => navigator.clipboard.writeText(q.explanation || '')}
+                                                    className="p-1 text-zinc-400 hover:text-zinc-600 rounded-md hover:bg-zinc-100 transition-all flex items-center gap-1 text-[11px] font-medium"
+                                                    title="Copy text"
+                                                >
+                                                    <Copy size={12} />
+                                                    <span>Copy</span>
+                                                </button>
+                                            </div>
+
+                                            <div
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                className="w-full text-xs text-[var(--color-text)] bg-transparent border-0 outline-none min-h-[40px] h-auto p-1 leading-relaxed whitespace-pre-wrap break-words"
+                                                onBlur={(e) => {
+                                                    const updated = [...generatedQuestions];
+                                                    updated[index].explanation = e.currentTarget.textContent || '';
+                                                    setGeneratedQuestions(updated);
+                                                }}
+                                            >
+                                                {q.explanation}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* STICKY FOOTER ACTIONS */}
-                        <div className="flex justify-end gap-3 border-t pt-4 border-zinc-200 bg-white flex-shrink-0">
+                        <div className="flex justify-end gap-3 border-t p-6 border-zinc-200 bg-white flex-shrink-0">
                             {!isEditMode ? (
                                 <button
                                     onClick={() => setGeneratedQuestions(null)}
                                     disabled={isPublishing}
-                                    className="px-4 py-2 border rounded-lg text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors"
+                                    className="px-5 py-2.5 border rounded-lg text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors"
                                 >
                                     Discard & Try Again
                                 </button>
@@ -541,7 +621,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                 <button
                                     onClick={onClose}
                                     disabled={isPublishing}
-                                    className="px-4 py-2 border rounded-lg text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors"
+                                    className="px-5 py-2.5 border rounded-lg text-[var(--color-text)] border-zinc-200 hover:bg-zinc-50 font-medium transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -549,7 +629,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                             <button
                                 onClick={handlePublishClick}
                                 disabled={isPublishing}
-                                className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:brightness-110 shadow-xs transition flex items-center gap-2"
+                                className="px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-bold hover:brightness-110 shadow-xs transition flex items-center gap-2"
                             >
                                 {isPublishing ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle size={18} />}
                                 <span>{isPublishing ? "Saving..." : isEditMode ? "Save Changes" : "Publish Quiz"}</span>
