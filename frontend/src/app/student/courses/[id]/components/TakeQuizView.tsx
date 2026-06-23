@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, SendHorizontal, ArrowLeft, CheckCircle2, Award, FileText, ListOrdered, Loader2 } from "lucide-react";
 import api from '@/utils/axiosConfig';
 
@@ -14,51 +14,56 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
     const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 minutes in seconds default
+    const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 minutes safe initial state
     const [results, setResults] = useState<any>(null);
 
+    // Keep an up-to-date mutable reference of selected answers to prevent timer useEffect triggers
+    const selectedAnswersRef = useRef(selectedAnswers);
     useEffect(() => {
+        selectedAnswersRef.current = selectedAnswers;
+    }, [selectedAnswers]);
+
+    // 1. FETCH QUIZ DATA EFFECT (Fixed Double Request)
+    useEffect(() => {
+        let isMounted = true;
+
         const loadQuizDetails = async () => {
             try {
                 const res = await api.get(`/quizzes/student/${quizId}`);
-                setQuizData(res.data);
-                if (res.data?.duration) {
-                    setTimeLeft(res.data.duration * 60);
+                
+                if (isMounted) {
+                    setQuizData(res.data);
+                    
+                    // Fallback to 30 minutes if durationInMinutes is null/undefined
+                    if (res.data?.durationInMinutes && res.data.durationInMinutes > 0) {
+                        setTimeLeft(res.data.durationInMinutes * 60);
+                    } else {
+                        setTimeLeft(30 * 60);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load quiz active instance", err);
             } finally {
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         };
+
         loadQuizDetails();
+
+        return () => {
+            isMounted = false; // Cleanup flag
+        };
     }, [quizId]);
 
-    useEffect(() => {
-        if (isLoading || results || timeLeft <= 0) return;
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => prev - 1);
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [isLoading, results, timeLeft]);
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const handleOptionSelect = (questionId: number, optionText: string) => {
-        if (results) return; 
-        setSelectedAnswers(prev => ({ ...prev, [questionId]: optionText }));
-    };
-
-    const handleSubmitQuiz = async () => {
+    // Abstracted Submission Logic
+    const executeSubmit = async (currentAnswers: typeof selectedAnswers) => {
         setIsSubmitting(true);
         try {
             const payload = {
                 quizId: quizId,
-                answers: Object.entries(selectedAnswers).map(([qId, val]) => ({
+                answers: Object.entries(currentAnswers).map(([qId, val]) => ({
                     questionId: Number(qId),
                     selectedOption: val
                 }))
@@ -74,6 +79,39 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
         }
     };
 
+    // 2. STABLE COUNTDOWN AND AUTO-SUBMIT EFFECT
+    useEffect(() => {
+        if (isLoading || results || isSubmitting) return;
+
+        // Auto-submit instantly if time runs out
+        if (timeLeft <= 0) {
+            executeSubmit(selectedAnswersRef.current);
+            return;
+        }
+
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => prev - 1);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isLoading, results, timeLeft, isSubmitting]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleOptionSelect = (questionId: number, optionText: string) => {
+        if (results || isSubmitting) return;
+        setSelectedAnswers(prev => ({ ...prev, [questionId]: optionText }));
+    };
+
+    const handleSubmitQuiz = () => {
+        if (isSubmitting || results) return;
+        executeSubmit(selectedAnswers);
+    };
+
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-12 text-center text-[var(--color-text)]/70">
             <Loader2 className="animate-spin mb-3 text-[var(--color-main)]" size={40} />
@@ -86,13 +124,14 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
 
     return (
         <div className="max-w-4xl mx-auto mt-4 px-4 pb-16 text-[var(--color-text)] antialiased">
-            
+
             {/* STICKY WORKSPACE HEADER BAR */}
             <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 border border-[var(--color-main)]/10 shadow-sm rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 transition-all duration-200">
                 <div className="space-y-0.5">
-                    <button 
-                        onClick={onBack} 
-                        className="flex items-center gap-1.5 text-xs text-[var(--color-text)]/60 hover:text-[var(--color-main)] mb-1 font-semibold transition-colors"
+                    <button
+                        onClick={onBack}
+                        disabled={isSubmitting && !results}
+                        className="flex items-center gap-1.5 text-xs text-[var(--color-text)]/60 hover:text-[var(--color-main)] mb-1 font-semibold transition-colors disabled:opacity-40"
                     >
                         <ArrowLeft size={14} /> Leave Assessment
                     </button>
@@ -103,7 +142,6 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
-                    {/* Progress tracking badge */}
                     {!results && (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 text-xs font-medium border border-gray-100">
                             <ListOrdered size={14} className="opacity-60" />
@@ -112,13 +150,12 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                     )}
 
                     {!results && (
-                        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-mono text-base font-bold shadow-sm tracking-wide transition-all ${
-                            timeLeft < 300 
-                                ? "bg-red-50 text-red-600 border-red-200 animate-pulse" 
-                                : "bg-[var(--color-soft-white)] text-[var(--color-text)] border-[var(--color-main)]/20"
-                        }`}>
+                        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-mono text-base font-bold shadow-sm tracking-wide transition-all ${timeLeft < 300
+                            ? "bg-red-50 text-red-600 border-red-200 animate-pulse"
+                            : "bg-[var(--color-soft-white)] text-[var(--color-text)] border-[var(--color-main)]/20"
+                            }`}>
                             <Clock size={18} className={timeLeft < 300 ? "text-red-500" : "text-[var(--color-main)]"} />
-                            {formatTime(timeLeft)}
+                            {formatTime(timeLeft <= 0 ? 0 : timeLeft)}
                         </div>
                     )}
                 </div>
@@ -138,7 +175,7 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                             </p>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 bg-white border border-green-200 p-4 rounded-xl shadow-inner shrink-0 self-stretch md:self-auto justify-center">
                         <Award size={24} className="text-green-600" />
                         <div>
@@ -157,13 +194,12 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                     const studentAnswer = selectedAnswers[q.id];
 
                     return (
-                        <div 
-                            key={q.id} 
-                            className={`p-6 bg-white rounded-2xl border transition-all duration-200 shadow-sm ${
-                                studentAnswer && !results 
-                                    ? "border-[var(--color-main)]/30 ring-1 ring-[var(--color-main)]/5" 
-                                    : "border-gray-100"
-                            }`}
+                        <div
+                            key={q.id}
+                            className={`p-6 bg-white rounded-2xl border transition-all duration-200 shadow-sm ${studentAnswer && !results
+                                ? "border-[var(--color-main)]/30 ring-1 ring-[var(--color-main)]/5"
+                                : "border-gray-100"
+                                }`}
                         >
                             <div className="flex items-start gap-3 mb-4">
                                 <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-main)]/5 text-[var(--color-main)] font-bold text-xs shrink-0 mt-0.5">
@@ -182,23 +218,20 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                                         <button
                                             key={optIdx}
                                             type="button"
-                                            disabled={!!results}
+                                            disabled={!!results || isSubmitting}
                                             onClick={() => handleOptionSelect(q.id, opt)}
-                                            className={`group w-full p-3.5 px-4 rounded-xl border text-left text-sm transition-all duration-150 flex items-center gap-3.5 ${
-                                                isSelected
-                                                    ? "bg-[var(--color-main)]/[0.03] border-[var(--color-main)] text-gray-900 font-semibold shadow-sm"
-                                                    : "bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50/50 text-gray-700 disabled:bg-gray-50/50 disabled:border-gray-100"
-                                            }`}
+                                            className={`group w-full p-3.5 px-4 rounded-xl border text-left text-sm transition-all duration-150 flex items-center gap-3.5 ${isSelected
+                                                ? "bg-[var(--color-main)]/[0.03] border-[var(--color-main)] text-gray-900 font-semibold shadow-sm"
+                                                : "bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50/50 text-gray-700 disabled:bg-gray-50/50 disabled:border-gray-100"
+                                                }`}
                                         >
-                                            {/* Choice Index Bubble */}
-                                            <div className={`w-6 h-6 rounded-lg border font-bold text-xs flex items-center justify-center shrink-0 transition-colors ${
-                                                isSelected 
-                                                    ? "bg-[var(--color-main)] border-[var(--color-main)] text-white shadow-sm shadow-[var(--color-main)]/20" 
-                                                    : "border-gray-200 bg-gray-50 text-gray-400 group-hover:border-gray-300"
-                                            }`}>
+                                            <div className={`w-6 h-6 rounded-lg border font-bold text-xs flex items-center justify-center shrink-0 transition-colors ${isSelected
+                                                ? "bg-[var(--color-main)] border-[var(--color-main)] text-white shadow-sm shadow-[var(--color-main)]/20"
+                                                : "border-gray-200 bg-gray-50 text-gray-400 group-hover:border-gray-300"
+                                                }`}>
                                                 {String.fromCharCode(65 + optIdx)}
                                             </div>
-                                            
+
                                             <span className="flex-1 leading-normal">{opt}</span>
                                         </button>
                                     );
@@ -213,8 +246,8 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
             {!results && (
                 <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
                     <p className="text-xs text-[var(--color-text)]/50 font-medium">
-                        {answeredCount === questionsCount 
-                            ? "All questions answered. Ready to submit." 
+                        {answeredCount === questionsCount
+                            ? "All questions answered. Ready to submit."
                             : `Unanswered tasks remaining: ${questionsCount - answeredCount}`}
                     </p>
 

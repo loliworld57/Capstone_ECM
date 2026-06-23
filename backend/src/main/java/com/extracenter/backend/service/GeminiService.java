@@ -1,7 +1,9 @@
 package com.extracenter.backend.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -11,11 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.extracenter.backend.dto.QuizQuestionDTO;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class GeminiService {
@@ -72,14 +73,46 @@ public class GeminiService {
         }
 
         public List<QuizQuestionDTO> generateQuiz(String lessonContent, int numberOfQuestions) throws Exception {
-                // 1. Build the prompt payload
+
                 String prompt = String.format(
-                                "You are an expert teacher. Generate a %d-question multiple choice quiz based strictly on the following lesson material. "
-                                                +
-                                                "You MUST return the response ONLY as a raw JSON array of objects. Do not include markdown formatting, ```json blocks, or any introductory text. "
-                                                +
-                                                "Use this exact JSON structure: [{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"correctAnswer\": \"...\", \"explanation\": \"...\"}] \n\nLesson Material:\n%s",
-                                numberOfQuestions, lessonContent);
+                                """
+                                                You are an expert teacher.
+
+                                                Generate %d multiple-choice questions based strictly on the lesson material.
+
+                                                Return ONLY a raw JSON array.
+
+                                                Do NOT use markdown.
+                                                Do NOT use ```json.
+                                                Do NOT add explanations outside JSON.
+
+                                                JSON format:
+
+                                                [
+                                                  {
+                                                    "question": "Question text",
+                                                    "options": [
+                                                      "Option A text",
+                                                      "Option B text",
+                                                      "Option C text",
+                                                      "Option D text"
+                                                    ],
+                                                    "correctAnswer": "FULL TEXT OF THE CORRECT OPTION",
+                                                    "explanation": "Short explanation"
+                                                  }
+                                                ]
+
+                                                IMPORTANT RULES:
+                                                - options must contain ONLY the option text
+                                                - Do NOT prefix options with A), B), C), D)
+                                                - correctAnswer must be the FULL TEXT of the correct option
+                                                - correctAnswer must NEVER be a letter such as A, B, C, or D
+
+                                                Lesson Material:
+                                                %s
+                                                """,
+                                numberOfQuestions,
+                                lessonContent);
 
                 Map<String, Object> requestBody = Map.of(
                                 "contents", List.of(
@@ -87,41 +120,105 @@ public class GeminiService {
                                                                 Map.of("text", prompt)))));
 
                 try {
-                        // Attempt A: Use primary Gemini 2.5 Flash model
                         System.out.println("🚀 Attempting quiz generation with Gemini 2.5 Flash...");
+
                         String primaryUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
                                         + apiKey;
+
                         return executeAiRequest(primaryUrl, requestBody);
 
                 } catch (HttpServerErrorException.ServiceUnavailable e) {
-                        // Intercept the 503 trace you just saw and switch channels automatically!
-                        System.out.println(
-                                        "⚠️ Gemini 2.5 Flash is overloaded (503). Triggering automatic fallback to Gemini 1.5 Flash...");
 
-                        try {
-                                String fallbackUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key="
-                                                + apiKey;
-                                return executeAiRequest(fallbackUrl, requestBody);
-                        } catch (Exception fallbackException) {
-                                System.out.println("❌ Both primary and fallback AI models are unavailable.");
-                                throw fallbackException; // Rethrow if backup fails too
-                        }
+                        System.out.println(
+                                        "⚠️ Gemini overloaded. Falling back...");
+
+                        String fallbackUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key="
+                                        + apiKey;
+
+                        return executeAiRequest(fallbackUrl, requestBody);
                 }
         }
 
-        private List<QuizQuestionDTO> executeAiRequest(String url, Map<String, Object> requestBody) throws Exception {
+        private List<QuizQuestionDTO> executeAiRequest(
+                        String url,
+                        Map<String, Object> requestBody) throws Exception {
+
                 RestTemplate restTemplate = new RestTemplate();
-                ResponseEntity<String> response = restTemplate.postForEntity(url, requestBody, String.class);
+
+                ResponseEntity<String> response = restTemplate.postForEntity(
+                                url,
+                                requestBody,
+                                String.class);
 
                 JsonNode rootNode = objectMapper.readTree(response.getBody());
+
                 String aiResponseText = rootNode.path("candidates").get(0)
                                 .path("content").path("parts").get(0)
                                 .path("text").asText();
 
-                // Clean out any rogue markdown wrappers
-                aiResponseText = aiResponseText.replaceAll("```json", "").replaceAll("```", "").trim();
+                aiResponseText = aiResponseText
+                                .replace("```json", "")
+                                .replace("```", "")
+                                .trim();
 
-                return objectMapper.readValue(aiResponseText, new TypeReference<List<QuizQuestionDTO>>() {
-                });
+                System.out.println("========== GEMINI RAW ==========");
+                System.out.println(aiResponseText);
+                System.out.println("================================");
+
+                List<QuizQuestionDTO> questions = objectMapper.readValue(
+                                aiResponseText,
+                                new TypeReference<List<QuizQuestionDTO>>() {
+                                });
+
+                for (QuizQuestionDTO q : questions) {
+
+                        String answer = q.getCorrectAnswer();
+
+                        if (answer == null)
+                                continue;
+
+                        answer = answer.trim();
+
+                        // Gemini trả A/B/C/D
+                        if (answer.matches("(?i)^[A-D]$")) {
+
+                                int index = Character.toUpperCase(answer.charAt(0)) - 'A';
+
+                                if (index >= 0 && index < q.getOptions().size()) {
+
+                                        String optionText = q.getOptions().get(index);
+
+                                        optionText = optionText
+                                                        .replaceFirst(
+                                                                        "(?i)^[A-D][\\)\\.\\-:\\s]+",
+                                                                        "")
+                                                        .trim();
+
+                                        q.setCorrectAnswer(optionText);
+                                }
+                        }
+
+                        // Gemini trả "B) something"
+                        else {
+
+                                q.setCorrectAnswer(
+                                                answer.replaceFirst(
+                                                                "(?i)^[A-D][\\)\\.\\-:\\s]+",
+                                                                "")
+                                                                .trim());
+                        }
+
+                        // làm sạch toàn bộ options
+                        List<String> cleanedOptions = q.getOptions().stream()
+                                        .map(opt -> opt.replaceFirst(
+                                                        "(?i)^[A-D][\\)\\.\\-:\\s]+",
+                                                        "")
+                                                        .trim())
+                                        .toList();
+
+                        q.setOptions(cleanedOptions);
+                }
+
+                return questions;
         }
 }

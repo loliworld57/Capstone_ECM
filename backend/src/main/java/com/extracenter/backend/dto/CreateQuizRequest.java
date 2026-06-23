@@ -15,5 +15,14 @@ public class CreateQuizRequest {
     private Boolean isGraded;
     private LocalDateTime dueDate;
     private List<QuizQuestionDTO> questions;
+    private Integer durationInMinutes;
+
+    public Integer getDurationInMinutes() {
+        return durationInMinutes;
+    }
+
+    public void setDurationInMinutes(Integer durationInMinutes) {
+        this.durationInMinutes = durationInMinutes;
+    }
 
 }
