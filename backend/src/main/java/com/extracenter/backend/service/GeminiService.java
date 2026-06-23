@@ -37,7 +37,23 @@ public class GeminiService {
                 promptBuilder.append(
                                 "You are an expert educational assistant. Summarize the following lesson material clearly and concisely. ");
                 promptBuilder.append("MUST RESPOND IN THE SAME LANGUAGE AS THE LESSON MATERIAL (e.g., Vietnamese). ");
-                promptBuilder.append("Do not use markdown like ```, just return the plain text summary.\n\n");
+                promptBuilder.append("""
+                                You are an expert educational assistant.
+
+                                Summarize the lesson material.
+
+                                Return ONLY valid HTML.
+
+                                Rules:
+                                - Use <h2> for section titles
+                                - Use <p> for paragraphs
+                                - Use <ul><li> for lists
+                                - Use <strong> for important concepts
+                                - Do not return markdown
+                                - Do not wrap in ```html
+                                - Do not include <html>, <body>, or <head>
+                                - Respond in the same language as the lesson material
+                                """);
 
                 if (teacherRequirement != null && !teacherRequirement.trim().isEmpty()) {
                         promptBuilder.append("CRITICAL INSTRUCTION FROM TEACHER: ").append(teacherRequirement)
