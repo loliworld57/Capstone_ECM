@@ -1,8 +1,11 @@
+"use client";
+
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import api from '@/utils/axiosConfig';
 import { Loader2, Sparkles, FileUp, Files, HelpCircle, CheckCircle, Lightbulb, Copy, X, Clock } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'; // Make sure <Toaster /> is placed in your global layout!
 import { useGradebookItems } from './GradebookItem';
 
 interface CreateQuizModalProps {
@@ -14,31 +17,27 @@ interface CreateQuizModalProps {
 }
 
 export default function CreateQuizModal({ isOpen, onClose, courseId, existingMaterials, quizIdToEdit }: CreateQuizModalProps) {
+    const [mounted, setMounted] = useState(false);
 
     const [sourceType, setSourceType] = useState<'existing' | 'upload'>('existing');
     const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [title, setTitle] = useState<string>('');
     const [dueDate, setDueDate] = useState<string>('');
-    const [durationInMinutes, setDurationInMinutes] = useState<string>('30'); // Added Time Limit state
+    const [durationInMinutes, setDurationInMinutes] = useState<string>('30');
     const [isPublishing, setIsPublishing] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
 
     const [generatedQuestions, setGeneratedQuestions] = useState<any[] | null>(null);
-
-    // Quiz Settings State
     const [questionCount, setQuestionCount] = useState<number>(10);
-    const [maxAttempts, setMaxAttempts] = useState<number>(1); // 0 = unlimited
+    const [maxAttempts, setMaxAttempts] = useState<number>(1);
     const [isGraded, setIsGraded] = useState<boolean>(true);
-
     const [isGenerating, setIsGenerating] = useState(false);
 
     const { gradebookItems } = useGradebookItems(courseId);
     const [scoreItemId, setScoreItemId] = useState<number | "">("");
 
-    // Reference to programmatically trigger hidden file input click
     const fileInputRef = useRef<HTMLInputElement>(null);
-
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -49,7 +48,11 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
     const closeModalConfig = () => setModalConfig(null);
 
-    // Bypasses generation if editing an existing quiz
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
     useEffect(() => {
         const loadQuizForEditing = async () => {
             if (!quizIdToEdit) {
@@ -113,13 +116,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
             if (sourceType === 'existing') {
                 if (!selectedMaterialId) {
-                    setModalConfig({
-                        isOpen: true,
-                        title: "Missing Material",
-                        message: "Please select a course material first before attempting to generate the quiz.",
-                        confirmText: "Understood",
-                        onConfirm: closeModalConfig
-                    });
+                    toast.error("Please select a course material first.");
                     setIsGenerating(false);
                     return;
                 }
@@ -127,36 +124,35 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
             }
             else if (sourceType === 'upload') {
                 if (!uploadFile) {
-                    setModalConfig({
-                        isOpen: true,
-                        title: "No File Selected",
-                        message: "Please upload a document first before asking the AI to generate a preview.",
-                        confirmText: "Understood",
-                        onConfirm: closeModalConfig
-                    });
+                    toast.error("Please upload a document first.");
                     setIsGenerating(false);
                     return;
                 }
 
-                setModalConfig({
-                    isOpen: true,
-                    title: "Coming Soon",
-                    message: "Direct file upload parsing is coming up next! Let's complete testing existing materials first.",
-                    confirmText: "OK",
-                    onConfirm: closeModalConfig
-                });
+                toast.custom((t) => (
+                    <div className="bg-zinc-900 text-white p-4 rounded-xl shadow-xl flex items-center gap-2 text-sm font-semibold">
+                        <Sparkles size={16} className="text-amber-400" />
+                        <span>Direct file parsing coming soon! Use existing materials for now.</span>
+                    </div>
+                ));
                 setIsGenerating(false);
                 return;
             }
 
-            const response = await api.post('/quizzes/generate', payload, { timeout: 60000 });
+            // Using loading promise toast if generation takes long time
+            const response = await toast.promise(
+                api.post('/quizzes/generate', payload, { timeout: 60000 }),
+                {
+                    loading: 'Gemini is drafting your custom questions...',
+                    success: 'Questions generated successfully!',
+                    error: 'AI high traffic error. Please check backend logs or try again!'
+                }
+            );
             
-            // --- CRITICAL AUTO-SELECTION FIX: MAPPING AND ALIGNING AI DATA ---
             const alignedQuestions = (response.data || []).map((q: any) => {
                 const opts = q.options || [];
                 let correctStr = (q.correctAnswer || q.correctOption || '').trim();
 
-                // If AI returns a single indicator letter ("A", "B", etc.), map it directly to the choice content string
                 if (correctStr === 'A' && opts[0]) correctStr = opts[0];
                 else if (correctStr === 'B' && opts[1]) correctStr = opts[1];
                 else if (correctStr === 'C' && opts[2]) correctStr = opts[2];
@@ -174,13 +170,8 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
         } catch (error: any) {
             console.error("Failed to generate quiz:", error);
-            setModalConfig({
-                isOpen: true,
-                title: "Generation Error",
-                message: error.message || "An unexpected issue occurred while Gemini was crafting your questions.",
-                confirmText: "Try Again",
-                onConfirm: closeModalConfig
-            });
+            // backup toast fallback if response promise wrapper rejected uniquely
+            toast.error(error.response?.data?.message || "An unexpected issue occurred while crafting your questions.");
         } finally {
             setIsGenerating(false);
         }
@@ -188,19 +179,12 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
     const handlePublishClick = async () => {
         if (!title || !dueDate) {
-            setModalConfig({
-                isOpen: true,
-                title: "Missing Details",
-                message: "A title and a valid due date are strictly required before you can save this quiz.",
-                confirmText: "Fix Details",
-                onConfirm: closeModalConfig
-            });
+            toast.error("Quiz title and a valid due date are required!");
             return;
         }
 
         setIsPublishing(true);
         try {
-            // Default to 30 mins if blank or invalid
             const finalDuration = durationInMinutes.trim() === "" ? 30 : Math.max(1, parseInt(durationInMinutes) || 30);
 
             const payload = {
@@ -211,38 +195,24 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                 isGraded: isGraded,
                 scoreItemId: scoreItemId || null,
                 dueDate: dueDate.length === 16 ? `${dueDate}:00` : dueDate,
-                durationInMinutes: finalDuration, // Appended to request payload
+                durationInMinutes: finalDuration,
                 questions: generatedQuestions
             };
 
             if (isEditMode) {
                 await api.put(`/quizzes/${quizIdToEdit}`, payload);
+                toast.success("Changes updated successfully!");
             } else {
                 await api.post('/quizzes/create', payload);
+                toast.success("AI Quiz published successfully!");
             }
 
-            setModalConfig({
-                isOpen: true,
-                title: "Success!",
-                message: isEditMode
-                    ? "Your changes have been successfully updated."
-                    : "Your AI Quiz has been generated and published.",
-                confirmText: "Back to Course",
-                onConfirm: () => {
-                    closeModalConfig();
-                    onClose();
-                }
-            });
+            // Instantly dismiss modal upon successful publish action
+            onClose();
 
         } catch (error: any) {
             console.error("Failed to save quiz:", error);
-            setModalConfig({
-                isOpen: true,
-                title: "Save Failed",
-                message: error.message || "The server refused to update the quiz metrics.",
-                confirmText: "Dismiss",
-                onConfirm: closeModalConfig
-            });
+            toast.error(error.response?.data?.message || "The server refused to update the quiz layout metrics.");
         } finally {
             setIsPublishing(false);
         }
@@ -261,30 +231,32 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
         return clean(stripPrefix(optionText)) === clean(stripPrefix(correctAnswer));
     };
 
-    if (!isOpen) return null;
+    if (!isOpen || !mounted) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm p-0 md:p-4 overflow-y-auto">
-            <div className="bg-white w-full h-full md:h-[95vh] md:max-w-6xl md:rounded-xl shadow-2xl flex flex-col overflow-hidden">
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-900/60 p-0 md:p-4 overflow-y-auto">
+            
+            {modalConfig && modalConfig.isOpen && createPortal(
+                <ConfirmModal
+                    isOpen={modalConfig.isOpen}
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    confirmText={modalConfig.confirmText || "Confirm"}
+                    onClose={closeModalConfig}
+                    onConfirm={modalConfig.onConfirm}
+                />,
+                document.body
+            )}
 
-                {modalConfig && (
-                    <ConfirmModal
-                        isOpen={modalConfig.isOpen}
-                        title={modalConfig.title}
-                        message={modalConfig.message}
-                        confirmText={modalConfig.confirmText || "Confirm"}
-                        onClose={closeModalConfig}
-                        onConfirm={modalConfig.onConfirm}
-                    />
-                )}
+            <div className="bg-white w-full h-full md:h-[95vh] md:max-w-6xl md:rounded-xl shadow-2xl flex flex-col overflow-hidden z-[9999] relative">
 
                 {isGenerating && !generatedQuestions ? (
-                    <div className="m-auto p-12 text-center text-[var(--color-text)]">
+                    <div className="m-auto p-12 text-center text-[var(--color-text)] z-[9999]">
                         <Loader2 size={40} className="animate-spin text-[var(--color-main)] mx-auto mb-4" />
-                        <p className="font-semibold text-lg text-[var(--color-text)]">Loading quiz structural layouts...</p>
+                        <p className="font-semibold text-lg text-[var(--color-text)]">Gemini is processing your content parameters...</p>
                     </div>
                 ) : !generatedQuestions ? (
-                    <div className="flex flex-col h-full overflow-y-auto p-6 md:p-8">
+                    <div className="flex flex-col h-full overflow-y-auto p-6 md:p-8 z-[9999]">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-bold text-[var(--color-text)] flex items-center gap-2">
                                 <Sparkles size={26} className="text-[var(--color-main)]" />
@@ -407,7 +379,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col h-full">
+                    <div className="flex flex-col h-full relative z-[9999]">
                         <div className="flex items-center justify-between p-6 border-b border-zinc-200 flex-shrink-0">
                             <h2 className="text-2xl font-bold text-[var(--color-text)]">
                                 {isEditMode ? "Edit Quiz Details" : "Review & Publish Quiz"}
@@ -439,7 +411,6 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                             onChange={(e) => setDueDate(e.target.value)}
                                         />
                                     </div>
-                                    {/* TIME LIMIT DURATION FIELD */}
                                     <div>
                                         <label className="block text-sm font-bold mb-1 flex items-center gap-1">
                                             <Clock size={15} className="text-zinc-500" />
@@ -639,6 +610,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

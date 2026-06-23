@@ -263,7 +263,7 @@ export default function CourseQuizzes({ courseId, readOnly = false }: Props) {
                                                                 ? "text-gray-400 bg-gray-50 border-dashed border-gray-200"
                                                                 : hasTaken
                                                                     ? "text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100"
-                                                                    : "text-white bg-green-600 border-green-500 hover:bg-green-700"
+                                                                    : "text-white bg-[var(--color-main)] border-[var(--color-main)] hover:bg-[var(--color-main)]/90 hover:border-[var(--color-main)]/90"
                                                     }`}
                                                 >
                                                     {isLockedOut ? (
@@ -276,7 +276,7 @@ export default function CourseQuizzes({ courseId, readOnly = false }: Props) {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <PlayCircle size={13} /> Start Quiz
+                                                            <PlayCircle size={13} /> Start
                                                         </>
                                                     )}
                                                 </button>

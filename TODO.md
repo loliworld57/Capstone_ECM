@@ -1,11 +1,9 @@
-# TODO (Teacher Dashboard Enhancements)
+# TODO
 
-- [x] Add Quick Actions Control Panel at top of teacher dashboard.
-- [x] Add Dynamic “Active Class” banner: determine active session, show live countdown, and one-click check-in link.
-
-- [ ] Add Pending Center Invitations preview with Accept/Decline actions (implement API wiring as available).
-- [ ] Add Analytical Student Performance Insights (risk alerts + top performers) using existing attendance/gradebook services when available.
-- [ ] Validate TypeScript build for frontend.
-
-
+- [ ] Adjust quiz time behavior:
+  - [ ] Fix frontend to use backend-configured durationInMinutes (and rename variable if needed)
+  - [ ] Implement auto-submit/lock when timer reaches 0
+  - [ ] Ensure teacher’s “Time Limit (Minutes)” is persisted and returned to students
+- [ ] Run frontend/backend build/tests (as applicable)
+- [ ] Verify the end-to-end flow: Create/Edit quiz -> Student takes quiz -> timer counts down -> submission/lock at 0
 

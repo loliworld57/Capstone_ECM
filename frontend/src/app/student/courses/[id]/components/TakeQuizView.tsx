@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, SendHorizontal, ArrowLeft, CheckCircle2, Award, FileText, ListOrdered, Loader2 } from "lucide-react";
+import { Clock, SendHorizontal, ArrowLeft, CheckCircle2, Award, FileText, ListOrdered, Loader2, ChevronLeft, ChevronRight, Grid } from "lucide-react";
 import api from '@/utils/axiosConfig';
 
 interface TakeQuizViewProps {
@@ -16,6 +16,9 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 minutes safe initial state
     const [results, setResults] = useState<any>(null);
+    
+    // Pagination state
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
 
     // Keep an up-to-date mutable reference of selected answers to prevent timer useEffect triggers
     const selectedAnswersRef = useRef(selectedAnswers);
@@ -30,10 +33,10 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
         const loadQuizDetails = async () => {
             try {
                 const res = await api.get(`/quizzes/student/${quizId}`);
-                
+
                 if (isMounted) {
                     setQuizData(res.data);
-                    
+
                     // Fallback to 30 minutes if durationInMinutes is null/undefined
                     if (res.data?.durationInMinutes && res.data.durationInMinutes > 0) {
                         setTimeLeft(res.data.durationInMinutes * 60);
@@ -109,7 +112,9 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
 
     const handleSubmitQuiz = () => {
         if (isSubmitting || results) return;
-        executeSubmit(selectedAnswers);
+        if (confirm("Are you sure you want to finish and submit your quiz attempt?")) {
+            executeSubmit(selectedAnswers);
+        }
     };
 
     if (isLoading) return (
@@ -119,14 +124,16 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
         </div>
     );
 
-    const questionsCount = quizData?.questions?.length || 0;
+    const questions = quizData?.questions || [];
+    const questionsCount = questions.length;
     const answeredCount = Object.keys(selectedAnswers).length;
+    const currentQuestion = questions[currentQuestionIndex];
 
     return (
-        <div className="max-w-4xl mx-auto mt-4 px-4 pb-16 text-[var(--color-text)] antialiased">
+        <div className="max-w-6xl mx-auto mt-4 px-4 pb-16 text-[var(--color-text)] antialiased">
 
             {/* STICKY WORKSPACE HEADER BAR */}
-            <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 border border-[var(--color-main)]/10 shadow-sm rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 transition-all duration-200">
+            <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 border border-gray-100 shadow-xs rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 transition-all duration-200">
                 <div className="space-y-0.5">
                     <button
                         onClick={onBack}
@@ -152,7 +159,7 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                     {!results && (
                         <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-mono text-base font-bold shadow-sm tracking-wide transition-all ${timeLeft < 300
                             ? "bg-red-50 text-red-600 border-red-200 animate-pulse"
-                            : "bg-[var(--color-soft-white)] text-[var(--color-text)] border-[var(--color-main)]/20"
+                            : "bg-zinc-50 text-[var(--color-text)] border-zinc-200"
                             }`}>
                             <Clock size={18} className={timeLeft < 300 ? "text-red-500" : "text-[var(--color-main)]"} />
                             {formatTime(timeLeft <= 0 ? 0 : timeLeft)}
@@ -188,45 +195,45 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                 </div>
             )}
 
-            {/* EXAM CORE QUESTIONS GRID TREE */}
-            <div className="space-y-6">
-                {quizData?.questions?.map((q: any, idx: number) => {
-                    const studentAnswer = selectedAnswers[q.id];
-
-                    return (
+            {/* MAIN TWO-COLUMN SPLIT CONTAINER (Exam layout + Navigation matrix sidebar) */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                
+                {/* LEFT: QUESTION WORKSPACE CARDS */}
+                <div className="lg:col-span-3 space-y-6">
+                    {currentQuestion && (
                         <div
-                            key={q.id}
-                            className={`p-6 bg-white rounded-2xl border transition-all duration-200 shadow-sm ${studentAnswer && !results
-                                ? "border-[var(--color-main)]/30 ring-1 ring-[var(--color-main)]/5"
-                                : "border-gray-100"
-                                }`}
+                            className={`p-6 bg-white rounded-2xl border transition-all duration-200 shadow-sm ${
+                                selectedAnswers[currentQuestion.id] && !results
+                                    ? "border-[var(--color-main)]/30 ring-1 ring-[var(--color-main)]/5"
+                                    : "border-gray-100"
+                            }`}
                         >
-                            <div className="flex items-start gap-3 mb-4">
+                            <div className="flex items-start gap-3 mb-6">
                                 <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--color-main)]/5 text-[var(--color-main)] font-bold text-xs shrink-0 mt-0.5">
-                                    {idx + 1}
+                                    {currentQuestionIndex + 1}
                                 </span>
                                 <p className="font-bold text-base text-gray-900 leading-snug">
-                                    {q.questionText}
+                                    {currentQuestion.questionText}
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-3 pl-0 md:pl-10">
-                                {q.options.map((opt: string, optIdx: number) => {
-                                    const isSelected = studentAnswer === opt;
+                            <div className="grid grid-cols-1 gap-3">
+                                {currentQuestion.options.map((opt: string, optIdx: number) => {
+                                    const isSelected = selectedAnswers[currentQuestion.id] === opt;
 
                                     return (
                                         <button
                                             key={optIdx}
                                             type="button"
                                             disabled={!!results || isSubmitting}
-                                            onClick={() => handleOptionSelect(q.id, opt)}
+                                            onClick={() => handleOptionSelect(currentQuestion.id, opt)}
                                             className={`group w-full p-3.5 px-4 rounded-xl border text-left text-sm transition-all duration-150 flex items-center gap-3.5 ${isSelected
                                                 ? "bg-[var(--color-main)]/[0.03] border-[var(--color-main)] text-gray-900 font-semibold shadow-sm"
                                                 : "bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50/50 text-gray-700 disabled:bg-gray-50/50 disabled:border-gray-100"
                                                 }`}
                                         >
                                             <div className={`w-6 h-6 rounded-lg border font-bold text-xs flex items-center justify-center shrink-0 transition-colors ${isSelected
-                                                ? "bg-[var(--color-main)] border-[var(--color-main)] text-white shadow-sm shadow-[var(--color-main)]/20"
+                                                ? "bg-[var(--color-main)] border-[var(--color-main)] text-white shadow-sm"
                                                 : "border-gray-200 bg-gray-50 text-gray-400 group-hover:border-gray-300"
                                                 }`}>
                                                 {String.fromCharCode(65 + optIdx)}
@@ -238,38 +245,112 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                                 })}
                             </div>
                         </div>
-                    );
-                })}
-            </div>
+                    )}
 
-            {/* ACTIONS FOOTER SUBMISSION BAR */}
-            {!results && (
-                <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
-                    <p className="text-xs text-[var(--color-text)]/50 font-medium">
-                        {answeredCount === questionsCount
-                            ? "All questions answered. Ready to submit."
-                            : `Unanswered tasks remaining: ${questionsCount - answeredCount}`}
-                    </p>
+                    {/* PAGINATION PROGRESS FOOTER BAR CONTROLS */}
+                    <div className="flex items-center justify-between bg-zinc-50/50 p-4 rounded-xl border border-zinc-100">
+                        <button
+                            type="button"
+                            disabled={currentQuestionIndex === 0}
+                            onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
+                            className="flex items-center gap-1 text-sm font-semibold border px-4 py-2 bg-white rounded-xl text-zinc-700 shadow-2xs hover:bg-zinc-50 disabled:opacity-40 transition"
+                        >
+                            <ChevronLeft size={16} /> Previous
+                        </button>
 
-                    <button
-                        onClick={handleSubmitQuiz}
-                        disabled={isSubmitting || answeredCount === 0}
-                        className="px-6 py-3 bg-[var(--color-main)] text-white font-bold text-sm rounded-xl shadow-md shadow-[var(--color-main)]/10 hover:brightness-110 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 flex items-center gap-2 shrink-0"
-                    >
-                        {isSubmitting ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Processing Grade...
-                            </>
-                        ) : (
-                            <>
-                                Finish & Submit
-                                <SendHorizontal size={16} />
-                            </>
-                        )}
-                    </button>
+                        <span className="text-xs text-zinc-500 font-medium font-mono">
+                            Question {currentQuestionIndex + 1} of {questionsCount}
+                        </span>
+
+                        <button
+                            type="button"
+                            disabled={currentQuestionIndex === questionsCount - 1}
+                            onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
+                            className="flex items-center gap-1 text-sm font-semibold border px-4 py-2 bg-white rounded-xl text-zinc-700 shadow-2xs hover:bg-zinc-50 disabled:opacity-40 transition"
+                        >
+                            Next <ChevronRight size={16} />
+                        </button>
+                    </div>
+
+                    {/* FOOTER ACTIONS SUBMISSION */}
+                    {!results && (
+                        <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
+                            <p className="text-xs text-[var(--color-text)]/50 font-medium">
+                                {answeredCount === questionsCount
+                                    ? "All tasks answered successfully. Ready to post."
+                                    : `Unanswered tasks remaining: ${questionsCount - answeredCount}`}
+                            </p>
+
+                            <button
+                                onClick={handleSubmitQuiz}
+                                disabled={isSubmitting || answeredCount === 0}
+                                className="px-6 py-3 bg-[var(--color-main)] text-white font-bold text-sm rounded-xl shadow-md hover:brightness-110 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 flex items-center gap-2 shrink-0"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Processing Grade...
+                                    </>
+                                ) : (
+                                    <>
+                                        Finish & Submit
+                                        <SendHorizontal size={16} />
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* RIGHT SIDEBAR: QUESTION NAVIGATION MAP GRID */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-xs space-y-4 lg:sticky lg:top-28">
+                    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                        <Grid size={16} className="text-zinc-400" />
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Question Map Table</h3>
+                    </div>
+
+                    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-4 gap-2">
+                        {questions.map((q: any, idx: number) => {
+                            const isAnswered = !!selectedAnswers[q.id];
+                            const isCurrent = idx === currentQuestionIndex;
+
+                            return (
+                                <button
+                                    key={q.id}
+                                    type="button"
+                                    onClick={() => setCurrentQuestionIndex(idx)}
+                                    className={`h-10 text-xs font-bold rounded-xl flex items-center justify-center border transition-all ${
+                                        isCurrent
+                                            ? "bg-white border-4 border-[var(--color-main)] text-[var(--color-main)] shadow-xs"
+                                            : isAnswered
+                                            ? "bg-[var(--color-main)] border-[var(--color-main)] text-white"
+                                            : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-100"
+                                    }`}
+                                >
+                                    {idx + 1}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* STATUS LEGEND INDICATORS */}
+                    <div className="pt-2 space-y-2 border-t border-gray-100 text-[11px] font-medium text-zinc-500">
+                        <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-md bg-white border-2 border-[var(--color-main)] text-[var(--color-main)] shadow-xs block" />
+                            <span>Current View</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-md bg-[var(--color-main)] border-[var(--color-main)] text-white block" />
+                            <span>Answered ({answeredCount})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-md bg-zinc-50 border border-zinc-200 block" />
+                            <span>Unanswered ({questionsCount - answeredCount})</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     );
 }
