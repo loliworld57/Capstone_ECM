@@ -1,17 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
-import { 
-    Sparkles, 
-    Loader2, 
-    RotateCcw, 
-    Copy, 
-    Check, 
-    Save 
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import {
+    Sparkles,
+    Loader2,
+    Copy,
+    Check,
+    Save,
+    X,
+    FileText,
+    Wand2
 } from "lucide-react";
 import api from "@/utils/axiosConfig";
 import ConfirmModal from "@/components/ConfirmModal";
 import toast from "react-hot-toast";
+import TiptapEditor from "@/components/TiptapEditor";
 
 interface AiSummaryModalProps {
     materialId: number;
@@ -33,6 +37,7 @@ export default function AiSummaryModal({
     const [generatedSummary, setGeneratedSummary] = useState(existingSummary || "");
     const [isSaving, setIsSaving] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState({
         isOpen: false,
@@ -42,23 +47,51 @@ export default function AiSummaryModal({
         onConfirm: () => { }
     });
 
+    useEffect(() => {
+        setMounted(true);
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = "unset";
+        };
+    }, []);
+
     const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
 
-    // Copy Content Feature
+    // Helper to strip HTML tags for plain text fallback
+    const stripHtml = (html: string) => {
+        if (typeof window === "undefined") return "";
+        const tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    };
+
+    // Upgraded Rich Text Copy Handler
     const handleCopy = async () => {
         if (!generatedSummary) return;
         try {
-            await navigator.clipboard.writeText(generatedSummary);
+            const plainText = stripHtml(generatedSummary);
+            
+            // Generate asynchronous blobs for both formatting options
+            const htmlBlob = new Blob([generatedSummary], { type: "text/html" });
+            const textBlob = new Blob([plainText], { type: "text/plain" });
+
+            // Write both formats natively to the target system clipboard
+            await navigator.clipboard.write([
+                new ClipboardItem({
+                    "text/html": htmlBlob,
+                    "text/plain": textBlob,
+                })
+            ]);
+
             setIsCopied(true);
-            toast.success("Summary copied to clipboard!");
+            toast.success("Rich text copied to clipboard!");
             setTimeout(() => setIsCopied(false), 2000);
         } catch (err) {
-            console.error("Failed to copy text: ", err);
-            toast.error("Failed to copy text.");
+            console.error("Failed to copy rich text data: ", err);
+            toast.error("Failed to copy formatted text.");
         }
     };
 
-    // ACTION 1: Send to AI
     const handleGenerate = async () => {
         setStatus("LOADING");
         try {
@@ -85,7 +118,6 @@ export default function AiSummaryModal({
         }
     };
 
-    // ACTION 2: Save to Database
     const handleSave = async () => {
         setIsSaving(true);
         try {
@@ -108,8 +140,12 @@ export default function AiSummaryModal({
         }
     };
 
-    return (
-        <div className="w-full">
+    if (!mounted) return null;
+
+    return createPortal(
+        /* Screen Escape Layer Container */
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+            
             <ConfirmModal
                 isOpen={alertConfig.isOpen}
                 title={alertConfig.title}
@@ -120,122 +156,163 @@ export default function AiSummaryModal({
                 onClose={closeAlert}
             />
 
-            {/* STATE 1: INPUT */}
-            {status === "INPUT" && (
-                <div className="space-y-4 animate-in fade-in duration-200">
-                    <label className="block text-sm font-semibold text-slate-700">
-                        Any specific requirements for the AI? <span className="text-slate-400 font-normal">(Optional)</span>
-                    </label>
-                    <div className="relative">
-                        <textarea
-                            className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-3.5 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[var(--color-main)] focus:ring-4 focus:ring-[var(--color-main)]/10 outline-none transition-all duration-200 resize-none"
-                            rows={4}
-                            maxLength={100}
-                            placeholder="e.g., Focus only on grammar rules, or keep it under 3 bullet points..."
-                            value={requirement}
-                            onChange={(e) => setRequirement(e.target.value)}
-                        />
-                        <div className="absolute bottom-3 right-3 text-[11px] font-medium text-slate-400 tracking-wider">
-                            {requirement.length} / 100
+            {/* Main Workspace Frame */}
+            <div className="w-full max-w-4xl flex flex-col max-h-[85vh] text-slate-800 bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all">
+                
+                {/* Header Context Bar */}
+                <div className="flex items-center justify-between border-b border-slate-100 p-5 shrink-0 bg-slate-50/70">
+                    <div className="flex items-center gap-2.5">
+                        <FileText className="w-5 h-5 text-[var(--color-main)]" />
+                        <span className="text-sm font-bold tracking-wide uppercase text-slate-700">
+                            AI Summary Generation Hub
+                        </span>
+                    </div>
+                    <button 
+                        onClick={onCancel}
+                        disabled={status === "LOADING" || isSaving}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Inner Stage Controller Body */}
+                <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+                    
+                    {/* STATE 1: INPUT COMPOSITION */}
+                    {status === "INPUT" && (
+                        <div className="space-y-4 max-w-2xl mx-auto py-8 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="text-center space-y-2 mb-6">
+                                <div className="inline-flex p-3 bg-[var(--color-main)]/10 rounded-full text-[var(--color-main)]">
+                                    <Wand2 className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-800">Customize AI Assistant Output</h3>
+                                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                                    Provide custom parameters below to guide the model outline generation structural format options.
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    Specific Requirements <span className="text-slate-400 font-normal">(Optional)</span>
+                                </label>
+                                <div className="relative">
+                                    <textarea
+                                        className="w-full bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-800 placeholder-slate-400 focus:border-[var(--color-main)] focus:ring-4 focus:ring-[var(--color-main)]/10 outline-none transition-all duration-200 resize-none shadow-xs"
+                                        rows={5}
+                                        maxLength={100}
+                                        placeholder="e.g., Focus only on grammar rules, extract key dates, or format into clear bullet points..."
+                                        value={requirement}
+                                        onChange={(e) => setRequirement(e.target.value)}
+                                    />
+                                    <div className="absolute bottom-3 right-3 text-[10px] font-bold text-slate-400 tracking-wider">
+                                        {requirement.length} / 100
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    )}
+
+                    {/* STATE 2: LOADING PROGRESS WINDOW */}
+                    {status === "LOADING" && (
+                        <div className="flex flex-col items-center justify-center py-24 animate-in fade-in duration-200">
+                            <div className="relative flex items-center justify-center mb-5">
+                                <div className="absolute w-14 h-14 rounded-full bg-[var(--color-main)]/10 animate-ping"></div>
+                                <Loader2 className="w-9 h-9 animate-spin text-[var(--color-main)]" />
+                            </div>
+                            <p className="text-sm font-semibold text-slate-700 tracking-wide animate-pulse">
+                                Gemini AI is processing document contents...
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">This may take up to a minute</p>
+                        </div>
+                    )}
+
+                    {/* STATE 3: REVIEW & LIVE EDIT SURFACE */}
+                    {status === "REVIEW" && (
+                        <div className="space-y-3 h-full animate-in fade-in zoom-in-98 duration-200">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    Interactive Editor Workspace
+                                </label>
+
+                                <button
+                                    onClick={handleCopy}
+                                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all duration-200 ${isCopied
+                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    {isCopied ? <Check size={14} /> : <Copy size={13} />}
+                                    <span>{isCopied ? "Copied!" : "Copy"}</span>
+                                </button>
+                            </div>
+                            
+                            {/* Rich Tiptap Text Core Canvas Wrapper */}
+                            <div className="bg-white rounded-xl shadow-xs border border-slate-100">
+                                <TiptapEditor
+                                    content={generatedSummary}
+                                    onChange={setGeneratedSummary}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Dynamic Action Panels */}
+                <div className="p-4 flex items-center justify-between gap-3 border-t border-slate-100 shrink-0 bg-slate-50/70">
+                    
+                    {/* Left Actions Contextual Controls */}
+                    <div>
+                        {status === "REVIEW" && (
+                            <button
+                                onClick={() => setStatus("INPUT")}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100/70 border border-amber-200/60 px-3 py-2 rounded-xl transition-all shadow-xs active:scale-95"
+                                disabled={isSaving}
+                            >
+                                <Sparkles size={13} />
+                                <span>Regenerate with AI</span>
+                            </button>
+                        )}
                     </div>
 
-                    <div className="pt-2 flex justify-end items-center gap-3">
-                        <button 
-                            onClick={onCancel} 
-                            className="text-slate-500 hover:text-slate-700 font-medium text-sm px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors"
+                    {/* Right Confirmation Controls */}
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            onClick={onCancel}
+                            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+                            disabled={status === "LOADING" || isSaving}
                         >
                             Cancel
                         </button>
-                        <button
-                            onClick={handleGenerate}
-                            className="inline-flex items-center gap-2 bg-[var(--color-main)] text-white px-5 py-2.5 rounded-xl hover:opacity-95 font-semibold text-sm transition-all shadow-sm active:scale-95"
-                        >
-                            <Sparkles size={16} />
-                            <span>Generate Summary</span>
-                        </button>
-                    </div>
-                </div>
-            )}
 
-            {/* STATE 2: LOADING */}
-            {status === "LOADING" && (
-                <div className="flex flex-col items-center justify-center py-12 animate-in fade-in duration-200">
-                    <div className="relative flex items-center justify-center mb-4">
-                        <div className="absolute w-12 h-12 rounded-full bg-[var(--color-main)]/10 animate-ping"></div>
-                        <Loader2 size={36} className="animate-spin text-[var(--color-main)]" />
-                    </div>
-                    <p className="text-slate-600 font-medium text-sm tracking-wide animate-pulse">
-                        Gemini AI is analyzing your lesson...
-                    </p>
-                </div>
-            )}
-
-            {/* STATE 3: REVIEW & EDIT */}
-            {status === "REVIEW" && (
-                <div className="space-y-4 animate-in fade-in duration-200">
-                    <div className="flex items-center justify-between">
-                        <label className="block text-sm font-semibold text-slate-700">
-                            Review and Edit Summary:
-                        </label>
-                        
-                        {/* Copy Code Feature Action Button */}
-                        <button
-                            onClick={handleCopy}
-                            className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all duration-200 ${
-                                isCopied 
-                                ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
-                                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-800"
-                            }`}
-                            title="Copy to Clipboard"
-                        >
-                            {isCopied ? <Check size={14} /> : <Copy size={13} />}
-                            <span>{isCopied ? "Copied!" : "Copy"}</span>
-                        </button>
-                    </div>
-
-                    <textarea
-                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl p-4 text-sm text-slate-700 leading-relaxed focus:bg-white focus:border-[var(--color-main)] focus:ring-4 focus:ring-[var(--color-main)]/10 outline-none transition-all duration-200"
-                        rows={10}
-                        value={generatedSummary}
-                        onChange={(e) => setGeneratedSummary(e.target.value)}
-                        disabled={isSaving}
-                    />
-
-                    <div className="pt-2 flex justify-between items-center">
-                        <button
-                            onClick={() => setStatus("INPUT")}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100/80 hover:bg-slate-100 border border-slate-200/60 px-3.5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                            disabled={isSaving}
-                        >
-                            <RotateCcw size={13} />
-                            <span>Regenerate</span>
-                        </button>
-
-                        <div className="flex items-center gap-3">
-                            <button 
-                                onClick={onCancel} 
-                                className="text-slate-500 hover:text-slate-700 font-medium text-sm px-4 py-2 rounded-xl hover:bg-slate-50 transition-colors"
-                                disabled={isSaving}
+                        {status === "INPUT" && (
+                            <button
+                                onClick={handleGenerate}
+                                className="inline-flex items-center gap-2 bg-[var(--color-main)] text-white px-5 py-2.5 rounded-xl hover:brightness-105 font-semibold text-sm transition-all shadow-md active:scale-95"
                             >
-                                Cancel
+                                <Sparkles size={15} />
+                                <span>Generate Summary</span>
                             </button>
+                        )}
+
+                        {status === "REVIEW" && (
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving || !generatedSummary.trim()}
-                                className="inline-flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 font-semibold text-sm transition-all shadow-sm active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:scale-100"
+                                className="inline-flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 font-semibold text-sm transition-all shadow-md active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:scale-100"
                             >
                                 {isSaving ? (
-                                    <Loader2 size={16} className="animate-spin" />
+                                    <Loader2 size={15} className="animate-spin" />
                                 ) : (
-                                    <Save size={16} />
+                                    <Save size={15} />
                                 )}
-                                <span>{isSaving ? "Saving..." : "Approve & Save"}</span>
+                                <span>{isSaving ? "Saving changes..." : "Approve & Save"}</span>
                             </button>
-                        </div>
+                        )}
                     </div>
                 </div>
-            )}
-        </div>
+            </div>
+        </div>,
+        document.body
     );
 }

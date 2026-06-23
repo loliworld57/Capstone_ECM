@@ -34,7 +34,7 @@ interface Material {
     fileName: string;
     fileUrl: string;
     fileType: string;
-    summary?: string; 
+    summary?: string;
     uploadedDate: string;
 }
 
@@ -47,7 +47,7 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
-    
+
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -117,7 +117,7 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
             await api.delete(`/materials/${id}`);
             toast.success("Material deleted successfully!");
             setMaterials((currentMaterials) => currentMaterials.filter((material) => material.id !== id));
-            
+
             // Adjust page index if the last item on the final page gets deleted
             if (paginatedMaterials.length === 1 && currentPage > 1) {
                 setCurrentPage(prev => prev - 1);
@@ -135,7 +135,7 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
 
     return (
         <div className="bg-[var(--color-soft-white)] rounded-xl border border-[var(--color-main)] shadow-md overflow-hidden transition-all duration-300">
-            
+
             <ConfirmModal
                 isOpen={!readOnly && pendingDeleteId !== null}
                 title="Delete Material"
@@ -298,36 +298,29 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                                                     <Download size={16} />
                                                 </a>
 
-                                                {material.summary ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => openSummaryModal(material, "REVIEW")}
-                                                            className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 border border-emerald-100 hover:border-emerald-200 px-2.5 py-1.5 rounded-xl transition-all duration-200 shadow-sm active:scale-95"
-                                                            title="View Summary"
-                                                        >
-                                                            <Eye size={14} />
-                                                            <span>View</span>
-                                                        </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => openSummaryModal(material, "REVIEW")}
+                                                            className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700 bg-sky-50/50 hover:bg-sky-50 border border-sky-100 hover:border-sky-200 px-2.5 py-1.5 rounded-xl transition-all duration-200 shadow-sm active:scale-95"
+                                                        title="Edit Summary"
+                                                    >
+                                                        <FileText size={14} />
+                                                        <span>
+                                                            {material.summary ? "Edit" : "Summarize"}
+                                                        </span>
+                                                    </button>
 
+                                                    {material.summary && (
                                                         <button
                                                             onClick={() => openSummaryModal(material, "INPUT")}
-                                                            className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700 bg-sky-50/50 hover:bg-sky-50 border border-sky-100 hover:border-sky-200 px-2.5 py-1.5 rounded-xl transition-all duration-200 shadow-sm active:scale-95"
-                                                            title="Regenerate Summary"
+                                                            className="inline-flex items-center gap-1 text-xs font-semibold text-amber-500 hover:text-amber-700 bg-amber-50/50 hover:bg-amber-50 border border-sky-100 hover:border-sky-200 px-2.5 py-1.5 rounded-xl transition-all duration-200 shadow-sm active:scale-95"
+                                                            title="Generate with AI"
                                                         >
-                                                            <RefreshCw size={12} />
-                                                            <span>Regen</span>
+                                                            <Sparkles size={13} />
+                                                            <span>AI</span>
                                                         </button>
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => openSummaryModal(material, "INPUT")}
-                                                        className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-700 bg-amber-50/50 hover:bg-amber-50 border border-amber-100 hover:border-amber-200 px-2.5 py-1.5 rounded-xl transition-all duration-200 shadow-sm active:scale-95"
-                                                        title="Generate AI Summary"
-                                                    >
-                                                        <Sparkles size={13} className="text-amber-500" />
-                                                        <span>Summary</span>
-                                                    </button>
-                                                )}
+                                                    )}
+                                                </div>
 
                                                 {!readOnly && (
                                                     <button
@@ -385,16 +378,15 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                                         >
                                             <ChevronLeft size={16} />
                                         </button>
-                                        
+
                                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                             <button
                                                 key={page}
                                                 onClick={() => setCurrentPage(page)}
-                                                className={`relative inline-flex items-center px-3 py-1.5 rounded-xl border text-xs font-bold transition-all duration-150 active:scale-95 ${
-                                                    page === currentPage
-                                                        ? "z-10 bg-[var(--color-main)] border-[var(--color-main)] text-white"
-                                                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                                }`}
+                                                className={`relative inline-flex items-center px-3 py-1.5 rounded-xl border text-xs font-bold transition-all duration-150 active:scale-95 ${page === currentPage
+                                                    ? "z-10 bg-[var(--color-main)] border-[var(--color-main)] text-white"
+                                                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                    }`}
                                             >
                                                 {page}
                                             </button>
