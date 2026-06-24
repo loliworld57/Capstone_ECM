@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface CategoryModalProps {
   mode: "create" | "edit";
@@ -56,6 +57,7 @@ export default function CategoryModal({
       toast.error("Operation failed");
     }
   };
+  useLockBodyScroll(true);
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">

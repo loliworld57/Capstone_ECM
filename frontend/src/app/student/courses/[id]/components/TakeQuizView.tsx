@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, SendHorizontal, ArrowLeft, CheckCircle2, Award, FileText, ListOrdered, Loader2 } from "lucide-react";
 import api from '@/utils/axiosConfig';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface TakeQuizViewProps {
     quizId: number;
@@ -14,14 +15,23 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
     const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [timeLeft, setTimeLeft] = useState<number>(1800); // 30 minutes safe initial state
+    const [timeLeft, setTimeLeft] = useState<number>(1800);
     const [results, setResults] = useState<any>(null);
 
-    // Keep an up-to-date mutable reference of selected answers to prevent timer useEffect triggers
     const selectedAnswersRef = useRef(selectedAnswers);
     useEffect(() => {
         selectedAnswersRef.current = selectedAnswers;
     }, [selectedAnswers]);
+
+    const [modalConfig, setModalConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        confirmText?: string;
+        onConfirm: () => void;
+    } | null>(null);
+
+    const closeModalConfig = () => setModalConfig(null);
 
     // 1. FETCH QUIZ DATA EFFECT (Fixed Double Request)
     useEffect(() => {
@@ -30,10 +40,10 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
         const loadQuizDetails = async () => {
             try {
                 const res = await api.get(`/quizzes/student/${quizId}`);
-                
+
                 if (isMounted) {
                     setQuizData(res.data);
-                    
+
                     // Fallback to 30 minutes if durationInMinutes is null/undefined
                     if (res.data?.durationInMinutes && res.data.durationInMinutes > 0) {
                         setTimeLeft(res.data.durationInMinutes * 60);
@@ -59,7 +69,10 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
 
     // Abstracted Submission Logic
     const executeSubmit = async (currentAnswers: typeof selectedAnswers) => {
+        if (isSubmitting) return;
         setIsSubmitting(true);
+        closeModalConfig();
+
         try {
             const payload = {
                 quizId: quizId,
@@ -79,6 +92,17 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
         }
     };
 
+    useEffect(() => {
+        const preventTabClose = (e: BeforeUnloadEvent) => {
+            if (results) return;
+            e.preventDefault();
+            e.returnValue = "Leaving now will lock your exam progress and grade unanswered questions as 0!";
+            return e.returnValue;
+        };
+        window.addEventListener("beforeunload", preventTabClose);
+        return () => window.removeEventListener("beforeunload", preventTabClose);
+    }, [results]);
+
     // 2. STABLE COUNTDOWN AND AUTO-SUBMIT EFFECT
     useEffect(() => {
         if (isLoading || results || isSubmitting) return;
@@ -96,6 +120,21 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
         return () => clearInterval(timer);
     }, [isLoading, results, timeLeft, isSubmitting]);
 
+    const handleLeaveAssessment = () => {
+        if (results) {
+            onBack();
+            return;
+        }
+
+        setModalConfig({
+            isOpen: true,
+            title: "Leave Assessment?",
+            message: "WARNING: Leaving now will instantly finalize and lock your attempt. Any unanswered questions remaining will be graded as INCORRECT (0 pts). Do you wish to proceed?",
+            confirmText: "Yes, Exit & Submit",
+            onConfirm: () => executeSubmit(selectedAnswersRef.current)
+        });
+    };
+
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -109,7 +148,14 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
 
     const handleSubmitQuiz = () => {
         if (isSubmitting || results) return;
-        executeSubmit(selectedAnswers);
+
+        setModalConfig({
+            isOpen: true,
+            title: "Finish & Submit?",
+            message: "Are you sure you want to finalize your assessment? You will not be able to change your options after this action.",
+            confirmText: "Finish & Submit",
+            onConfirm: () => executeSubmit(selectedAnswers)
+        });
     };
 
     if (isLoading) return (
@@ -125,11 +171,22 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
     return (
         <div className="max-w-4xl mx-auto mt-4 px-4 pb-16 text-[var(--color-text)] antialiased">
 
+            {modalConfig && (
+                <ConfirmModal
+                    isOpen={modalConfig.isOpen}
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    confirmText={modalConfig.confirmText || "Confirm"}
+                    onClose={closeModalConfig}
+                    onConfirm={modalConfig.onConfirm}
+                />
+            )}
+
             {/* STICKY WORKSPACE HEADER BAR */}
             <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 border border-[var(--color-main)]/10 shadow-sm rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 transition-all duration-200">
                 <div className="space-y-0.5">
                     <button
-                        onClick={onBack}
+                        onClick={handleLeaveAssessment}
                         disabled={isSubmitting && !results}
                         className="flex items-center gap-1.5 text-xs text-[var(--color-text)]/60 hover:text-[var(--color-main)] mb-1 font-semibold transition-colors disabled:opacity-40"
                     >
@@ -161,7 +218,7 @@ export default function TakeQuizView({ quizId, onBack }: TakeQuizViewProps) {
                 </div>
             </div>
 
-            {/* SCORE DISCOVERY HERO SECTION */}
+            {/* SCORE DISCOVERY SECTION */}
             {results && (
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 p-6 rounded-2xl mb-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-start gap-4">

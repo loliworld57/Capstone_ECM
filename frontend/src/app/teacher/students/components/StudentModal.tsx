@@ -10,6 +10,7 @@ import {
 } from "../../../../services/userService";
 import { getMyCenters, Center } from "@/services/centerService";
 import toast from "react-hot-toast";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 type StudentCenter = {
     id: number;
@@ -292,7 +293,7 @@ export default function StudentModal({
     );
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+        <div className="mt-20 fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
 
             <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl space-y-6 sm:p-6">
 

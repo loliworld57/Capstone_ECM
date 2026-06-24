@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "@/components/ConfirmModal";
 import { unlinkTeacherFromCenter } from "@/services/centerService";
 import InviteTeacherModal from "./InviteTeacherModal";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
     centerId: number;
@@ -77,6 +78,8 @@ export default function TeacherListTab({ centerId, teachers, isManager, onUpdate
             toast.error("Failed to unlink teacher");
         }
     };
+
+    useLockBodyScroll(unlinkTeacherId !== null || inviteModalOpen);
 
     if (!isManager) {
         return (

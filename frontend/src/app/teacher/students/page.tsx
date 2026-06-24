@@ -17,12 +17,13 @@ import {
 } from "@/services/userService";
 import StudentModal from "./components/StudentModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 export default function GlobalStudentsPage() {
     const studentsPerPage = 10;
     const [studentStatus, setStudentStatus] = useState<"active" | "rolled-out">("active");
     const [studentScope, setStudentScope] = useState<"own" | "other">("own");
-    
+
     // 1. STATE QUẢN LÝ DỮ LIỆU
     const [allStudents, setAllStudents] = useState<TeacherManagedStudent[]>([]);
     const [filteredStudents, setFilteredStudents] = useState<TeacherManagedStudent[]>([]);
@@ -175,6 +176,8 @@ export default function GlobalStudentsPage() {
         setModalOpen(true);
     };
 
+    useLockBodyScroll(isModalOpen || deletingStudentId !== null || resettingStudent !== null || rollingBackStudent !== null);
+
     return (
         <div className="space-y-6 max-w-[1600px] mx-auto p-1">
             <ConfirmModal
@@ -189,7 +192,7 @@ export default function GlobalStudentsPage() {
             <ConfirmModal
                 isOpen={!!resettingStudent}
                 title="Reset Student Password"
-                message={`Reset the password for "${resettingStudent?.lastName || ""} ${resettingStudent?.firstName || ""}" to the default password "ecm123"?`}
+                message={`Reset the password for "${resettingStudent?.lastName || ""} ${resettingStudent?.firstName || ""}" to the default password "emc123"?`}
                 confirmText="Reset Password"
                 onClose={() => setResettingStudent(null)}
                 onConfirm={() => (resettingStudent ? handleResetPassword(resettingStudent) : undefined)}
@@ -242,11 +245,10 @@ export default function GlobalStudentsPage() {
                             setStudentScope("own");
                             setSelectedCenterId("ALL");
                         }}
-                        className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                            studentStatus === "active"
-                                ? "bg-white text-[var(--color-main)] shadow-sm"
-                                : "text-[var(--color-text)]/70 hover:text-[var(--color-text)]"
-                        }`}
+                        className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${studentStatus === "active"
+                            ? "bg-white text-[var(--color-main)] shadow-sm"
+                            : "text-[var(--color-text)]/70 hover:text-[var(--color-text)]"
+                            }`}
                     >
                         Active List
                     </button>
@@ -257,11 +259,10 @@ export default function GlobalStudentsPage() {
                             setStudentScope("own");
                             setSelectedCenterId("ALL");
                         }}
-                        className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                            studentStatus === "rolled-out"
-                                ? "bg-[var(--color-alert)]/10 text-[var(--color-alert)] shadow-sm"
-                                : "text-[var(--color-text)]/70 hover:text-[var(--color-alert)]"
-                        }`}
+                        className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${studentStatus === "rolled-out"
+                            ? "bg-[var(--color-alert)]/10 text-[var(--color-alert)] shadow-sm"
+                            : "text-[var(--color-text)]/70 hover:text-[var(--color-alert)]"
+                            }`}
                     >
                         Rolled Out Archive
                     </button>
@@ -317,11 +318,10 @@ export default function GlobalStudentsPage() {
                             setStudentScope("own");
                             setSelectedCenterId("ALL");
                         }}
-                        className={`px-4 py-2.5 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
-                            studentScope === "own"
-                                ? "border-[var(--color-main)] text-[var(--color-main)]"
-                                : "border-transparent text-[var(--color-text)]/60 hover:text-[var(--color-text)]"
-                        }`}
+                        className={`px-4 py-2.5 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${studentScope === "own"
+                            ? "border-[var(--color-main)] text-[var(--color-main)]"
+                            : "border-transparent text-[var(--color-text)]/60 hover:text-[var(--color-text)]"
+                            }`}
                     >
                         <Users size={16} className="stroke-[2.5]" /> My Students
                     </button>
@@ -331,11 +331,10 @@ export default function GlobalStudentsPage() {
                             setStudentScope("other");
                             setSelectedCenterId("ALL");
                         }}
-                        className={`px-4 py-2.5 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
-                            studentScope === "other"
-                                ? "border-[var(--color-main)] text-[var(--color-main)]"
-                                : "border-transparent text-[var(--color-text)]/60 hover:text-[var(--color-text)]"
-                        }`}
+                        className={`px-4 py-2.5 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${studentScope === "other"
+                            ? "border-[var(--color-main)] text-[var(--color-main)]"
+                            : "border-transparent text-[var(--color-text)]/60 hover:text-[var(--color-text)]"
+                            }`}
                     >
                         <UserCog size={16} className="stroke-[2.5]" /> Shared Access (Other Teachers)
                     </button>

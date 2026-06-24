@@ -4,6 +4,7 @@ import { Loader2, Sparkles, FileUp, Files, HelpCircle, CheckCircle, Lightbulb, C
 import ConfirmModal from '@/components/ConfirmModal';
 import toast from 'react-hot-toast';
 import { useGradebookItems } from './GradebookItem';
+import { useLockBodyScroll } from '@/hook/useLockBodyScroll';
 
 interface CreateQuizModalProps {
     isOpen: boolean;
@@ -25,6 +26,8 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
     const [isEditMode, setIsEditMode] = useState(false);
 
     const [generatedQuestions, setGeneratedQuestions] = useState<any[] | null>(null);
+
+    useLockBodyScroll(isOpen);
 
     // Quiz Settings State
     const [questionCount, setQuestionCount] = useState<number>(10);
@@ -150,7 +153,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
             }
 
             const response = await api.post('/quizzes/generate', payload, { timeout: 60000 });
-            
+
             // --- CRITICAL AUTO-SELECTION FIX: MAPPING AND ALIGNING AI DATA ---
             const alignedQuestions = (response.data || []).map((q: any) => {
                 const opts = q.options || [];
@@ -265,7 +268,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm p-0 md:p-4 overflow-y-auto">
-            <div className="bg-white w-full h-full md:h-[95vh] md:max-w-6xl md:rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="bg-white w-full h-full md:h-[70vh] md:max-w-6xl md:rounded-xl shadow-2xl flex flex-col overflow-hidden">
 
                 {modalConfig && (
                     <ConfirmModal
@@ -327,10 +330,9 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, existingMat
                                     ))}
                                 </select>
                             ) : (
-                                <div 
-                                    className={`border-2 border-dashed p-12 text-center rounded-xl bg-zinc-50 cursor-pointer flex flex-col items-center justify-center gap-2 transition-all ${
-                                        uploadFile ? 'border-emerald-500 bg-emerald-50/20' : 'border-zinc-300 hover:border-[var(--color-main)]'
-                                    }`}
+                                <div
+                                    className={`border-2 border-dashed p-12 text-center rounded-xl bg-zinc-50 cursor-pointer flex flex-col items-center justify-center gap-2 transition-all ${uploadFile ? 'border-emerald-500 bg-emerald-50/20' : 'border-zinc-300 hover:border-[var(--color-main)]'
+                                        }`}
                                     onClick={() => fileInputRef.current?.click()}
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={(e) => {

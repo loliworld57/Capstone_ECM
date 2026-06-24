@@ -48,7 +48,7 @@ export default function Logo({ className = "", color }: LogoProps) {
           className="text-2xl font-black tracking-tighter text-gray-950 transition-colors"
           style={{ color }}
         >
-          ECM
+          EMC
         </span>
         <span
           className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5"

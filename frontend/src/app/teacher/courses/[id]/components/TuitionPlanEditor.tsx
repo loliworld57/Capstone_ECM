@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { PaymentPlanType, saveTuitionAccount, StudentTuition } from "@/services/financeService";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
     tuition: StudentTuition;
@@ -14,6 +15,9 @@ interface Props {
 type CustomInstallment = { dueDate: string; amountDueVnd: string };
 
 export default function TuitionPlanEditor({ tuition, onSaved, onClose }: Props) {
+
+
+
     const [planType, setPlanType] = useState<PaymentPlanType>(tuition.paymentPlanType || "FULL_COURSE");
     const [startDate, setStartDate] = useState(tuition.planStartDate || new Date().toISOString().slice(0, 10));
     const [endDate, setEndDate] = useState(tuition.planEndDate || startDate);

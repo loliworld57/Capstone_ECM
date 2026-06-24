@@ -18,6 +18,7 @@ import {
     Eye,
     EyeClosed,
 } from "lucide-react";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface UserProfile {
     id: number;
@@ -192,6 +193,8 @@ export default function ProfilePage() {
             }
         }
     };
+
+    useLockBodyScroll(showPasswordModal);
 
     if (loading) return <div className="p-10 text-center">Loading profile...</div>;
 

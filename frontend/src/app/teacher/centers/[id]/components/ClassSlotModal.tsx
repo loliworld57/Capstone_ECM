@@ -237,7 +237,7 @@ export default function ClassSlotModal({
 
 	return (
 		<div className="fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-			<div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-6 space-y-5">
+			<div className="mt-15 bg-white w-full max-w-xl rounded-2xl shadow-2xl p-6 space-y-5">
 				<div className="flex items-center justify-between border-b pb-3">
 					<h3 className="text-lg font-bold text-[var(--color-text)]">
 						{isOccurrenceMode ? "Edit Selected Occurrence" : slot ? "Edit Class Slot" : "Add Class Slot"}
@@ -260,11 +260,10 @@ export default function ClassSlotModal({
 						<select
 							value={courseId}
 							onChange={(e) => setCourseId(e.target.value ? Number(e.target.value) : "")}
-							className={`w-full p-3 border-2 rounded-lg outline-none ${
-								lockCourse || isOccurrenceMode
-									? "border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed"
-									: "border-[var(--color-main)] bg-white"
-							}`}
+							className={`w-full p-3 border-2 rounded-lg outline-none ${lockCourse || isOccurrenceMode
+								? "border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed"
+								: "border-[var(--color-main)] bg-white"
+								}`}
 							disabled={lockCourse || isOccurrenceMode}
 							required
 						>

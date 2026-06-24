@@ -15,6 +15,7 @@ import {
 	User,
 	X,
 } from "lucide-react";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface StudentUser {
 	id: number;
@@ -118,6 +119,8 @@ export default function StudentProfilePage() {
 			setChangingPassword(false);
 		}
 	};
+
+	useLockBodyScroll(showPasswordModal);
 
 	if (loading) {
 		return <div className="p-10 text-center text-[var(--color-text)]">Loading profile...</div>;

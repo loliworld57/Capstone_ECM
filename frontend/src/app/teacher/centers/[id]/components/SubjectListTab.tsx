@@ -10,6 +10,7 @@ import {
 } from "@/services/centerService";
 import SubjectModal from "./SubjectModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
     centerId: number;
@@ -96,6 +97,8 @@ export default function SubjectListTab({ centerId, isManager }: Props) {
         }
     };
 
+    useLockBodyScroll(isModalOpen || !!deletingSubject);
+
     if (loading) {
         return (
             <div className="p-12 text-center text-sm font-medium text-[var(--color-text)] opacity-70 animate-pulse">
@@ -149,7 +152,7 @@ export default function SubjectListTab({ centerId, isManager }: Props) {
                         onClick={handleCreate}
                         className="flex items-center justify-center gap-2 border border-transparent bg-[var(--color-main)] hover:opacity-95 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-all outline-none shadow-xs shrink-0 self-start sm:self-auto"
                     >
-                        <Plus size={16} className="stroke-[2.5]" /> 
+                        <Plus size={16} className="stroke-[2.5]" />
                         Add Subject
                     </button>
                 )}
@@ -190,7 +193,7 @@ export default function SubjectListTab({ centerId, isManager }: Props) {
                                         <div className="inline-flex rounded-lg border border-[var(--color-secondary)]/30 bg-[var(--color-secondary)]/10 px-2.5 py-1 text-xs font-bold text-[var(--color-main)] tracking-wide truncate max-w-[65%]">
                                             {subject.name}
                                         </div>
-                                        
+
                                         {/* DISTINCT BUTTON INTERACTIVE MATRIX MOVED TO TOP */}
                                         {isManager && (
                                             <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">

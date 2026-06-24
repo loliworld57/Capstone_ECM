@@ -157,13 +157,13 @@ export default function RegisterPage() {
 
   return (
     <div className="flex-1 min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50/50 relative overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
-      
+
       {/* Background visual structural layer */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
       {/* Main Registration Panel Card */}
       <div className="w-full max-w-[460px] bg-white border border-gray-200/70 rounded-2xl p-6 sm:p-10 shadow-xl shadow-gray-100/40 relative z-10 transition-all duration-300">
-        
+
         {/* Registration Title Block */}
         <div className="text-center mb-8">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-[var(--color-main)] text-white shadow-md shadow-indigo-500/10">
@@ -171,12 +171,12 @@ export default function RegisterPage() {
           </div>
           <h2 className="text-2xl font-black tracking-tight text-gray-900">Create Account</h2>
           <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wider">
-            Join Education Center Management
+            Join Education Management Center
           </p>
         </div>
 
         <form className="space-y-5" onSubmit={handleRegister}>
-          
+
           {/* First Name & Last Name Split Row */}
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="w-full sm:w-1/2 space-y-1.5">
@@ -194,11 +194,10 @@ export default function RegisterPage() {
                   placeholder="John"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className={`block w-full rounded-xl border p-3 pl-10 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${
-                    errors.firstName 
-                      ? "border-red-400 bg-red-50/10 focus:border-red-500" 
+                  className={`block w-full rounded-xl border p-3 pl-10 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${errors.firstName
+                      ? "border-red-400 bg-red-50/10 focus:border-red-500"
                       : "border-gray-200 bg-gray-50/30 focus:border-indigo-500"
-                  }`}
+                    }`}
                 />
               </div>
               {errors.firstName && <p className="text-xs font-semibold text-red-500 pl-1">{errors.firstName}</p>}
@@ -215,11 +214,10 @@ export default function RegisterPage() {
                 placeholder="Doe"
                 value={formData.lastName}
                 onChange={handleChange}
-                className={`block w-full rounded-xl border p-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${
-                  errors.lastName 
-                    ? "border-red-400 bg-red-50/10 focus:border-red-500" 
+                className={`block w-full rounded-xl border p-3 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${errors.lastName
+                    ? "border-red-400 bg-red-50/10 focus:border-red-500"
                     : "border-gray-200 bg-gray-50/30 focus:border-indigo-500"
-                }`}
+                  }`}
               />
               {errors.lastName && <p className="text-xs font-semibold text-red-500 pl-1">{errors.lastName}</p>}
             </div>
@@ -242,11 +240,10 @@ export default function RegisterPage() {
                 placeholder="name@example.com"
                 value={formData.personalEmail}
                 onChange={handleChange}
-                className={`block w-full rounded-xl border p-3 pl-10 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${
-                  errors.personalEmail 
-                    ? "border-red-400 bg-red-50/10 focus:border-red-500" 
+                className={`block w-full rounded-xl border p-3 pl-10 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${errors.personalEmail
+                    ? "border-red-400 bg-red-50/10 focus:border-red-500"
                     : "border-gray-200 bg-gray-50/30 focus:border-indigo-500"
-                }`}
+                  }`}
               />
             </div>
             {errors.personalEmail && <p className="text-xs font-semibold text-red-500 pl-1">{errors.personalEmail}</p>}
@@ -270,11 +267,10 @@ export default function RegisterPage() {
                 placeholder="0912345678"
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className={`block w-full rounded-xl border p-3 pl-10 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${
-                  errors.phoneNumber 
-                    ? "border-red-400 bg-red-50/10 focus:border-red-500" 
+                className={`block w-full rounded-xl border p-3 pl-10 text-sm text-gray-900 placeholder-gray-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium ${errors.phoneNumber
+                    ? "border-red-400 bg-red-50/10 focus:border-red-500"
                     : "border-gray-200 bg-gray-50/30 focus:border-indigo-500"
-                }`}
+                  }`}
               />
             </div>
             {errors.phoneNumber && <p className="text-xs font-semibold text-red-500 pl-1">{errors.phoneNumber}</p>}
@@ -284,9 +280,8 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full mt-2 relative inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-500 to-[var(--color-main)] text-white text-sm font-bold p-3.5 shadow-md shadow-indigo-500/10 hover:opacity-95 active:scale-98 transition transform duration-150 ${
-              loading ? "cursor-not-allowed opacity-75" : ""
-            }`}
+            className={`w-full mt-2 relative inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-500 to-[var(--color-main)] text-white text-sm font-bold p-3.5 shadow-md shadow-indigo-500/10 hover:opacity-95 active:scale-98 transition transform duration-150 ${loading ? "cursor-not-allowed opacity-75" : ""
+              }`}
           >
             {loading ? (
               <>

@@ -19,6 +19,7 @@ import { DateHeader, Timeline, TimelineHeaders, TimelineItemBase } from "react-c
 import "react-calendar-timeline/dist/style.css";
 import dayjs from "dayjs";
 import { formatDateValue } from "../../../../../utils/dateFormat";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 /** Maps Java DayOfWeek enum values to dayjs .day() (0 = Sunday … 6 = Saturday) */
 const DAY_OF_WEEK_MAP: Record<string, number> = {
@@ -487,6 +488,8 @@ export default function ClassSlotTab({ centerId, isManager }: Props) {
         },
         [handleItemClick]
     );
+
+    useLockBodyScroll(isModalOpen || !!deletingSlot || isOccurrenceEditModalOpen || isOccurrenceActionModalOpen || isDeleteOccurrenceConfirmOpen);
 
     if (loading) {
         return (
