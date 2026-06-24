@@ -23,6 +23,7 @@ import api from '@/utils/axiosConfig';
 import MaterialAddForm from "./MaterialAddForm";
 import ConfirmModal from "@/components/ConfirmModal";
 import AiSummaryModal from "./AiSummaryModal";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
     courseId: number;
@@ -111,6 +112,8 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const paginatedMaterials = filteredMaterials.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
+    useLockBodyScroll(isAddModalOpen || isAiSummaryModalOpen);
+
     const handleDelete = async (id: number) => {
         setDeletingId(id);
         try {
@@ -147,8 +150,8 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
 
             {/* --- ADD MATERIAL MODAL --- */}
             {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className=" mt-20 bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
                         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/70">
                             <h2 className="font-bold text-slate-800 text-lg">Add New Material</h2>
                             <button
@@ -301,7 +304,7 @@ export default function CourseMaterials({ courseId, readOnly = false }: Props) {
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => openSummaryModal(material, "REVIEW")}
-                                                            className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700 bg-sky-50/50 hover:bg-sky-50 border border-sky-100 hover:border-sky-200 px-2.5 py-1.5 rounded-xl transition-all duration-200 shadow-sm active:scale-95"
+                                                        className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 hover:text-sky-700 bg-sky-50/50 hover:bg-sky-50 border border-sky-100 hover:border-sky-200 px-2.5 py-1.5 rounded-xl transition-all duration-200 shadow-sm active:scale-95"
                                                         title="Edit Summary"
                                                     >
                                                         <FileText size={14} />

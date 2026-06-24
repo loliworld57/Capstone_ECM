@@ -40,10 +40,10 @@ const LockedAccountModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             Please contact support to resolve this issue:
                         </p>
                         <a
-                            href="mailto:admin@ecm.edu.vn"
+                            href="mailto:admin@emc.edu.vn"
                             className="text-red-600 font-bold hover:underline text-lg block mt-1"
                         >
-                            admin@ecm.edu.vn
+                            admin@emc.edu.vn
                         </a>
                     </div>
                 </div>

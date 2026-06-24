@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { createStudentAuto } from "@/services/userService";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 type ApiError = {
 	response?: {
@@ -128,6 +129,7 @@ export default function StudentModal({ isOpen, onClose, onSuccess, centerId }: P
 			setLoading(false);
 		}
 	};
+
 
 	return (
 		<div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">

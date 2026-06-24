@@ -25,10 +25,10 @@ export default function TeacherLayout({
     const router = useRouter();
     const [user, setUser] = useState<StoredUser | null>(null);
     const [collapsed, setCollapsed] = useState(false);
-    
+
     // Breakpoint state tracking
     const [isFHDAndAbove, setIsFHDAndAbove] = useState(true);
-    
+
     const [pendingInvites, setPendingInvites] = useState(0);
     const sidebarRef = useRef<HTMLElement | null>(null);
 
@@ -70,7 +70,7 @@ export default function TeacherLayout({
 
             // Default state behaviors: Pinned expanded on FHD+, completely hidden on smaller screens
             if (matchesFHD) {
-                setCollapsed(false); 
+                setCollapsed(false);
             } else {
                 setCollapsed(true);
             }
@@ -120,7 +120,7 @@ export default function TeacherLayout({
 
     return (
         <div className="relative min-h-screen w-full bg-[var(--color-soft-white)] text-slate-900 selection:bg-indigo-500 selection:text-white flex flex-col">
-            
+
             {/* FLOATING ACTION ARROW TRIGGER - Displays below FHD when menu slides away, or on FHD when mini strip isn't preferred */}
             {collapsed && (
                 <button
@@ -136,27 +136,24 @@ export default function TeacherLayout({
             {/* DECOUPLED FLOATING SIDEBAR NAVIGATION COMPONENT */}
             <aside
                 ref={sidebarRef}
-                className={`fixed left-0 z-50 flex flex-col border-r border-slate-900 bg-slate-950 shadow-2xl transition-all duration-300 ease-in-out ${
-                    isFHDAndAbove
+                className={`fixed left-0 z-50 flex flex-col border-r border-slate-900 bg-slate-950 shadow-2xl transition-all duration-300 ease-in-out ${isFHDAndAbove
                         ? collapsed
                             ? "translate-x-0 w-20" // Mini strip layout style for FHD and above screens
                             : "translate-x-0 w-64" // Fully expanded layout layout layout style
                         : collapsed
                             ? "-translate-x-full w-64 pointer-events-none opacity-0" // Completely off-screen below FHD
                             : "translate-x-0 w-64 opacity-100" // Fully open overlay drawer pane
-                }`}
+                    }`}
                 style={{
                     top: "var(--app-header-height, 73px)",
                     height: "calc(100vh - var(--app-header-height, 73px))"
                 }}
             >
                 {/* Header Profile Info Block */}
-                <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] transition-all ${
-                    (isFHDAndAbove && collapsed) ? "justify-center" : "justify-between"
-                }`}>
-                    <div className={`truncate pr-2 transition-all duration-300 ${
-                        (isFHDAndAbove && collapsed) ? "w-0 opacity-0 pointer-events-none hidden" : "w-auto opacity-100 block"
+                <div className={`flex items-center p-4 border-b border-slate-900 min-h-[73px] transition-all ${(isFHDAndAbove && collapsed) ? "justify-center" : "justify-between"
                     }`}>
+                    <div className={`truncate pr-2 transition-all duration-300 ${(isFHDAndAbove && collapsed) ? "w-0 opacity-0 pointer-events-none hidden" : "w-auto opacity-100 block"
+                        }`}>
                         <h2 className="text-xs font-black text-slate-400 tracking-widest uppercase">Workspace</h2>
                         <p className="text-sm font-bold text-white truncate mt-0.5">
                             {user?.firstName ? `Faculty: ${user.firstName}` : "Academic Faculty"}
@@ -166,9 +163,8 @@ export default function TeacherLayout({
                     {/* Navigation layout controller button */}
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className={`p-2 rounded-xl border border-slate-800 text-slate-400 bg-slate-900/50 hover:bg-slate-900 hover:text-white hover:border-slate-700 transition-all active:scale-95 shadow-md ${
-                            !isFHDAndAbove && collapsed ? "hidden" : "block"
-                        }`}
+                        className={`p-2 rounded-xl border border-slate-800 text-slate-400 bg-slate-900/50 hover:bg-slate-900 hover:text-white hover:border-slate-700 transition-all active:scale-95 shadow-md ${!isFHDAndAbove && collapsed ? "hidden" : "block"
+                            }`}
                         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
                         {(isFHDAndAbove && collapsed) ? <ChevronRight size={16} className="stroke-[2.5]" /> : <ChevronLeft size={16} className="stroke-[2.5]" />}
@@ -180,30 +176,27 @@ export default function TeacherLayout({
                     {menuItems.map((item) => {
                         const isActive = pathname === item.href;
                         const isMiniStrip = isFHDAndAbove && collapsed;
-                        
+
                         return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`group relative flex items-center rounded-xl p-3 text-sm font-semibold transition-all duration-200 outline-none ${
-                                    isActive
+                                className={`group relative flex items-center rounded-xl p-3 text-sm font-semibold transition-all duration-200 outline-none ${isActive
                                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10 border border-indigo-500/50"
                                         : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-100 border border-transparent"
-                                } ${isMiniStrip ? "justify-center" : "gap-3.5"}`}
+                                    } ${isMiniStrip ? "justify-center" : "gap-3.5"}`}
                             >
                                 <item.icon
                                     size={20}
-                                    className={`shrink-0 transition-transform duration-200 group-hover:scale-105 ${
-                                        isActive ? "text-white stroke-[2.5]" : "text-slate-400 group-hover:text-slate-200 stroke-[2]"
-                                    }`}
+                                    className={`shrink-0 transition-transform duration-200 group-hover:scale-105 ${isActive ? "text-white stroke-[2.5]" : "text-slate-400 group-hover:text-slate-200 stroke-[2]"
+                                        }`}
                                 />
 
                                 {/* Smooth label fading layout toggle */}
-                                <span className={`tracking-wide whitespace-nowrap transition-all duration-200 origin-left ${
-                                    isMiniStrip 
-                                        ? "w-0 opacity-0 pointer-events-none hidden" 
+                                <span className={`tracking-wide whitespace-nowrap transition-all duration-200 origin-left ${isMiniStrip
+                                        ? "w-0 opacity-0 pointer-events-none hidden"
                                         : "w-auto opacity-100 block"
-                                }`}>
+                                    }`}>
                                     {item.name}
                                 </span>
 
@@ -216,11 +209,10 @@ export default function TeacherLayout({
 
                                 {/* Notification Alert Badges */}
                                 {item.notify && (
-                                    <span className={`absolute rounded-full bg-rose-500 ring-[3px] ${
-                                        isMiniStrip
+                                    <span className={`absolute rounded-full bg-rose-500 ring-[3px] ${isMiniStrip
                                             ? "top-2.5 right-4 h-2.5 w-2.5 ring-slate-950"
                                             : "right-3 h-2 w-2 ring-slate-950 group-hover:ring-slate-900"
-                                    } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""} transition-all`} />
+                                        } ${isActive ? "ring-indigo-600 group-hover:ring-indigo-600" : ""} transition-all`} />
                                 )}
                             </Link>
                         );

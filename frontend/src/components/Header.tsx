@@ -70,15 +70,15 @@ export default function Header() {
                     : "/";
 
     return (
-        <header 
-            ref={headerRef} 
+        <header
+            ref={headerRef}
             className="sticky top-0 z-40 w-full border-b border-slate-900/40 bg-slate-950/90 backdrop-blur-md shadow-md"
         >
             {/* Top Micro Info Strip */}
             <div className="bg-slate-300 border-b border-slate-800/50 py-1.5 px-4">
                 <div className="container mx-auto flex items-center justify-between text-xs text-[var(--color-text)] font-medium">
                     <span className="hidden sm:inline-block tracking-wide">
-                        Education Center Management System
+                        Education Management Center System
                     </span>
                     <span className="mx-auto sm:mx-0 tracking-wider font-semibold uppercase text-[10px] bg-[var(--color-main)] text-white border border-indigo-500/20 px-2 py-0.5 rounded-sm">
                         EIU Student Project
@@ -89,7 +89,7 @@ export default function Header() {
             {/* Main Interactive Command Ribbon */}
             <div className="px-4 py-3.5">
                 <div className="container mx-auto flex items-center justify-between gap-4">
-                    
+
                     {/* Brand Anchor Logo Group - Integrated Glyph Design */}
                     <Link href="/" className="flex items-center group transition-transform duration-200 active:scale-95 shrink-0">
                         {/* I have updated the Logo component here. 
@@ -107,7 +107,7 @@ export default function Header() {
                                 <span className="hidden md:inline-block text-xs font-semibold text-slate-300 tracking-tight max-w-[180px] truncate">
                                     {user.email}
                                 </span>
-                                
+
                                 <div className="h-4 w-[1px] bg-slate-800 hidden md:block" />
 
                                 <div className="flex items-center gap-1.5">
@@ -119,7 +119,7 @@ export default function Header() {
                                     >
                                         <LayoutDashboard size={18} />
                                     </Link>
-                                    
+
                                     <Link
                                         href={profileHref}
                                         className="p-1.5 text-slate-400 rounded-full hover:bg-slate-800 hover:text-white transition-all duration-200"
@@ -139,14 +139,14 @@ export default function Header() {
                             </div>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Link 
-                                    href="/login" 
+                                <Link
+                                    href="/login"
                                     className="text-sm font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-lg transition-colors"
                                 >
                                     Login
                                 </Link>
-                                <Link 
-                                    href="/register" 
+                                <Link
+                                    href="/register"
                                     className="bg-linear-to-r from-indigo-500 to-[var(--color-main)] hover:from-indigo-600 hover:to-[var(--color-main)] text-white text-sm font-bold px-4 py-2 rounded-lg shadow-md shadow-indigo-950/50 transition-all transform active:scale-98"
                                 >
                                     Get Started
@@ -159,11 +159,11 @@ export default function Header() {
 
             {/* Backdrop Modal Overlay Layer */}
             {showLogoutConfirm && (
-                <div 
+                <div
                     className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center z-50 p-4"
                     onClick={() => setShowLogoutConfirm(false)}
                 >
-                    <div 
+                    <div
                         className="bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-800 transform transition-all duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >

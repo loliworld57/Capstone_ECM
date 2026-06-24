@@ -8,6 +8,7 @@ import {
   updateCenterSubject,
   CenterSubject,
 } from "@/services/centerService";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
   centerId: number;
@@ -69,6 +70,7 @@ export default function SubjectModal({
       toast.error("Operation failed");
     }
   };
+
 
   if (!isOpen) return null;
 

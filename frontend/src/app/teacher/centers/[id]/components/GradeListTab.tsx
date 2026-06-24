@@ -10,6 +10,7 @@ import {
 } from "@/services/centerService";
 import GradeModal from "./GradeModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
     centerId: number;
@@ -85,6 +86,8 @@ export default function GradeListTab({ centerId, isManager }: Props) {
             toast.error(message);
         }
     };
+
+    useLockBodyScroll(isModalOpen || !!deletingGrade);
 
     if (loading) {
         return (
@@ -185,8 +188,8 @@ export default function GradeListTab({ centerId, isManager }: Props) {
                                 {/* HOVER DYNAMIC TABLE BODY */}
                                 <tbody className="divide-y divide-gray-100 text-gray-700">
                                     {paginatedGrades.map((grade) => (
-                                        <tr 
-                                            key={grade.id} 
+                                        <tr
+                                            key={grade.id}
                                             className="transition-colors duration-150 hover:bg-gray-50/40 group"
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">

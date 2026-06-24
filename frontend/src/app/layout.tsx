@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ECM",
-  description: "Extra Center Management application.",
+  title: "EMC",
+  description: "Extra Management Center application.",
 };
 
 export default function RootLayout({
@@ -37,7 +37,7 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col w-full">
           <Header />
           <SessionManager />
-          
+
           <Toaster
             position="top-right"
             containerStyle={{ zIndex: 4000 }}

@@ -24,6 +24,7 @@ import toast from "react-hot-toast";
 import api from '@/utils/axiosConfig';
 import AssignmentForm from "./AddAssignmentForm";
 import AssignmentDetailModal from "./AssignmentDetail";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
     courseId: number;
@@ -47,6 +48,7 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [keyword, setKeyword] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+
 
     // Combined Sorting State
     const [sortField, setSortField] = useState<SortField>('createdDate');
@@ -187,6 +189,9 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
         }
     };
 
+    useLockBodyScroll(isAddModalOpen || selectedAssignment !== null || confirmDeleteId !== null || viewSubmissionsId !== null);
+
+
     return (
         <div className="space-y-6 m-4">
             {/* --- METRICS SUB-DASHBOARD --- */}
@@ -269,8 +274,8 @@ export default function CourseAssignments({ courseId, readOnly = false }: Props)
                 )}
 
                 {isAddModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                        <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                        <div className="mt-20 bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
                             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-[var(--color-main)]">
                                 <h2 className="font-bold text-white text-lg">Create Assignment</h2>
                                 <button

@@ -103,7 +103,7 @@ export default function LoginPage() {
 
     return (
         <div className="flex-1 min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50/50 relative overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
-            
+
             {/* Soft geometric background grid layer */}
             <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
@@ -114,18 +114,18 @@ export default function LoginPage() {
 
             {/* Core Authentic Form Container Card */}
             <div className="w-full max-w-[420px] bg-white border border-gray-200/70 rounded-2xl p-6 sm:p-10 shadow-xl shadow-gray-100/40 relative z-10 transition-all duration-300">
-                
+
                 {/* Branding Block Header */}
                 <div className="mb-8 text-center">
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-[var(--color-main)] text-white shadow-md shadow-indigo-500/10">
                         <Lock size={22} className="stroke-[2.2]" />
                     </div>
-                    <h2 className="text-2xl font-black tracking-tight text-gray-900">Sign In to ECM</h2>
-                    <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wider">Education Center Management</p>
+                    <h2 className="text-2xl font-black tracking-tight text-gray-900">Sign In to EMC</h2>
+                    <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wider">Education Management Center</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-5">
-                    
+
                     {/* Input Block: Email address */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold uppercase tracking-wide text-gray-500 flex items-center justify-between">
@@ -142,7 +142,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="block w-full rounded-xl border border-gray-200 bg-gray-50/30 p-3 pl-11 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition duration-200 font-medium"
-                                placeholder="name@ecm.edu.vn"
+                                placeholder="name@emc.edu.vn"
                             />
                         </div>
                     </div>
@@ -179,9 +179,8 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full relative inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-500 to-[var(--color-main)] text-white text-sm font-bold p-3.5 shadow-md shadow-indigo-500/10 hover:opacity-95 active:scale-98 transition transform duration-150 ${
-                            loading ? "cursor-not-allowed opacity-75" : ""
-                        }`}
+                        className={`w-full relative inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-500 to-[var(--color-main)] text-white text-sm font-bold p-3.5 shadow-md shadow-indigo-500/10 hover:opacity-95 active:scale-98 transition transform duration-150 ${loading ? "cursor-not-allowed opacity-75" : ""
+                            }`}
                     >
                         {loading ? (
                             <>
@@ -197,8 +196,8 @@ export default function LoginPage() {
                 {/* Registration Deep Link redirection path */}
                 <p className="mt-8 text-center text-sm text-gray-500 font-medium">
                     Don&apos;t have an account?{" "}
-                    <Link 
-                        href="/register" 
+                    <Link
+                        href="/register"
                         className="font-bold text-indigo-600 hover:text-indigo-700 underline underline-offset-4 decoration-indigo-500/30 hover:decoration-indigo-600 transition-colors"
                     >
                         Go to register

@@ -20,12 +20,12 @@ interface AssignmentDetailModalProps {
     onRefresh: () => void; // Called after successful Edit
 }
 
-export default function AssignmentDetailModal({ 
-    courseId, 
-    assignment, 
-    readOnly = false, 
-    onClose, 
-    onRefresh 
+export default function AssignmentDetailModal({
+    courseId,
+    assignment,
+    readOnly = false,
+    onClose,
+    onRefresh
 }: AssignmentDetailModalProps) {
     const [isEditing, setIsEditing] = useState(false);
 
@@ -33,10 +33,10 @@ export default function AssignmentDetailModal({
     const formatDateTime = (dateStr: string) => {
         if (!dateStr) return "";
         return new Date(dateStr).toLocaleString('en-US', {
-            hour: '2-digit', 
-            minute: '2-digit', 
-            day: '2-digit', 
-            month: '2-digit', 
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit',
             year: 'numeric'
         });
     };
@@ -51,8 +51,8 @@ export default function AssignmentDetailModal({
     // If in Edit mode, render Form instead of View
     if (isEditing) {
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="mt-20 bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
                     <div className="flex justify-between items-center p-4 border-b bg-gray-50">
                         <h2 className="font-bold text-gray-800 text-lg">Edit Assignment</h2>
                     </div>
@@ -92,17 +92,17 @@ export default function AssignmentDetailModal({
                     </div>
                     <div className="flex gap-2">
                         {!readOnly && (
-                            <button 
-                                onClick={() => setIsEditing(true)} 
-                                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-white" 
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-white"
                                 title="Edit"
                             >
                                 <Edit3 size={20} />
                             </button>
                         )}
-                        <button 
-                            onClick={onClose} 
-                            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-white" 
+                        <button
+                            onClick={onClose}
+                            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-white"
                             title="Close"
                         >
                             <X size={20} />
@@ -124,7 +124,7 @@ export default function AssignmentDetailModal({
                         <div className="mt-6">
                             <h3 className="text-sm font-bold text-gray-800 mb-2">Attached Document</h3>
                             <a
-                                href={assignment.fileUrl ||  '#'}
+                                href={assignment.fileUrl || '#'}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:border-[var(--color-main)] hover:shadow-md transition group"
@@ -148,14 +148,14 @@ export default function AssignmentDetailModal({
 
                 {/* Footer Actions */}
                 <div className="p-4 border-t bg-white flex justify-end gap-3">
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="px-6 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition text-sm shadow-sm"
                     >
                         Close
                     </button>
                     {readOnly && (
-                        <button 
+                        <button
                             onClick={handleStudentSubmit}
                             disabled={isOverdue}
                             className="px-6 py-2.5 bg-[var(--color-main)] text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2 text-sm shadow-sm"

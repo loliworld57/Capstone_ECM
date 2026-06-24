@@ -108,15 +108,15 @@ export default function AssignmentForm({ courseId, classSessionId, initialData, 
 
     return (
         /* 1. Added full screen boundary limit constraints and flex direction */
-        <form 
-            onSubmit={handleSubmit} 
+        <form
+            onSubmit={handleSubmit}
             className="flex flex-col w-full max-h-[85vh] md:max-h-[80vh] bg-white rounded-xl shadow-lg overflow-hidden"
         >
 
 
             {/* 2. Scrollable Body Content Wrapper */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                
+
                 {/* TITLE */}
                 <div>
                     <label className="block text-sm font-bold text-[var(--color-text)] mb-1 flex items-center gap-2">
@@ -217,16 +217,16 @@ export default function AssignmentForm({ courseId, classSessionId, initialData, 
 
             {/* 3. Sticky Action Footer Bar (Will never slip off screen) */}
             <div className="flex justify-end gap-3 px-6 py-3.5 bg-gray-50 border-t border-gray-100 shrink-0">
-                <button 
-                    type="button" 
-                    onClick={onCancel} 
+                <button
+                    type="button"
+                    onClick={onCancel}
                     className="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition shadow-sm"
                 >
                     Cancel
                 </button>
-                <button 
-                    type="submit" 
-                    disabled={loading} 
+                <button
+                    type="submit"
+                    disabled={loading}
                     className="px-5 py-2 text-sm font-bold text-white bg-[var(--color-main)] rounded-lg hover:opacity-90 transition flex items-center gap-2 shadow-sm disabled:opacity-60"
                 >
                     {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}

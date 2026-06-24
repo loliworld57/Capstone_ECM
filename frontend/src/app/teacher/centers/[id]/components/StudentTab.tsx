@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "@/components/ConfirmModal";
 import AssignStudentModal from "./AssignStudentModal";
 import StudentModal from "./StudentModal";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 type StudentCenterCard = User & {
     courses: { id: number; name: string }[];
@@ -95,6 +96,8 @@ export default function StudentTab({ centerId, students, isManager, onUpdate }: 
             toast.error("Error removing student.");
         }
     };
+
+    useLockBodyScroll(isAssignModalOpen || isCreateModalOpen || !!removingStudent);
 
     return (
         <div className="space-y-6">

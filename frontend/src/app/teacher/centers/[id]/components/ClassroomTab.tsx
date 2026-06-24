@@ -11,6 +11,7 @@ import {
 import ClassroomModal from "./ClassroomModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { formatDateValue } from "@/utils/dateFormat";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface Props {
 	centerId: number;
@@ -104,6 +105,8 @@ export default function ClassroomTab({ centerId, isManager }: Props) {
 		const startIndex = (currentPage - 1) * rowsPerPage;
 		return filteredClassrooms.slice(startIndex, startIndex + rowsPerPage);
 	}, [filteredClassrooms, currentPage]);
+
+	useLockBodyScroll(isModalOpen || !!deletingClassroom);
 
 	if (loading) {
 		return (

@@ -20,6 +20,7 @@ export default function GradebookToolbar({
   onAddScoreItem,
   onExport,
 }: GradebookToolbarProps) {
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
       <div className="flex items-center justify-between flex-wrap gap-4">

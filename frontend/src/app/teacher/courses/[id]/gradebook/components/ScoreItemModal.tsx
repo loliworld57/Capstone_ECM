@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { ScoreCategory } from "@/services/gradebookService";
+import { useLockBodyScroll } from "@/hook/useLockBodyScroll";
 
 interface ScoreItemModalProps {
   categories: ScoreCategory[];
@@ -64,6 +65,7 @@ export default function ScoreItemModal({
       toast.error("Operation failed");
     }
   };
+  useLockBodyScroll(true);
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
