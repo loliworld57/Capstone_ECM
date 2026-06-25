@@ -2,18 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { 
-    BookOpen, 
-    Users, 
-    CalendarDays, 
-    Clock3, 
-    MapPin, 
-    CheckCircle2, 
-    Building2, 
-    Check, 
-    X, 
-    ChevronLeft, 
-    ChevronRight 
+import {
+    BookOpen,
+    Users,
+    CalendarDays,
+    Clock3,
+    MapPin,
+    CheckCircle2,
+    Building2,
+    Check,
+    X,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getTeacherCourses, getStudentsInCourse, getInvitations, respondInvitation } from "@/services/courseService";
@@ -54,16 +54,38 @@ function ActiveClassBanner({
 }) {
     const countdown = useMemo(() => {
         if (!activeSession) return null;
-        
+
         const start = dayjs(`${activeSession.date}T${activeSession.startTime}`);
         const diffMs = start.valueOf() - nowTick;
-        
-        if (diffMs <= 0) return { isLive: true, mm: "00", ss: "00" };
+
+        // If the class has already started
+        if (diffMs <= 0) return { isLive: true, displayStr: "00m 00s" };
 
         const totalSeconds = Math.floor(diffMs / 1000);
-        const mm = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-        const ss = String(totalSeconds % 60).padStart(2, "0");
-        return { isLive: false, mm, ss };
+
+        // Case 1: More than 1 day away
+        if (totalSeconds >= 86400) {
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            return { isLive: false, displayStr: `${days}d ${hours}h` };
+        }
+
+        // Case 2: Less than 1 day, but more than 1 hour away
+        if (totalSeconds >= 3600) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            return { isLive: false, displayStr: `${hours}h ${minutes}m` };
+        }
+
+        // Case 3: Less than 1 hour away
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        // Padding with '0' for a cleaner look when displaying minutes and seconds
+        const paddedMm = String(minutes).padStart(2, "0");
+        const paddedSs = String(seconds).padStart(2, "0");
+
+        return { isLive: false, displayStr: `${paddedMm}m ${paddedSs}s` };
     }, [activeSession, nowTick]);
 
     if (loading) {
@@ -77,9 +99,10 @@ function ActiveClassBanner({
 
     if (!activeSession) return null;
 
-    const statusLabel = countdown?.isLive 
-        ? "Now Active" 
-        : `Starts in ${countdown?.mm}:${countdown?.ss}`;
+    // Dynamically apply the new formatted display string
+    const statusLabel = countdown?.isLive
+        ? "Now Active"
+        : `Starts in ${countdown?.displayStr}`;
 
     return (
         <div className="rounded-xl border-2 border-slate-200 bg-gradient-to-r from-[var(--color-main)]/10 to-[var(--color-main)]/20 text-[var(--color-text)] p-4 sm:p-6 shadow-md transition-all duration-300">
@@ -106,7 +129,7 @@ function ActiveClassBanner({
                 </div>
 
                 <Link
-                    href="/teacher/schedule"
+                    href={`/teacher/courses/${activeSession.courseId}?tab=attendance`}
                     className="inline-flex items-center justify-center rounded-xl bg-[var(--color-main)] text-white font-bold px-4 py-2.5 hover:opacity-90 transition text-sm active:scale-[0.99] shadow-sm shrink-0"
                 >
                     <CheckCircle2 size={16} className="mr-2" />
@@ -116,7 +139,6 @@ function ActiveClassBanner({
         </div>
     );
 }
-
 export default function TeacherDashboard() {
     const [loading, setLoading] = useState(true);
     const [totalCourses, setTotalCourses] = useState(0);
@@ -218,13 +240,13 @@ export default function TeacherDashboard() {
     // Determine which session is currently the active banner candidate
     const activeSession = useMemo(() => {
         if (!upcomingClasses.length) return null;
-        
+
         const activeCandidates = upcomingClasses
             .filter((s) => {
                 const end = dayjs(`${s.date}T${s.endTime}`);
                 return end.valueOf() > nowTick;
             });
-            
+
         return activeCandidates[0] ?? null;
     }, [upcomingClasses, nowTick]);
 
@@ -291,7 +313,7 @@ export default function TeacherDashboard() {
 
             {/* MAIN WORKING PANELS SPLIT VIEW GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+
                 {/* LEFT BLOCK: UPCOMING SCHEDULE LEDGER W/ PAGINATION */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs flex flex-col justify-between min-h-[380px]">
@@ -316,13 +338,12 @@ export default function TeacherDashboard() {
                                         const isNextUp = currentPage === 1 && index === 0;
 
                                         return (
-                                            <div 
-                                                key={index} 
-                                                className={`rounded-xl border p-3 flex items-center justify-between text-xs transition duration-200 ${
-                                                    isNextUp 
-                                                        ? "border-[var(--color-main)] bg-[var(--color-main)]/5 shadow-2xs font-semibold" 
-                                                        : "border-slate-100 bg-slate-50/40 hover:bg-slate-50"
-                                                }`}
+                                            <div
+                                                key={index}
+                                                className={`rounded-xl border p-3 flex items-center justify-between text-xs transition duration-200 ${isNextUp
+                                                    ? "border-[var(--color-main)] bg-[var(--color-main)]/5 shadow-2xs font-semibold"
+                                                    : "border-slate-100 bg-slate-50/40 hover:bg-slate-50"
+                                                    }`}
                                             >
                                                 <div className="min-w-0">
                                                     <div className="font-bold text-[var(--color-text)] truncate flex items-center gap-2">
@@ -366,11 +387,10 @@ export default function TeacherDashboard() {
                                         <button
                                             key={i}
                                             onClick={() => setCurrentPage(i + 1)}
-                                            className={`px-3 py-1 text-xs font-bold rounded-lg transition border ${
-                                                currentPage === i + 1
-                                                    ? "bg-[var(--color-main)] border-[var(--color-main)] text-white"
-                                                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                            }`}
+                                            className={`px-3 py-1 text-xs font-bold rounded-lg transition border ${currentPage === i + 1
+                                                ? "bg-[var(--color-main)] border-[var(--color-main)] text-white"
+                                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                }`}
                                         >
                                             {i + 1}
                                         </button>
@@ -394,18 +414,18 @@ export default function TeacherDashboard() {
                     <div className="bg-white p-5 rounded-xl border border-slate-200/70 shadow-2xs">
                         <h2 className="text-sm font-black text-[var(--color-main)] uppercase tracking-wider mb-3">Quick Actions</h2>
                         <div className="grid grid-cols-1 gap-2">
-                            <Link href="/teacher/centers" 
-                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
+                            <Link href="/teacher/centers"
+                                className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
                                 <Building2 size={14} className="text-[var(--color-main)]" />
                                 Your Centers
                             </Link>
-                            <Link href="/teacher/courses" 
-                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
-                                <BookOpen size={14} className="text-[var(--color-main)]"/>
+                            <Link href="/teacher/courses"
+                                className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
+                                <BookOpen size={14} className="text-[var(--color-main)]" />
                                 Your Courses
                             </Link>
-                            <Link href="/teacher/students" 
-                            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
+                            <Link href="/teacher/students"
+                                className="flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white text-[var(--color-text)] font-bold text-xs hover:bg-slate-50 transition">
                                 <Users size={14} className="text-[var(--color-main)]" />
                                 Your Students
                             </Link>
