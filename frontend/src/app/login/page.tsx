@@ -120,7 +120,7 @@ export default function LoginPage() {
                     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-[var(--color-main)] text-white shadow-md shadow-indigo-500/10">
                         <Lock size={22} className="stroke-[2.2]" />
                     </div>
-                    <h2 className="text-2xl font-black tracking-tight text-gray-900">Sign In to EMC</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-gray-900">Sign In to ECM</h2>
                     <p className="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wider">Education Management Center</p>
                 </div>
 

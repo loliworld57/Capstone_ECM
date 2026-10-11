@@ -44,7 +44,7 @@ public class ApiStatusController {
     @ApiResponse(responseCode = "200", description = "Welcome message and links")
     public ResponseEntity<Map<String, Object>> welcome() {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Welcome to Extra Center Management API");
+        response.put("message", "Welcome to Education Center Management API");
         response.put("description", "API for managing educational centers, courses, enrollments, and users");
         response.put("timestamp", LocalDateTime.now());
         
@@ -67,9 +67,9 @@ public class ApiStatusController {
     public ResponseEntity<Map<String, Object>> health() {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "UP");
-        response.put("message", "Extra Center Management API is running");
+        response.put("message", "Education Center Management API is running");
         response.put("timestamp", LocalDateTime.now());
-        response.put("service", "ExtraCenterBackend");
+        response.put("service", "EducationCenterBackend");
         return ResponseEntity.ok(response);
     }
 
@@ -82,7 +82,7 @@ public class ApiStatusController {
     public ResponseEntity<Map<String, Object>> status() {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "OPERATIONAL");
-        response.put("service", "Extra Center Management System");
+        response.put("service", "Education Center Management System");
         response.put("version", "1.0.0");
         response.put("timestamp", LocalDateTime.now());
         response.put("uptime", "Running");

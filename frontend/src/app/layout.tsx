@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EMC",
-  description: "Extra Management Center application.",
+  title: "Education Center Management (ECM)",
+  description: "Education Center Management application.",
 };
 
 export default function RootLayout({

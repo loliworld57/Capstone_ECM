@@ -1,7 +1,7 @@
 # API Documentation Guide
 
 ## Overview
-Your Extra Center Management API now includes comprehensive API documentation and health check endpoints. This guide shows you how to access and use them.
+Your Education Center Management API now includes comprehensive API documentation and health check endpoints. This guide shows you how to access and use them.
 
 ## Access Points
 
@@ -16,9 +16,9 @@ GET http://localhost:8080/api/health
 ```json
 {
   "status": "UP",
-  "message": "Extra Center Management API is running",
+  "message": "Education Center Management API is running",
   "timestamp": "2026-05-05T10:30:45.123456",
-  "service": "ExtraCenterBackend"
+  "service": "EducationCenterBackend"
 }
 ```
 
@@ -33,7 +33,7 @@ GET http://localhost:8080/api/status
 ```json
 {
   "status": "OPERATIONAL",
-  "service": "Extra Center Management System",
+  "service": "Education Center Management System",
   "version": "1.0.0",
   "timestamp": "2026-05-05T10:30:45.123456",
   "buildVersion": "0.0.1-SNAPSHOT",
